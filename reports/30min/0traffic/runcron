@@ -1,0 +1,16 @@
+#!/bin/sh
+
+IP_DIR=$1
+DATE=$2
+
+#  Run config file
+. $IP_DIR/ipaudit-web.conf
+
+if [ -f $IP_DIR/data/30min/$DATE.txt ]
+then
+   cat $IP_DIR/data/30min/$DATE.txt | ./MakeReport30 $DATE html/$DATE.html
+#  If runcron called after file created, need to unzip it first
+elif [ -f $IP_DIR/data/30min/$DATE.txt.gz ]
+then
+   $ZCAT $IP_DIR/data/30min/$DATE.txt | ./MakeReport30 $DATE html/$DATE.html
+fi

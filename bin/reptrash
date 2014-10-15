@@ -1,0 +1,116 @@
+#!/usr/bin/perl
+
+use POSIX "strftime";
+
+
+&Usage unless scalar(@ARGV)     >= 2;
+&Usage unless scalar(@ARGV) % 2 == 0;
+
+#
+#  Store directories and expiration times into array
+#
+while (@ARGV) {
+   push @DIR,  shift @ARGV;
+   push @NDAY, shift @ARGV;
+}
+
+#
+#  If plus sign in expiration period, add to previous expiration period
+#
+$prev_period = 0;
+for (@NDAY) {
+	if (/^\+(\d+)$/) {
+		$_ = $prev_period + $1;
+	}
+	$prev_period = $_;
+}
+
+#
+#  Make sure that nday0 < nday1 < nday2 ...
+#
+for $i ( 1..$#NDAY) {
+	if ( $NDAY[$i-1] > $NDAY[$i] ) {
+		print "ERROR:  Expiration times out of order\n";
+		exit;
+	}
+}
+
+
+#
+#  Make sure that directories exist and are writeable
+#
+for (@DIR) {
+	die "   Cannot find current directory <$_>\n\n"  unless -d $_;
+	die "   Source directory <$_> not writable\n\n"  unless -w $_;
+}
+
+
+
+#
+#  Process directories in reverse order
+#    Erase file from last directory, 
+#     move files from other directories
+#
+for ($i=$#DIR; $i>=0; $i--) {
+
+	#  Get date string for expiration date for this directory
+	$expdate = strftime("%Y-%m-%d", gmtime(time-$NDAY[$i]*86_400));
+
+	#  Read files from last directory
+	opendir DIR, $DIR[$i] || "  Cannot find directory \"$DIR[$#DIR]\"\n\n";
+	for (readdir DIR) {
+		next unless /^(\d{4}-\d{2}-\d{2})/;
+		next unless $1 lt $expdate;
+		if ($i==$#DIR) {
+			$COMMAND = "rm $DIR[$i]/$_";
+		} else {
+			$COMMAND = "mv $DIR[$i]/$_ $DIR[$i+1]";
+		}
+		#  Execute command
+		`$COMMAND`;
+	}
+	closedir DIR;
+   
+}
+
+exit;
+
+
+sub Usage {
+($basename) = $0=~/([^\/]+)$/;
+print <<"EOM";
+
+   $basename <dir1> <nday1> [ <dir2> [+]<nday2> [ .. [ <dirn> [+]<ndayn> ] 
+   
+   $basename helps manage a large set of files by transferring them
+   through a list directories as they age, finally deleting them
+   after the last directory.  The files must be named with a prefix 
+   such as 
+      2000-07-14
+   which is formed from the 4 digit year, the 2 digit month (left
+   padded with 0 one digit) and the 2 digit day (also left padded).
+
+   <dir1>, <dir2>, .. <dirn> are the directories.  <nday1> is the
+   age of files stored in dir1.  Once their ages exceeds <nday1>
+   they are moved to <dir2>, and so on as they grow older than
+   <nday2>, etc.  Once they become older than the last <ndayn>
+   they are erased.  You can prefix <nday> with a plus sign (+)
+   in which case value is added to previous expiration period
+   to make the new expiration period.
+
+   Note:  Unless <nday1> <  <nday2> <  <nday3> .. the program 
+   aborts, unless using + option.
+
+   Example:
+      $basename  /data/first 30  /data/second 60
+   This moves files older than 30 days (as determined by the date
+   prefix in the file name) from the directory /data/first to 
+   /data/second.  Files older than 60 days are deleted.
+
+      $basename  /data/first 30  /data/second +30
+   Same as previous, +30 means to add 30 days to first expiration 
+   period, make second expiration period 60 days.
+
+EOM
+exit;
+}

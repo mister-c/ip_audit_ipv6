@@ -1,0 +1,973 @@
+#!/usr/bin/perl -Tw
+
+
+#-----------------------------------------------------------------------
+#   History
+#-----------------------------------------------------------------------
+#  General house cleaning 2003-10-05 JR
+
+
+#-----------------------------------------------------------------------
+#   Constants
+#-----------------------------------------------------------------------
+
+#  Column info, used by both print_column_labels() and 
+#    print_table_data() and porturl().
+my ($PORT_WIDTH)=6;
+my (@COLWIDTH) = 
+	(-15, -15, -6, $PORT_WIDTH, $PORT_WIDTH, 
+	8, 8, 8, 8, -13, -13, -6, -6);
+my (@COLCOLOR) = (0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1);
+
+#  Map protocol name to number
+my %PROTO = ( 'tcp'=>6, 'udp'=>17, 'icmp'=>1);
+
+
+#  Map protocol number to name
+my %PROTO_LABEL = (6=>'tcp', 17=>'udp', 1=>'icmp');
+
+#  Map talker number to label
+my @TALKER_LABEL = (0,'L','R');
+
+#  Initialize values to prevent initialization error
+#  messages when print_form() is called (2003-02-20 JR)
+my (%arg) = (
+	"qmin"          => "",
+	"qmax"          => "",
+	"ip_address"    => "",
+	"local_port"    => "",
+	"remote_port"   => "",
+	"line_limit"    => "",
+	"line_incr"     => "",
+	"data_min"      => "",
+	"data_max"      => "",
+	"proto"         => "any",
+	"first_talker"  => "any",
+	"last_talker"   => "any",
+);
+
+my (%search);
+
+
+
+#-----------------------------------------------------------------------
+#   Initialize Directories, Modules, Output
+#-----------------------------------------------------------------------
+
+# make adjust-cgi will search and replace the below from
+# what the configure script has detected as the ipaudit homedir.
+BEGIN {
+  unshift (@INC,"/home/ipaudit/"); # Adjusted via adjust-cgi
+}
+
+#  Set output to immediate flush
+$| = 1;
+
+#  Print HTTP header now so subsequent output will be legal
+print "Content-type: text/html\n\n";
+
+use strict;
+use ipaudit_config;
+
+#  Don't use advanced data parsing if not present
+eval "use Time::ParseDate";
+my ($Is_ParseDate_Found) = $@ eq "";
+if ($Is_ParseDate_Found) {
+	use POSIX;
+}
+
+#  Untaint environment
+delete @ENV{'PATH', 'IFS', 'CDPATH', 'ENV', 'BASH_ENV'};
+
+require 5.004;  # needed for tie interface
+
+
+
+#-----------------------------------------------------------------------
+#   Declare Variables
+#-----------------------------------------------------------------------
+
+my ($IP_DIR,$DATA_DIR,$ZCAT,$ZGREP,%conf);
+my ($filemin,$filemax,
+	$min_date,$max_date,
+	$min_sec, $max_sec,
+	$data_max, $data_min,
+	$prefix_min, $prefix_max,
+	$ip_pattern,
+	$first_talker, $last_talker,
+	$protocol,
+	$line_limit, $line_incr, @files);
+my (%portlist);
+my ($cgidir, $t1,$t2);
+my ($head,$msg);
+
+
+
+#-----------------------------------------------------------------------
+#  Main
+#-----------------------------------------------------------------------
+
+#  Starting time
+$t1 = time();
+
+#  Read configuration file
+%conf = &ipa_getconf();
+
+#  Initialize some dependent variables
+$IP_DIR = &untaint ($conf{'IP_DIR'} ) || '/home/ipaudit';
+$ZCAT   = &untaint ($conf{'ZCAT'}   ) || '/bin/zcat';
+$ZGREP  = &untaint ($conf{'ZGREP'}  ) || '/usr/bin/zgrep';
+
+$DATA_DIR = "$IP_DIR/data/30min";
+
+#  Cgi directory, used to call PortLookup script
+($cgidir) = ($ENV{SCRIPT_NAME}=~/^(.*)\/([^\/]+)$/);
+
+#  Make sure that ZCAT and ZGREP aren't missing, 
+#  this is a frequent source of errors.
+if (not -x $ZCAT && -x $ZGREP ) {
+	$head  = "ERROR: Script Misconfiguration";
+	$msg   = "<p align='center'><b>ERROR</b></p><br>\n";
+	$msg  .= "This script (<tt>~ipaudit/cgi-bin/SearchIpauditData</tt>) is misconfigured.<br><br>";
+	$msg  .= "The <b>ZCAT</b> executable <b><tt>$ZCAT</tt></b> cannot be found.<br>" if not -x $ZCAT;
+	$msg  .= "The <b>ZGREP</b> executable <b><tt>$ZGREP</tt></b> cannot be found.<br>" if not -x $ZGREP;
+	$msg  .= <<EOM;
+<br>Be sure the following lines from the <b><tt>ipaudit-web.conf</tt></b> file
+<pre>
+<b>ZCAT</b>=$ZCAT
+<b>ZGREP</b>=$ZGREP
+</pre>
+contain the correct file paths of the <b>zcat</b> and <b>zgrep</b>
+utilities.
+EOM
+	&croak($msg,$head);
+}
+
+#  Read mapping of port number->name 
+&get_port_list();
+
+#  Print html header
+&html_header();
+
+#  get list of all files in directory
+@files = &get_files();
+($min_date) = $files[ 0]=~/(\d{4}-\d{2}-\d{2}-\d{2}:*\d{2})/;
+($max_date) = $files[-1]=~/(\d{4}-\d{2}-\d{2}-\d{2}:*\d{2})/;
+
+#  Print date range
+printf "<p>Data Available from %s to %s.</p>\n",
+	$min_date, $max_date;
+
+#  Read form input
+&read_arg;
+
+#  Format input stored %arg for redisplay in form.
+&set_form_defaults();
+
+#  Set search parameters from from input
+&set_search_param;
+
+#  Print search form
+&print_form();
+
+# If arguments present, do search
+# Here is where data file are read and results printed
+if($arg{date} or $arg{qmin} ne "") {
+	&read_files (@files);
+}
+
+#  Print total processing time
+$t2= time();
+print "<hr><i>Total Processing time: ",$t2 - $t1, "seconds </i>\n";
+
+#  Print footer
+&html_footer();
+
+exit;
+
+
+#-----------------------------------------------------------------------
+#  Functions
+#-----------------------------------------------------------------------
+
+sub html_header() {
+my $title = "IPAudit Log Search";
+print<<"EOM";
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head>
+<title>$title</title>
+<meta http-equiv="Content-Type" content=
+"text/html; charset=windows-1252">
+<link href="../ip.ico" rel="SHORTCUT ICON">
+<link href="../ipaudit_style.css" rel="stylesheet" type=
+"text/css">
+<STYLE TYPE="text/css">
+H1 { font-size: x-large; color: red }
+H2 { font-size: large; color: blue }
+table { border-width: 0 0 0 0; padding: 0 0 0 0 }
+td.l1 { font-family: monospace; white-space: pre; background: #f5f5dc }
+td.l2 { font-family: monospace; white-space: pre; background: #ffffff }
+</STYLE>
+</head>
+
+<body text="#080808" vlink="#942B9D" alink="#6C8FBB" link=
+"#2B4E9D" bgcolor="white">
+
+<table cellspacing="0" cellpadding="2" width="100%" border="0">
+<tr>
+<td align="center" bgcolor="#6C8FBB" colspan="5" height="25">
+<h4 class="ed"><b>IPAudit - Log Search</b></h4>
+</td>
+</tr>
+<tr bgcolor="#EDEDED">
+
+<td  width="15%" align="center">
+<a href="/~ipaudit">Home</a>
+</td>
+
+<td width="20%" align="center">&nbsp;</td>
+
+<td width="30%" align="center">
+<h5><b>&nbsp;</b></h5>
+</td>
+
+<td width="%15" align="center">&nbsp;</td>
+
+<td width="%15" align="center">&nbsp;</td>
+
+</tr>
+</table>
+EOM
+}
+
+
+#  Convert date in format "2002-02-13 10:30" or "2002-02-13" 
+#  to seconds from Epoch
+sub local_parsedate {
+	my ($date) = @_;
+	#  use Time::ParseDate if available
+	if ($Is_ParseDate_Found) {
+		my ($sec) = eval 'parsedate($date, NO_RELATIVE => 1)';
+		return $sec;
+	}
+	my ($year,$month,$day);
+	my ($hour) = 0;
+	my ($min) = 0;
+
+	#  Set isdst ("IS Daylight Savings Time, field 9) to 
+	#   "not available" (see 'man mktime')
+	if ($date=~m!(\d+)/(\d+)/(\d+)\s+(\d+):(\d+)!) {
+				return mktime (0,$5,$4,$3,$2-1,$1-1900,0,0,-1);
+	} elsif ($date=~m!(\d+)/(\d+)/(\d+)!) {
+		return mktime (0,0,0,$3,$2-1,$1-1900,0,0,-1);
+	} else {
+		&croak ("Cannot read date format (advanced date parsing not present)");
+	}
+}
+	
+
+
+# Given a file name, returns the value as the unix time in seconds.
+# Round down/up if optional round is negative/positive.
+# Treat file name as list of numbers separted by non-numbers,
+# these numbers are in order of: year, month, day, hour, minute, second.
+# Missing numbers are set to defaults (year->2000, month,day->1,
+# hour,min,sec->0).
+sub file2time {
+        my ($filename,$round) = @_;
+	my (@defdig) = (2000,1,1,0,0,0);
+	my ($i,$ndig);
+
+	#  Get digits
+	my (@digits) = split(/\D+/,$filename);
+
+	#  Set defaults
+	$ndig = scalar @digits;
+	@digits[$ndig..5] = @defdig[$ndig..5];
+
+	#  If no hour,secs, use any extra digits from hour
+	#  that is if hour is like 1234 or 123456 then treat 
+	#  as 12:34 or 12:34:56
+	if ($digits[3]=~/^(\d\d)(\d\d)$/) {
+		@digits[3,4] = ($1,$2);
+	} elsif ($digits[3]=~/^(\d\d)(\d\d)(\d\d)$/) {
+		@digits[3..5] = ($1,$2,$3);
+	}
+
+	#  Form digits into date time format compatible with parsedate.
+	$filename = sprintf "%04d/%02d/%02d %02d:%02d:%02d", @digits;
+
+        my ($sec) = local_parsedate ($filename);
+        #  If round is negative, round down
+        if ($round < 0)  {
+                $sec -= $sec % (-$round);
+        #  If round is positive, round up
+        } elsif ($round > 0) {
+                $sec += ($round - $sec % $round);
+        }
+        return $sec;
+}
+
+
+
+# This gets the begining prefix - atleast so we know where to start looking.
+sub time2file($ ) {
+	my $time_val = shift;
+
+	my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime($time_val);
+	# yay y2k!
+	$year += 1900;
+	return sprintf("%4d-%02d-%02d-%02d:%02d", $year, $mon + 1, $mday, $hour, $min);
+}
+
+
+#  Get list of all data files in data directory
+sub get_files() {
+	opendir(DIR, $DATA_DIR) or &croak ("Can't Open $DATA_DIR: $!\n");
+	# read in all the gzip files that start with a number and are really files
+	for (readdir(DIR)) {
+		next unless -f "$DATA_DIR/$_";
+		next unless /^(\d{4}-\d{2}-\d{2}-\d{2}:*\d{2}.txt.gz)/;
+		push @files, $1;
+	}
+	close(DIR);
+	return sort @files;
+}
+
+
+#  Change human readable counts like '200m' or '200k' to numbers
+sub str2bytes($ ) {
+	my $str = shift;
+	&croak ("str2bytes: no input") if !defined($str);
+	if($str =~ m/k$/i) {
+		$str =~ s/k$//gi;
+		return $str * 1024;
+	} elsif ($str =~ m/b$/i) {
+		$str =~ s/b$//gi;
+		return $str;
+	} elsif ($str =~ m/m$/i) {
+		$str =~ s/m$//gi;
+		return $str * 1024 * 1024;
+	} elsif ($str =~ m/g$/i) {
+		$str =~ s/g$//gi;
+		return $str * 1024 * 1024 * 1024;
+	} elsif ($str =~ m/^\d+$/) {
+		return $str;
+	}
+	&croak ("Couldn't convert str->bytes: $str\n");
+}
+
+
+#  Convert numbers to human readable form like '200m' or '200k'
+sub bytes2str($ ) {
+	my $bytes = shift;
+	&croak ("bytes2str: no input") if !defined($bytes);
+	if($bytes < 1024)  {
+		return "$bytes";
+	} elsif ($bytes < 1048576) {
+		$bytes = $bytes / 1024;
+		return sprintf("%.1fk", $bytes);
+	} elsif ($bytes < 1073741824) {
+		$bytes = $bytes / 1048576;
+		return sprintf("%.2fM", $bytes);
+	}
+	$bytes = $bytes / 1073741824;
+	return sprintf("%.2dG", $bytes);
+}
+
+
+#  Given search parameters, display corresponding 'connections'.
+sub read_files {
+	my (@files) = @_;
+	my ($pid);
+	my ($line, $nprint, $nread, $nincr);
+	my ($datelen,$compare);
+	$datelen = 
+		length($search{file_min}) > length($search{file_max}) ?
+		length($search{file_min}) :
+		length($search{file_max}) ;
+	
+
+	# only get the files in our time range.
+	my (@file_list);
+	for (@files) {
+		$compare = substr($_,0,$datelen);
+		next unless 
+			$search{file_min} le $compare && 
+			$search{file_max} ge $compare;
+		push @file_list, "$DATA_DIR/$_";
+	}
+
+	# saveing stderr - I don't care if the pipe breaks on zcat.
+	open(SAVERR, '>&STDERR');
+	open(STDERR, '>/dev/null');
+
+	if($search{ip_pattern}) {
+		$pid = open(FILE, "-|") or exec "$ZGREP" , $search{ip_pattern}, @file_list;
+			&croak ("$ZGREP exec failed: $!")  unless defined($pid);
+	} else {
+		$pid = open(FILE, "-|") or exec "$ZCAT", @file_list;
+			&croak ("$ZCAT exec failed: $!")  unless defined($pid);
+	}        
+
+	#  Print table header, column labels
+	&print_column_labels;
+
+	#  Print data rows
+	$nprint = 0;
+	$nincr  = 0;
+	$nread  = 0;
+###DEBUG #test
+###DEBUG my ($k);
+###DEBUG for $k (sort keys %arg) {
+###DEBUG 	print "\$arg{$k} (<b>$arg{$k}</b>)<br>\n";
+###DEBUG }
+###DEBUG for $k (sort keys %search) {
+###DEBUG 	print "\$search{$k} (<b>$search{$k}</b>)<br>\n";
+###DEBUG }
+###DEBUG #end
+	while(($nprint < $arg{line_limit}) && ($line = <FILE>)) {
+		# #    0-Local IP    1-Remote IP
+		# #    2-Protocol (1=icmp, 6=tcp, 17=udp)
+		# #    3-Local Port    4-Remote Port
+		# #    5-Incoming (bytes)    6-Outgoing (bytes)
+		# #    7-Incoming (packets)    8-Outgoing (packets)
+		# #    9-First Packet time    10-Last Packet time
+		# #    11-First Packet source    12-Last Packet source (1=Local,2=Remote)
+
+		#  Count number of lines read
+		$nread++;
+
+		#  Test this input line for requested conditions
+		chomp $line;
+		my @data = split(/\s+/, $line, 13);
+		
+		next if @data<13 && print "skipping (less than thirteen fields)";
+
+		#  Test total byte min/max
+		next if ($search{data_min} > -1) && (($data[5] + $data[6]) < $search{data_min});
+		next if ($search{data_max} > -1) && (($data[5] + $data[6]) > $search{data_max});
+
+		if($search{lport_pattern}) {
+			next if  $data[3] !~ m/^$search{lport_pattern}$/;
+		}
+		
+		if($search{rport_pattern}) {
+			next if  $data[4] !~ m/^$search{rport_pattern}$/;
+		}
+
+		#  Select protocol
+		next if $search{protocol} && $data[2]!=$search{protocol};
+
+		#  Compare first,last talker values
+		if($search{first_talker} ne "any")  {
+			next if $data[11] ne $search{first_talker};
+		}
+		
+		if($search{last_talker} ne "any")  {
+			next if $data[12] ne $search{last_talker};
+		}
+
+		#  Skip this eligible line until count of $incr is reached
+		next unless ++$nincr == $arg{line_incr};
+		$nincr = 0;
+
+		#  Reformat ips
+		$data[0] = demunge_ip($data[0]);
+		$data[1] = demunge_ip($data[1]);
+
+		# Make bytes human readable
+		$data[5] = bytes2str($data[5]);
+		$data[6] = bytes2str($data[6]);
+
+		#  Map protocols and talkers to their labels
+		$data[ 2] = $PROTO_LABEL {$data[ 2]};
+		$data[11] = $TALKER_LABEL[$data[11]];
+		$data[12] = $TALKER_LABEL[$data[12]];
+
+		#  If only a one-way connection, set last field to '-'
+		if ($data[7]==0 || $data[8]==0) {
+			$data[12] = "-";
+		} 
+
+		#  Convert port numbers to port lookup url's
+		&porturl(\@data);
+
+		#  Print this connection
+		&print_table_data($nprint,@data); 
+
+		#  Count number of lines printed
+		$nprint++;
+	}
+
+	#  Close data table
+	&print_column_labels;
+
+	# Added by jh@dok.org
+	#  Print Summary
+	print("<br><font size=2> &nbsp;");
+	print "<font color=\"#666666\">** $nread lines read.</font><br>\n";
+	if($nprint eq $arg{line_limit}) {
+		print 
+			"<font color=\"#FF6666\">** Max lines $nprint/$arg{line_limit} printed.</font>";
+	} else {
+		print 
+			"<font color=\"#666666\">** $nprint lines printed.</font>";
+	}
+	print("</font>");
+	close(STDERR);
+	open(STDERR,">&SAVERR");
+	close(SAVERR);
+}
+#  -- end of read files
+
+
+
+sub print_column_labels {
+	my (@label) = (
+		"Local IP", "",
+		"Remote IP", "",
+		"Proto-", "col",
+		"Local", "Port",
+		"Remote", "Port",
+		"Incoming", "Bytes",
+		"Outgoing", "Bytes",
+		"Incoming", "Packets",
+		"Outgoing", "Packets",
+		"First Packet", "Time",
+		"Last Packet", "Time",
+		"First", "Talker",
+		"Last", "Talker"
+	);
+	my ($i,$l,$format,$line);
+	print "\n";
+	print "<table><tr><td class=\"l2\"><b>";
+	for ($l=0;$l<2;$l++) {
+		for ($i=0;$i<13;$i++) {
+			$format = "%" . $COLWIDTH[$i] . "s";
+			$format = "<font color=\"#0066FF\">$format</font>"
+				if  $COLCOLOR[$i];
+			printf " $format", $label[2*$i+$l];
+		}
+		print "\n";
+	}
+	print "</b></td></tr></table>\n";
+	print "\n";
+}
+
+
+#
+#  Print data with alternate background line coloring and 
+#    column keyed text colors
+#
+sub print_table_data {
+	my ($cnt,@data) = @_;
+	my ($i,$format);
+	if ($cnt % 2 == 0) {
+		print "<table border=0 cellspacing=0 cellpadding=0><tr><td class=\"l1\">";
+	} else {
+		print "<table border=0 cellspacing=0 cellpadding=0><tr><td class=\"l2\">";
+	}
+	for ($i=0;$i<13;$i++) {
+		$format = "%" . $COLWIDTH[$i] . "s";
+		$format = "<font color=\"#0066FF\">$format</font>"
+			if  $COLCOLOR[$i];
+		printf " $format", $data[$i];
+	}
+	print "</td></tr></table>";
+	print "\n";
+}
+
+
+# converts an ip to ipaudit style
+sub munge_ip($ ) {
+	my $ip = shift;
+	&croak ("munge_ip: No ip defined")  unless defined($ip);
+	# taken almost directly from SearchIpauditData
+	return sprintf "%03d.%03d.%03d.%03d", ($ip =~/(\d{1,3})\.(\d{1,3}).(\d{1,3}).(\d{1,3})/);
+}
+
+# converts ip to "normal" form
+sub demunge_ip {
+	my ($ip) = @_;
+	&croak ("demunge_ip: No ip defined")  unless defined($ip);
+	return sprintf "%d.%d.%d.%d", ($ip =~/0*(\d+)\.0*(\d+).0*(\d+).0*(\d+)/);
+}
+
+# convert an ip fragment to ipaudit style
+sub munge_ip_frag ($ ) {
+		return join ".", map ( sprintf ("%03d", $_)  , split (/\./, shift) ) ;
+}
+		
+		
+
+#  Print search form, setting all defaults
+sub print_form() {
+#  Date format example depends on date subroutine used
+my ($date_format_example) = $Is_ParseDate_Found ?
+	"Eg: yesterday, -2 days, last Wednesday, 2001-03-13-12:30" :
+	"Eg: 2002-03-13-12:30";
+
+#  Set defaults for SELECT boxes
+my (%SELECTED) = ();
+my ($key);
+
+#  Initialize values for %SELECT
+$SELECTED{proto}{any} = "";
+$SELECTED{proto}{tcp} = "";
+$SELECTED{proto}{udp} = "";
+$SELECTED{proto}{icmp} = "";
+$SELECTED{first_talker}{any} = "";
+$SELECTED{first_talker}{local} = "";
+$SELECTED{first_talker}{remote} = "";
+$SELECTED{last_talker}{any} = "";
+$SELECTED{last_talker}{local} = "";
+$SELECTED{last_talker}{remote} = "";
+for $key (qw(proto first_talker last_talker)) {
+	$SELECTED{$key}{$arg{$key}} = "SELECTED";
+}
+
+print<<"EOM";
+<!--  Start of input form  -->
+<form METHOD="GET" ACTION="/~ipaudit/cgi-bin/SearchIpauditData"
+ENCTYPE="application/x-www-form-urlencoded">
+
+<table border="0" align="center">
+
+<tr bgcolor="#C9D5E5">
+<td colspan="3" align="center"><b>Search Form</b></td>
+</tr>
+
+<tr bgcolor="#ffffff">
+<td>Submit</td>
+<td>
+<input TYPE="submit" size="20" NAME="submit" VALUE="Submit Form">
+</td>
+<td>&nbsp;</td>
+</tr>
+
+<tr bgcolor="#ffffff">
+<td>Start Date:
+</td> 
+<td>
+  <input TYPE="text" size="20" NAME="qmin" VALUE="$arg{qmin}">
+</td> 
+<td>
+<i>$date_format_example</i>
+</td>
+
+</tr> 
+<tr bgcolor="#ffffff" ALIGN="LEFT">
+<td>End Date:
+</td> 
+<td>
+<input TYPE="text" size="20" NAME="qmax" VALUE="$arg{qmax}">
+</td>
+</tr> 
+<tr bgcolor="#ffffff" ALIGN="LEFT">
+<td>IP Address:
+</td> 
+<td>
+<input TYPE="text" size="20" NAME="ip_address" VALUE="$arg{ip_address}" >
+</td>
+</tr> 
+<tr bgcolor="#ffffff" ALIGN="LEFT">
+<td>Local Port:
+</td> 
+<td>
+<input TYPE="text" size="20" NAME="local_port" VALUE="$arg{local_port}" >
+</td> 
+<td>
+<i>Eg: 21,23
+</i>
+</td>
+</tr> 
+<tr bgcolor="#ffffff" ALIGN="LEFT">
+<td>Remote Port:
+</td> 
+<td>
+<input TYPE="text" size="20" NAME="remote_port" VALUE="$arg{remote_port}" >
+</td> 
+<td>
+<i>Eg: 21,23
+</i>
+</td>
+</tr> 
+<tr bgcolor="#ffffff" ALIGN="LEFT">
+<td>Max Lines Displayed:
+</td> 
+<td>
+<input TYPE="text" size="20" NAME="line_limit" VALUE="$arg{line_limit}">
+</td> 
+<td>
+<i>Eg: 200
+</i>
+</td>
+</tr> 
+<tr bgcolor="#ffffff" ALIGN="LEFT">
+<td>Print Incr:
+</td> 
+<td>
+<input TYPE="text" size="20" NAME="line_incr" VALUE="$arg{line_incr}">
+</td> 
+<td>
+<i>Eg: 2
+</i>
+</td>
+</tr> 
+<tr bgcolor="#ffffff" ALIGN="LEFT">
+<td>Min Session Size:
+</td> 
+<td>
+<input TYPE="text" size="20" NAME="data_min" VALUE="$arg{data_min}" >
+</td> 
+<td>
+<i>Eg: 200, 2k, 1G
+</i>
+</td>
+</tr> 
+<tr bgcolor="#ffffff" ALIGN="LEFT">
+<td>Max Session Size:
+</td> 
+<td>
+<input TYPE="text" size="20" NAME="data_max" VALUE="$arg{data_max}" >
+</td> 
+<td>
+<i>Eg: 200, 2k, 1G
+</i>
+</td>
+</tr> 
+<tr bgcolor="#ffffff" ALIGN="LEFT">
+<td>Protocol:
+</td> 
+<td>
+<select NAME="proto">
+<option  VALUE="any"  $SELECTED{proto}{any}>  any
+<option  VALUE="tcp"  $SELECTED{proto}{tcp}>  tcp
+<option  VALUE="udp"  $SELECTED{proto}{udp}>  udp
+<option  VALUE="icmp" $SELECTED{proto}{icmp}> icmp
+</select>
+</td></tr> 
+<tr bgcolor="#ffffff" ALIGN="LEFT"><td>First Talker:</td> 
+<td>
+<select NAME="first_talker">
+<option  VALUE="any"    $SELECTED{first_talker}{any}    > any
+<option  VALUE="local"  $SELECTED{first_talker}{local}  > local
+<option  VALUE="remote" $SELECTED{first_talker}{remote} > remote
+</select>
+</td></tr> 
+<tr bgcolor="#ffffff" ALIGN="LEFT"><td>Last Talker:</td> 
+<td>
+<select NAME="last_talker">
+<option  VALUE="any"    $SELECTED{last_talker}{any}    > any
+<option  VALUE="local"  $SELECTED{last_talker}{local}  > local
+<option  VALUE="remote" $SELECTED{last_talker}{remote} > remote
+</select>
+</td></tr>
+</table>
+</form>
+<!--  End of input form  -->
+EOM
+}
+
+
+#  HTML footer
+sub html_footer() {
+	print "</body></html>\n";
+}
+
+
+
+#  Convert port list to regular expression
+sub portlist2regex {
+        my ($list) = @_;
+        return undef if(!defined($list));
+
+        my $ret = $list;
+        $ret =~ s!,!|!g;
+        $ret = "($ret)";
+        return $ret;
+}
+
+
+
+#  Read form input arguments
+sub read_arg {
+	my ($key,$val);
+
+	#  Parse $ENV{QUERY_STRING}
+	for (split /\&/, $ENV{QUERY_STRING}) {
+		($key,$val) = split /=/;
+		$val =~ s/\+/ /g;
+		$val =~ s/%([0-9a-fA-F]{2})/chr(hex($1))/ge;
+		$arg{$key} = $val;
+	}
+}
+
+
+
+
+#  Set defaults on user form if not entered from previous call
+sub set_form_defaults() {
+
+	$arg{line_limit} = 100 unless $arg{line_limit};
+	$arg{line_incr } =   1 unless $arg{line_incr };
+
+	#  Set min and max times (qmin,qmax) if only date was entered.
+	if ($arg{date}) {
+		my $date = $arg{date};
+		#  If date includes time, 
+		#  then min date/time is same as date,
+		#  and  max date/time is 30 minutes (1800 sec) later
+		if ($date =~ m/:/) {
+			# date includes time:
+			$arg{qmin} = $date;
+			$arg{qmax} = time2file(file2time($date,1800));
+		#  If date does not include time,
+		#  then min date/time is start of date at midnight,
+		#  and  max date/time next midnight
+		} elsif ($date =~ m/\d{4}-\d{2}-\d{2}/) {
+			$arg{qmin} = $date;
+			$arg{qmax} = time2file(86400 + file2time($date));
+		} else {
+			&croak ("Can't handle date=$date\n");
+		}
+	}
+
+	# $arg{ip}         is used when script called from static page
+	# $arg{ip_address} is used when script calls itself
+	#  Set ip_address if not set
+	if ($arg{ip}) {
+		my $ip = $arg{ip};
+		chomp($ip);
+		$arg{ip_address} = demunge_ip($ip);
+	}
+
+}  # set_form_defaults
+
+
+
+
+#  Re-format input parameters for use by data search function
+sub set_search_param {
+	my ($key);
+
+	# yes this is weird.  file2time_max handles the max range that a prefix would represent.
+	# basically - this defaults to only search the most recent file
+	$search{qmin} = $arg{qmin} ne "" ? $arg{qmin} : $max_date;
+	$search{qmax} = $arg{qmax} ne "" ? $arg{qmax} : time2file(file2time($max_date,1800));
+
+	#  Find the min and max file to search from the requested time range
+	$search{file_min}  = time2file(file2time($search{qmin},-1800));
+	$search{file_max}  = time2file(file2time($search{qmax},-1800));
+
+	#  Untaint ip_pattern
+	if ($arg{ip_address}) {
+		($search{ip_pattern}) = $arg{ip_address} =~/^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/;
+		$search{ip_pattern} = munge_ip($search{ip_pattern});
+	}
+
+	#  Set port and protocol search
+	$search{lp_query}   = $arg{local_port } || "";
+	$search{rp_query}   = $arg{remote_port} || "";
+	if (defined $arg{proto} && lc $arg{proto} ne "any") {
+		$search{protocol} = defined $PROTO{$arg{proto}} ? $PROTO{$arg{proto}} : $arg{proto};
+	}
+
+	#  Set first and last talker search
+	for $key ('first_talker','last_talker') {
+		$search{$key} = $arg{$key} || "any";
+		if($search{$key} eq "remote") { $search{$key} = 2 };
+		if($search{$key} eq "local")  { $search{$key} = 1 };
+	}
+
+
+	#  Set minimum/maximum connection byte limit
+	for $key ('data_min','data_max') {
+		if ($arg{$key}) {
+			$search{$key} = str2bytes($arg{$key})
+		} else {
+			$search{$key} = -1;
+		}
+	}
+
+	#  Build reqular expression to match ports
+        $search{lport_pattern} = portlist2regex($arg{local_port} ) if $arg{local_port};
+        $search{rport_pattern} = portlist2regex($arg{remote_port}) if $arg{remote_port};
+
+
+
+}  # &set_search_param
+
+
+
+
+#  Look up known ports, store in %port as "23u" "1024t" 
+#   for ports 23/udp, 1024/tcp, etc.
+sub get_port_list {
+	my ($scriptdir) = ($ENV{SCRIPT_FILENAME}=~/^(.*)\/([^\/]+)$/);
+	my (@F);
+
+	if (open F, "$scriptdir/port.lst") {
+		while (<F>) {
+			next if /^\s*#/;
+			@F=split(/\s*[\|]\s*/);
+			$F[0]=~s/^\s+//;
+			$portlist{$F[0]} = 1;
+		}
+	}
+	close F;
+}
+
+
+#  Given port/protocol forms URL for link to CGI-SCRIPT "PortLookup"
+sub porturl {
+	my ($data) = @_;
+	my ($port, $traffic, $portf, $index);
+	my (@temp) = (\$$data[3], $$data[6], \$$data[4], $$data[5]);
+	#  Local udp/tcp port or outgoing ICMP code
+	while (@temp) {
+		$port = shift @temp;
+		$traffic = shift @temp;
+		$portf = sprintf "%${PORT_WIDTH}d", $$port;
+		$index = $$port . substr($$data[2],0,1);
+		if (defined $portlist{$index} && ($traffic || $$data[2] ne "icmp")) {
+			$$port = 
+				"<a href=\"$cgidir/PortLookup?" . 
+				$index . 
+				"\" onClick=window.open('','popup','height=20,width=480,scrollbars=yes') target='popup'>" .
+				$portf . 
+				"</a>";
+		} else {
+			$$port = $portf;
+		}
+	}   
+}
+
+
+#  Print HTML'ized message and die (cheap replacement for CGI::croak)
+sub croak {
+my ($msg, $head) = @_;
+$head = $msg if not defined $head;
+print<<"EOM";
+<html><head><title>$head</title></head>
+<body bgcolor='white'>
+<br><br><br>
+<table align='center' bgcolor='#ddddff' cellpadding=10>
+<tr><td>
+$msg
+</td></tr></table>
+</body></html>
+EOM
+exit;
+}
+
+
+#  Untaint variable
+sub untaint {
+	$_[0] =~ /^(.*)$/;
+	return $1;
+}

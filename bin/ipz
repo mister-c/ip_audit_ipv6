@@ -1,0 +1,77 @@
+#!/usr/bin/perl
+
+sub Usage {
+print<<"EOM";
+
+   ipz [-ihx] [filename]
+
+   Reads text file and converts ip octets (137.99.20.25) to
+   8 digit hexidecimal (xxxxxxxx) or reverse.
+
+   -i   Convert from 8 digit hexidecimal to ip octet (DEFAULT)
+   -f   Convert from 8 digit hexidecimal to zero padded ip octet
+   -x   Convert from ip octet to hexidecimal
+   -h   Help
+
+EOM
+exit;
+}
+
+$CONVERT_HEX = 0;
+$CONVERT_IP  = 1;
+$CONVERT_IPF = 2;
+
+#  ipz <file>  OR   ipz -i <file>
+#  Convert ip addresses from 
+#    nnn.nnn.nnn.nnn to xxxxxxxx hex 
+#   
+#  ipz -i <file>
+#    Convert ip addresses from xxxxxxxx hex to nnn.nnn.nnn.nnn
+
+#  Read options
+$convert = $CONVERT_HEX;
+if (@ARGV>0) {
+	if ($ARGV[0] eq '-i') {
+		$convert = $CONVERT_IP;
+		$FORMAT  = "%d.%d.%d.%d";
+		shift;
+	} elsif ($ARGV[0] eq '-f') {
+		$convert = $CONVERT_IPF;
+		$FORMAT  = "%03d.%03d.%03d.%03d";
+		shift;
+	} elsif ($ARGV[0] eq '-x') {
+		$convert = $CONVERT_HEX;
+		shift;
+	} elsif ($ARGV[0] eq '-h') {
+		&Usage;
+	}
+}
+
+while (<>) {
+
+
+	if (/^\s*#/ || /^\s*$/) {
+		print;
+		next;
+	}
+
+	#  Convert octet ip address to 8 digit hex
+	if ($convert==$CONVERT_HEX) {
+		while (/^(\D*)(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})(.*)$/) {
+			printf "%s%02x%02x%02x%02x", $1,$2,$3,$4,$5;
+			$_ = $6;
+		}
+	#  Convert 8 digit hex to octet ip address
+	} else {
+		while 
+			(/^([^0-9a-fA-F]*)([0-9a-fA-F]{8})(.*)$/ || 
+			 /^(.*\s)([0-9a-fA-F]{8})(.*)$/) {
+			printf "%s", $1;
+			$_   = $3;
+			$2=~/(..)(..)(..)(..)/;
+			printf $FORMAT, hex($1), hex($2), hex($3), hex($4);
+			
+		}
+	}
+	print "$_\n";
+}

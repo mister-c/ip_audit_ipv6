@@ -1,0 +1,57 @@
+#!/bin/sh
+#
+#
+#  Usage: cronmonthly (yyyy-mm)
+#
+#  Run Monthly Report for yyyy-mm
+#
+#
+#  Examples:
+#
+#     cronmonthly               (report for previous month)
+#
+#     cronmonthly  1999-03      (report for March  1999)
+
+
+#  Determine date string MONTH
+IP_DIR=$HOME
+
+if [ $# -gt 0 ]
+then
+	MONTH=$1
+#  Date for previous month
+else
+	 DAY=`$IP_DIR/bin/pdate -f "%d"`
+	MONTH=`$IP_DIR/bin/pdate -a-${DAY}d   -f "%Y-%m"`
+fi
+
+
+#  Program for performing totals asn subtotals on text files
+TOTAL=$IP_DIR/bin/total
+
+#  Read config file
+. $IP_DIR/ipaudit-web.conf
+
+#  Get list of file names for past 7 days of local host info
+DAILY_DIR=$IP_DIR/data/daily/localhost
+MONTHLY_DIR=$IP_DIR/data/monthly/localhost
+
+(for a in $DAILY_DIR/$MONTH*; do zcat $a 2> /dev/null; done) |
+   $TOTAL 1 2,3 - > $MONTHLY_DIR/$MONTH.txt
+
+#  Search directories under $IP_DIR/reports/monthly and $IP_DIR/reports/local/monthly
+#  to run reports.  
+#  Add your local reports under $IP_DIR/reports/local
+for dir in $IP_DIR/reports/monthly/* $IP_DIR/reports/local/monthly/*
+do
+   if [ -d $dir ] 
+   then
+      cd $dir
+      if [ -x runcron ]
+      then
+         ./runcron $IP_DIR $MONTH
+      fi
+   fi
+done
+
+$GZIP -f $MONTHLY_DIR/$MONTH.txt

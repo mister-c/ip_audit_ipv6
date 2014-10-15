@@ -1,0 +1,64 @@
+top_srcdir =	@top_srcdir@
+srcdir =	@srcdir@
+CC =		@CC@
+CFLAGS =	@CFLAGS@ @DEFS@
+LDFLAGS =	@LDFLAGS@
+#  Uncomment following two lines for MySQL native support
+##LMYSQL= -L/usr/lib/mysql -lz -lmysqlclient
+##CMYSQL= -I/usr/include/mysql -DUSE_MYSQL
+LIBS =		@LIBS@ $(LMYSQL)
+CIDIR=		-I/usr/include/pcap @CPPFLAGS@ -I@top_srcdir@ $(CMYSQL)
+
+
+#LIB=../../libpcap-0.5/libpcap.a
+
+all: ipaudit total ipstrings pdate makelocal calcbytes lookforzero
+
+ipaudit: ipaudit.o ipdbase.o hash.o
+	$(CC) $(CFLAGS) $(CIDIR) $(LDFLAGS) -o ipaudit ipaudit.o ipdbase.o hash.o $(LIBS)
+
+total: total.o hash.o
+	$(CC) $(CFLAGS) -o total total.o hash.o -lm
+
+ipstrings: ipstrings.o
+	$(CC) $(CFLAGS) $(CIDIR) $(LDFLAGS) -o ipstrings ipstrings.o $(LIBS)
+
+pdate: pdate.o
+	$(CC) $(CFLAGS) $(CIDIR) $(LDFLAGS) -o pdate pdate.o $(LIBS)
+
+ipaudit.o: ipaudit.c hash.h
+	$(CC) $(CFLAGS)  -c ipaudit.c $(CIDIR) $(DFLAGS)
+
+ipdbase.o: ipdbase.c hash.h
+	$(CC) $(CFLAGS)  -c ipdbase.c $(CIDIR) $(DFLAGS)
+
+hash.o: hash.c hash.h
+	$(CC) $(CFLAGS) $(CIDIR)  -c hash.c
+
+total.o: total.c hash.c hash.h
+	$(CC) $(CFLAGS) $(CIDIR)  -c total.c
+
+ipstrings.o: ipstrings.c
+	$(CC) $(CFLAGS) -c ipstrings.c $(CIDIR) $(DFLAGS)
+
+makelocal: makelocal.c
+	$(CC) $(CFLAGS) $(CIDIR) -o makelocal makelocal.c
+
+calcbytes: calcbytes.c
+	$(CC) $(CFLAGS) $(CIDIR) -o calcbytes calcbytes.c
+
+lookforzero: lookforzero.c
+	$(CC) $(CFLAGS) $(CIDIR) -o lookforzero lookforzero.c
+
+pdate.o: pdate.c
+	$(CC) $(CFLAGS) $(CIDIR) -c pdate.c
+
+clean:
+	rm -f *.o
+	rm -f ipaudit
+	rm -f total
+	rm -f ipstrings
+	rm -f pdate
+	rm -f makelocal
+	rm -f calcbytes
+	rm -f lookforzero

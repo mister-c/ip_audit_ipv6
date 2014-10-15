@@ -1,0 +1,33 @@
+#!/usr/bin/perl
+#
+# icf - Insert comma's and format
+#        Inserts commas into large numbers >= 1000
+#
+
+if ($ARGV[0] eq '-h') {
+	print "Usage: cat <file> | icf \n";
+	print "\n\nInsert comma's into large numbers: 2304203 -> 2,304,203\n";
+	print "All other input is copied as is.\n";
+	exit;
+	}
+
+while (<STDIN>) {
+	chomp;
+	$in  = $_;
+	$out = "";
+	while ($in) {
+		$in =~ /^(\D*)(\d*)(\D*.*)$/;
+		$out .= $1 . &ic($2);
+		$in   = $3;
+	}
+	print "$out\n";
+}
+
+exit;
+
+#  Insert comma's into number
+sub ic {
+        my ($x) = @_;
+        1 while ($x=~s/(\d)(\d\d\d)(?!\d)/$1,$2/g);
+        return $x;
+}

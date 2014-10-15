@@ -1,0 +1,7 @@
+Ipaudits is a command line version of the Search scripts that come with
+ipaudit-web.
+
+They are written in C so that they are faster, therefore capable of
+searching larger time ranges than the web front end.  They are also
+callable from customized reporting scripts.
+

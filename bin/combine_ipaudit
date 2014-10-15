@@ -1,0 +1,103 @@
+#!/usr/bin/perl
+
+&Usage unless @ARGV>1;
+
+sub Usage {
+print<<"EOM";
+
+   combine_ipaudit <data1> <data2> [data3] ...
+
+   Combine two more more ipaudit data files and print result
+   to standard out.  Ipaudit must have been run with the -t
+   option and without the -e option.
+
+EOM
+exit;
+}
+
+my ($DATA_BYTES_IN);
+my ($DATA_BYTES_OUT);
+my ($DATA_PKTS_IN);
+my ($DATA_PKTS_OUT);
+my ($DATA_FIRST_TIME);
+my ($DATA_FIRST_MACH);
+my ($DATA_LAST_TIME);
+my ($DATA_LAST_MACH);
+
+#  Find order of fields in output
+#   (the field order depends on the options given to ipaudit.
+#   We assume -t was present and -e was not.  In future version
+#   we can try to determine this from the output itself)
+&FindFieldOrder();
+
+while (<>) {
+	#  Skip comments or blank lines
+	next if /^\s*#/ or /^\s*$/;
+	#  Split fields
+   @F = split;
+
+	#  make key from local/remote ip, protocol, local/remote port
+   $key = join(" ",@F[0..4]);
+
+	#  see if this is first occurance
+	$is_first = ! (defined $f{$key});
+
+	#  Accumulate counts
+   $f{$key}{BYTES_IN}  += $F[$DATA_BYTES_IN ];
+   $f{$key}{BYTES_OUT} += $F[$DATA_BYTES_OUT];
+   $f{$key}{PKTS_IN}   += $F[$DATA_PKTS_IN  ];
+   $f{$key}{PKTS_OUT}  += $F[$DATA_PKTS_OUT ];
+
+	#  First occurance for this key, just store and go to next record
+	if ($is_first) {
+      $f{$key}{FIRST_TIME} =  $F[$DATA_FIRST_TIME];
+      $f{$key}{FIRST_MACH} =  $F[$DATA_FIRST_MACH];
+      $f{$key}{LAST_TIME}  =  $F[$DATA_LAST_TIME];
+      $f{$key}{LAST_MACH}  =  $F[$DATA_LAST_MACH];
+		next;
+	}
+
+	#  Save earliest time/machine for this connection
+   if ($f{$key}{FIRST_TIME} gt $F[$DATA_FIRST_TIME]) {
+      $f{$key}{FIRST_TIME} =  $F[$DATA_FIRST_TIME];
+      $f{$key}{FIRST_MACH} =  $F[$DATA_FIRST_MACH];
+   }
+
+	#  Save latest time/machine for this connection
+   if ($f{$key}{LAST_TIME} lt $F[$DATA_LAST_TIME]) {
+      $f{$key}{LAST_TIME} =  $F[$DATA_LAST_TIME];
+      $f{$key}{LAST_MACH} =  $F[$DATA_LAST_MACH];
+   }
+}
+
+
+#  Print results sorted by first time
+for (sort {$f{$a}{FIRST_TIME} cmp $f{$b}{FIRST_TIME}} keys %f) {
+	printf "%s %d %d %d %d %s %s %d %d\n", 
+		$_, 
+		$f{$_}{BYTES_IN}, 
+		$f{$_}{BYTES_OUT}, 
+		$f{$_}{PKTS_IN}, 
+		$f{$_}{PKTS_OUT}, 
+		$f{$_}{FIRST_TIME},
+		$f{$_}{LAST_TIME},
+		$f{$_}{FIRST_MACH},
+		$f{$_}{LAST_MACH};
+}
+
+
+exit;
+
+#  Initialize order of fields in output
+#  This version gives order for ipauit output with -t option
+#   and without -e option
+sub FindFieldOrder {
+$DATA_BYTES_IN    =  5;
+$DATA_BYTES_OUT   =  6;
+$DATA_PKTS_IN     =  7;
+$DATA_PKTS_OUT    =  8;
+$DATA_FIRST_TIME  =  9;
+$DATA_LAST_TIME   = 10;
+$DATA_FIRST_MACH  = 11;
+$DATA_LAST_MACH   = 12;
+}

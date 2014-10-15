@@ -1,0 +1,1406 @@
+# Port list
+#   Borrowed heavily from Nmap's port list and 
+#     www.simovits.com trojan port list, with additions
+#
+# format:  port[ut] | description | citation (URL) | date entered
+#
+1u | tcpmux - TCP Port Service Multiplexer |  | 
+2t | compressnet - Management Utility |  | 
+3t | compressnet - Compression Process |  | 
+5t | rje - Remote Job Entry |  | 
+7t | echo |  | 
+9t | discard - sink null |  | 
+11u | systat - Active Users |  | 
+13u | daytime |  | 
+15t | netstat |  | 
+17t | qotd - Quote of the Day |  | 
+18u | msp - Message Send Protocol |  | 
+19t | chargen - ttytst source Character Generator |  | 
+20u | ftp-data - File Transfer [Default Data] |  | 
+21u | ftp - File Transfer [Control] |  | 
+22t | ssh - Secure Shell Login |  | 
+23t | telnet |  | 
+24t | priv-mail - any private mail system |  | 
+25t | smtp - Simple Mail Transfer |  | 
+27t | nsw-fe - NSW User System FE |  | 
+29u | msg-icp - MSG ICP |  | 
+30t | Agent 40421 | http://www.simovits.com/trojans/tr_data/y46.html | 2001-06-06
+31t | msg-auth - MSG Authentication |  | 
+33t | dsp - Display Support Protocol |  | 
+35u | priv-print - any private printer server |  | 
+37t | time - timserver |  | 
+38u | rap - Route Access Protocol |  | 
+39u | rlp - Resource Location Protocol |  | 
+41t | graphics |  | 
+42u | nameserver - Host Name Server |  | 
+43u | shois - nicname |  | 
+44u | mpm-flags - MPM FLAGS Protocol |  | 
+45u | mpm - Message Processing Module [recv] |  | 
+46t | mpm-snd - MPM [default send] |  | 
+47t | ni-ftp - NI FTP |  | 
+48t | auditd - Digital Audit Daemon |  | 
+49t | tacacs - Login Host Protocol (TACACS) |  | 
+50t | re-mail-ck - Remote Mail Checking Protocol |  | 
+51t | la-maint - IMP Logical Address Maintenance |  | 
+52t | xns-time - XNS Time Protocol |  | 
+53t | domain - Domain Name Server |  | 
+54u | xns-ch - XNS Clearinghouse |  | 
+55u | isi-gl - ISI Graphics Language |  | 
+56t | xns-auth - XNS Authentication |  | 
+57t | priv-term - any private terminal access |  | 
+58u | xns-mail - XNS Mail |  | 
+59u | priv-file - any private file service |  | 
+61u | ni-mail - NI MAIL |  | 
+62u | acas - ACA Services |  | 
+63t | via-ftp - VIA Systems - FTP & whois++ |  | 
+64u | covia - Communications Integrator (CI) |  | 
+65t | tacacs-ds - TACACS-Database Service |  | 
+66u | sql*net - Oracle SQL*NET |  | 
+67t | bootps - Bootstrap Protocol Server |  | 
+68t | bootpc - Bootstrap Protocol Client |  | 
+69t | tftp - Trivial File Transfer |  | 
+70u | gopher |  | 
+71t | netrjs-1 - Remote Job Service |  | 
+72u | netrjs-2 - Remote Job Service |  | 
+73t | netrjs-3 - Remote Job Service |  | 
+74u | netrjs-4 - Remote Job Service |  | 
+75u | priv-dial - any private dial out service |  | 
+76u | deos - Distributed External Object Store |  | 
+77t | priv-rje - any private RJE service, netrjs |  | 
+78t | vettcp |  | 
+79t | finger |  | 
+80t | http - World Wide Web HTTP |  | 
+81t | hosts2-ns - HOSTS2 Name Server |  | 
+82t | xfer - XFER Utility |  | 
+83u | mit-ml-dev - MIT ML Device |  | 
+84t | ctf - Common Trace Facility |  | 
+85t | mit-ml-dev - MIT ML Device |  | 
+86t | mfcobol - Micro Focus Cobol |  | 
+87t | priv-term-l - any private terminal link, ttylink |  | 
+88u | kerberos-sec - Kerberos (v5) |  | 
+89t | su-mit-tg - SU/MIT Telnet Gateway |  | 
+90t | dnsix - DNSIX Securit Attribute Token Map |  | 
+91t | mit-dov - MIT Dover Spooler |  | 
+92t | npp - Network Printing Protocol |  | 
+93u | dcp - Device Control Protocol |  | 
+94t | objcall - Tivoli Object Dispatcher |  | 
+95t | supdup - BSD supdupd(8) |  | 
+96u | dixie - DIXIE Protocol Specification |  | 
+97u | swift-rvf - Swift Remote Virtural File Protocol |  | 
+98u | tacnews - TAC News |  | 
+99t | metagram - Metagram Relay |  | 
+100t | newacct - [unauthorized use] |  | 
+101t | hostname - hostnames NIC Host Name Server |  | 
+102u | iso-tsap - tsap ISO-TSAP Class 0 |  | 
+103u | gppitnp - Genesis Point-to-Point Trans Net |  | 
+104t | acr-nema - ACR-NEMA Digital Imag. & Comm. 300 |  | 
+105u | csnet-ns - Mailbox Name Nameserver |  | 
+106t | pop3pw - Eudora compatible PW changer |  | 
+107u | rtelnet - Remote Telnet Service |  | 
+108t | snagas - SNA Gateway Access Server |  | 
+109u | pop-2 - PostOffice V.2 |  | 
+110u | pop-3 - PostOffice V.3 |  | 
+111u | sunrpc - portmapper, rpcbind |  | 
+112t | mcidas - McIDAS Data Transmission Protocol |  | 
+113u | auth - ident, tap, Authentication Service |  | 
+114t | audionews - Audio News Multicast |  | 
+115t | sftp - Simple File Transfer Protocol |  | 
+116u | ansanotify - ANSA REX Notify |  | 
+117u | uucp-path - UUCP Path Service |  | 
+118t | sqlserv - SQL Services |  | 
+119t | nntp - Network News Transfer Protocol |  | 
+120u | cfdptkt |  | 
+121t | erpc - Encore Expedited Remote Pro.Call |  | 
+122u | smakynet |  | 
+123t | ntp - Network Time Protocol |  | 
+124u | ansatrader - ANSA REX Trader |  | 
+125u | locus-map - Locus PC-Interface Net Map Ser |  | 
+126u | unitary - Unisys Unitary Login |  | 
+127u | locus-con - Locus PC-Interface Conn Server |  | 
+128u | gss-xlicen - GSS X License Verification |  | 
+129t | pwdgen - Password Generator Protocol |  | 
+130t | cisco-fna - cisco FNATIVE |  | 
+131t | cisco-tna - cisco TNATIVE |  | 
+132t | cisco-sys - cisco SYSMAINT |  | 
+133t | statsrv - Statistics Service |  | 
+134t | ingres-net - INGRES-NET Service |  | 
+135t | loc-srv - NCS local location broker |  | 
+136t | profile - PROFILE Naming System |  | 
+137u | netbios-ns - NETBIOS Name Service |  | 
+138t | netbios-dgm - NETBIOS Datagram Service |  | 
+139t | netbios-ssn - NETBIOS Session Service |  | 
+140t | emfis-data - EMFIS Data Service |  | 
+141u | emfis-cntl - EMFIS Control Service |  | 
+142u | bl-idm - Britton-Lee IDM |  | 
+143u | imap2 - Interim Mail Access Protocol v2 |  | 
+144t | news - NewS window system |  | 
+145t | uaac - UAAC Protocol |  | 
+146t | iso-tp0 |  | 
+147u | iso-ip |  | 
+148u | cronus - CRONUS-SUPPORT |  | 
+149t | aed-512 - AED 512 Emulation Service |  | 
+150u | sql-net |  | 
+151u | hems |  | 
+152u | bftp - Background File Transfer Program |  | 
+153u | sgmp |  | 
+154t | netsc-prod |  | 
+155u | netsc-dev |  | 
+156u | sqlsrv - SQL Service |  | 
+157u | knet-cmp - KNET/VM Command/Message Protocol |  | 
+158u | pcmail-srv - PCMail Server |  | 
+159u | nss-routing |  | 
+160u | sgmp-traps |  | 
+161t | snmp |  | 
+162u | snmptrap - snmp-trap |  | 
+163u | cmip-man - CMIP/TCP Manager |  | 
+164t | cmip-agent - CMIP/TCP Agent |  | 
+165t | xns-courier - Xerox |  | 
+166t | s-net - Sirius Systems |  | 
+167t | namp |  | 
+168u | rsvd |  | 
+169t | send |  | 
+170t | print-srv - Network PostScript |  | 
+171t | multiplex - Network Innovations Multiplex |  | 
+172t | cl-1 - Network Innovations CL/1 |  | 
+173u | xyplex-mux |  | 
+174u | mailq |  | 
+175u | vmnet |  | 
+176u | genrad-mux |  | 
+177t | xdmcp - X Display Mgr. Control Proto |  | 
+178u | nextstep - NextStep Window Server |  | 
+179u | bgp - Border Gateway Protocol |  | 
+180u | ris - Intergraph |  | 
+181t | unify |  | 
+182t | audit - Unisys Audit SITP |  | 
+183t | ocbinder |  | 
+184u | ocserver |  | 
+185t | remote-kis |  | 
+186u | kis - KIS Protocol |  | 
+187t | aci - Application Communication Interface |  | 
+188t | mumps - Plus Five's MUMPS |  | 
+189u | qft - Queued File Transport |  | 
+190t | gacp - Gateway Access Control Protocol |  | 
+191t | prospero - Prospero Directory Service |  | 
+192u | osu-nms - OSU Network Monitoring System |  | 
+193t | srmp - Spider Remote Monitoring Protocol |  | 
+194t | irc - Internet Relay Chat |  | 
+195u | dn6-nlm-aud - DNSIX Network Level Module Audit |  | 
+196t | dn6-smm-red - DNSIX Session Mgt Module Audit Redir |  | 
+197u | dls - Directory Location Service |  | 
+198u | dls-mon - Directory Location Service Monitor |  | 
+199u | smux |  | 
+200u | src - IBM System Resource Controller |  | 
+201t | at-rtmp - AppleTalk Routing Maintenance |  | 
+202u | at-nbp - AppleTalk Name Binding |  | 
+203u | at-3 - AppleTalk Unused |  | 
+204t | at-echo - AppleTalk Echo |  | 
+205t | at-5 - AppleTalk Unused |  | 
+206t | at-zis - AppleTalk Zone Information |  | 
+207u | at-7 - AppleTalk Unused |  | 
+208u | at-8 - AppleTalk Unused |  | 
+209t | tam - Trivial Authenticated Mail Protocol |  | 
+210t | z39.50 - wais, ANSI Z39.50 |  | 
+211u | 914c-g - Texas Instruments 914C/G Terminal |  | 
+212u | anet - ATEXSSTR |  | 
+213t | ipx |  | 
+214u | vmpwscs |  | 
+215u | softpc - Insignia Solutions |  | 
+216t | atls - Access Technology License Server |  | 
+217t | dbase - dBASE Unix |  | 
+218u | mpp - Netix Message Posting Protocol |  | 
+219u | uarps - Unisys ARPs |  | 
+220t | imap3 - Interactive Mail Access Protocol v3 |  | 
+221u | fln-spx - Berkeley rlogind with SPX auth |  | 
+222u | rsh-spx - Berkeley rshd with SPX auth |  | 
+223t | cdc - Certificate Distribution Center |  | 
+242t | direct |  | 
+243t | sur-meas - Survey Measurement |  | 
+244u | dayna |  | 
+245t | link |  | 
+246u | dsp3270 - Display Systems Protocol |  | 
+247u | subntbcst_tftp |  | 
+248t | bhfhs |  | 
+256t | rap |  | 
+257u | set - secure electronic transaction |  | 
+258t | yak-chat - yak winsock personal chat |  | 
+259u | esro-gen - efficient short remote operations |  | 
+260t | openport |  | 
+261u | nsiiops - iiop name service over tls/ssl |  | 
+262u | arcisdms |  | 
+263u | hdap |  | 
+264u | bgmp |  | 
+280u | http-mgmt |  | 
+281t | personal-link |  | 
+282t | cableport-ax - cable port a/x |  | 
+308u | novastorbakcup - novastor backup |  | 
+309t | entrusttime |  | 
+310t | bhmds |  | 
+311t | asip-webadmin - appleshare ip webadmin |  | 
+312t | vslmp |  | 
+313t | magenta-logic |  | 
+314t | opalis-robot |  | 
+315u | dpsi |  | 
+316t | decauth |  | 
+317u | zannet |  | 
+321t | pip |  | 
+334t | Backage | http://www.simovits.com/trojans/tr_data/y127.html | 2001-06-06
+344u | pdap - Prospero Data Access Protocol |  | 
+345t | pawserv - Perf Analysis Workbench |  | 
+346u | zserv - Zebra server |  | 
+347u | fatserv - Fatmen Server |  | 
+348t | csi-sgwp - Cabletron Management Protocol |  | 
+349t | mftp |  | 
+350t | matip-type-a - MATIP Type A |  | 
+351u | matip-type-b - MATIP Type B or bhoetty |  | 
+352t | dtag-ste-sb - DTAG, or bhoedap4 |  | 
+353u | ndsauth |  | 
+354t | bh611 |  | 
+355t | datex-asn |  | 
+356u | cloanto-net-1 |  | 
+357t | bhevent |  | 
+358t | shrinkwrap |  | 
+359u | tenebris_nts - Tenebris Network Trace Service |  | 
+360t | scoi2odialog |  | 
+361t | semantix |  | 
+362u | srssend - SRS Send |  | 
+363u | rsvp_tunnel |  | 
+364t | aurora-cmgr |  | 
+365t | dtk - Deception Tool Kit (lame -- see www.all.net) |  | 
+366t | odmr |  | 
+367u | mortgageware |  | 
+368u | qbikgdp |  | 
+369u | rpc2portmap |  | 
+370t | codaauth2 |  | 
+371u | clearcase |  | 
+372u | ulistserv - Unix Listserv |  | 
+373t | legent-1 - Legent Corporation (now Computer Associates Intl.) |  | 
+374t | legent-2 - Legent Corporation (now Computer Associates Intl.) |  | 
+375t | hassle |  | 
+376u | nip - Amiga Envoy Network Inquiry Proto |  | 
+377t | tnETOS - NEC Corporation |  | 
+378u | dsETOS - NEC Corporation |  | 
+379t | is99c - TIA/EIA/IS-99 modem client |  | 
+380u | is99s - TIA/EIA/IS-99 modem server |  | 
+381u | hp-collector - hp performance data collector |  | 
+382u | hp-managed-node - hp performance data managed node |  | 
+383u | hp-alarm-mgr - hp performance data alarm manager |  | 
+384t | arns - A Remote Network Server System |  | 
+385t | ibm-app - IBM Application |  | 
+386t | asa - ASA Message Router Object Def. |  | 
+387u | aurp - Appletalk Update-Based Routing Pro. |  | 
+388u | unidata-ldm - Unidata LDM Version 4 |  | 
+389u | ldap - Lightweight Directory Access Protocol |  | 
+390u | uis |  | 
+391u | synotics-relay - SynOptics SNMP Relay Port |  | 
+392u | synotics-broker - SynOptics Port Broker Port |  | 
+393u | dis - Data Interpretation System |  | 
+394t | embl-ndt - EMBL Nucleic Data Transfer |  | 
+395u | netcp - NETscout Control Protocol |  | 
+396u | netware-ip - Novell Netware over IP |  | 
+397t | mptn - Multi Protocol Trans. Net. |  | 
+398t | kryptolan |  | 
+399t | iso-tsap-c2 - ISO-TSAP Class 2 |  | 
+400t | work-sol - Workstation Solutions |  | 
+401t | ups - Uninterruptible Power Supply |  | 
+402u | genie - Genie Protocol |  | 
+403t | decap |  | 
+404u | nced |  | 
+405u | ncld |  | 
+406t | imsp - Interactive Mail Support Protocol |  | 
+407t | timbuktu |  | 
+408t | prm-sm - Prospero Resource Manager Sys. Man. |  | 
+409t | prm-nm - Prospero Resource Manager Node Man. |  | 
+410u | decladebug - DECLadebug Remote Debug Protocol |  | 
+411t | rmt - Remote MT Protocol |  | 
+412t | synoptics-trap - Trap Convention Port |  | 
+413t | smsp |  | 
+414t | infoseek |  | 
+415u | bnet |  | 
+416u | silverplatter |  | 
+417t | onmux |  | 
+418u | hyper-g |  | 
+419t | ariel1 |  | 
+420t | smpte |  | 
+421t | ariel2 |  | 
+422t | ariel3 |  | 
+423t | opc-job-start - IBM Operations Planning and Control Start |  | 
+424u | opc-job-track - IBM Operations Planning and Control Track |  | 
+425u | icad-el |  | 
+426u | smartsdp |  | 
+427u | svrloc - Server Location |  | 
+428t | ocs_cmu |  | 
+429t | ocs_amu |  | 
+430u | utmpsd |  | 
+431u | utmpcd |  | 
+432u | iasd |  | 
+433u | nnsp |  | 
+434t | mobileip-agent |  | 
+435t | mobilip-mn |  | 
+436t | dna-cml |  | 
+437u | comscm |  | 
+438t | dsfgw |  | 
+439t | dasp |  | 
+440u | sgcp |  | 
+441t | decvms-sysmgt |  | 
+442t | cvc_hostd |  | 
+443t | https - secure http (SSL) |  | 
+444t | snpp - Simple Network Paging Protocol |  | 
+445u | microsoft-ds |  | 
+446u | ddm-rdb |  | 
+447u | ddm-dfm |  | 
+448u | ddm-ssl - ddm-byte |  | 
+449t | as-servermap - AS Server Mapper |  | 
+450u | tserver |  | 
+451t | sfs-smp-net - Cray Network Semaphore server |  | 
+452u | sfs-config - Cray SFS config server |  | 
+453t | creativeserver |  | 
+454u | contentserver |  | 
+455u | creativepartnr |  | 
+456u | macon-udp |  | 
+457t | scohelp |  | 
+458t | appleqtc - apple quick time |  | 
+459u | ampr-rcmd |  | 
+460u | skronk |  | 
+461u | datasurfsrv |  | 
+462u | datasurfsrvsec |  | 
+463t | alpes |  | 
+464u | kpasswd5 - Kerberos (v5) |  | 
+465t | smtps - smtp protocol over TLS/SSL (was ssmtp) |  | 
+466t | digital-vrc |  | 
+467t | mylex-mapd |  | 
+468t | photuris - Photuris Key Management |  | 
+469u | rcp - Radio Control Protocol |  | 
+470u | scx-proxy |  | 
+471t | mondex |  | 
+472u | ljk-login |  | 
+473t | hybrid-pop |  | 
+474u | tn-tl-w2 |  | 
+475t | tcpnethaspsrv |  | 
+476t | tn-tl-fd1 |  | 
+477t | ss7ns |  | 
+478t | spsc |  | 
+479u | iafserver |  | 
+480t | loadsrv |  | 
+481u | ph |  | 
+482u | xlog |  | 
+483t | ulpnet |  | 
+484t | integra-sme - Integra Software Management Environment |  | 
+485u | powerburst - Air Soft Power Burst |  | 
+486u | avian |  | 
+487t | saft - saft Simple Asynchronous File Transfer |  | 
+488u | gss-http |  | 
+489u | nest-protocol |  | 
+490u | micom-pfs |  | 
+491u | go-login |  | 
+492u | ticf-1 - Transport Independent Convergence for FNA |  | 
+493t | ticf-2 - Transport Independent Convergence for FNA |  | 
+494t | pov-ray |  | 
+495t | intecourier |  | 
+496t | pim-rp-disc |  | 
+497t | dantz |  | 
+498u | siam |  | 
+499u | iso-ill - ISO ILL Protocol |  | 
+500t | isakmp |  | 
+501t | stmf |  | 
+502u | asa-appl-proto |  | 
+503t | intrinsa |  | 
+504t | citadel |  | 
+505t | mailbox-lm |  | 
+506t | ohimsrv |  | 
+507u | crs |  | 
+508u | xvttp |  | 
+509u | snare |  | 
+510u | fcp - FirstClass Protocol |  | 
+511u | passgo |  | 
+512u | biff - comsat |  | 
+513u | who - BSD rwhod(8) |  | 
+514t | shell - BSD rshd(8) |  | 
+515u | printer - spooler (lpd) |  | 
+516u | videotex |  | 
+517t | talk - like tenex link, but across |  | 
+518u | ntalk - (talkd) |  | 
+519u | utime - unixtime |  | 
+520u | route - router routed -- RIP |  | 
+521u | ripng |  | 
+522t | ulp |  | 
+523t | ibm-db2 |  | 
+524t | ncp |  | 
+525t | timed - timeserver |  | 
+526u | tempo - newdate |  | 
+527t | stx - Stock IXChange |  | 
+528t | custix - Customer IXChange |  | 
+529t | irc-serv |  | 
+530t | courier - rpc |  | 
+531u | conference - chat |  | 
+532u | netnews - readnews |  | 
+533t | netwall - for emergency broadcasts |  | 
+534t | mm-admin - MegaMedia Admin |  | 
+535u | iiop |  | 
+536u | opalis-rdv |  | 
+537u | nmsp - Networked Media Streaming Protocol |  | 
+538u | gdomap |  | 
+539t | apertus-ldp - Apertus Technologies Load Determination |  | 
+540t | uucp - uucpd |  | 
+541u | uucp-rlogin |  | 
+542u | commerce |  | 
+543u | klogin - Kerberos (v4/v5) |  | 
+544u | kshell - krcmd Kerberos (v4/v5) |  | 
+545t | ekshell - Kerberos encrypted remote shell -kfall |  | 
+546u | dhcpv6-client - DHCPv6 Client |  | 
+547u | dhcpv6-server - DHCPv6 Server |  | 
+548t | afpovertcp - AFP over TCP |  | 
+549u | idfp |  | 
+550u | new-rwho - new-who |  | 
+551u | cybercash |  | 
+552u | deviceshare |  | 
+553t | pirp |  | 
+554t | rtsp - Real Time Stream Control Protocol |  | 
+555t | dsf |  | 
+556u | remotefs - rfs, rfs_server, Brunhoff remote filesystem |  | 
+557t | openvms-sysipc |  | 
+558u | sdnskmp |  | 
+559u | teedtap |  | 
+560u | rmonitor - rmonitord |  | 
+561t | monitor |  | 
+562t | chshell - chcmd |  | 
+563t | snews |  | 
+564u | 9pfs - plan 9 file service |  | 
+565t | whoami |  | 
+566t | streettalk |  | 
+567t | banyan-rpc |  | 
+568u | ms-shuttle - Microsoft shuttle |  | 
+569t | ms-rome - Microsoft rome |  | 
+570t | meter - demon |  | 
+571u | umeter - udemon |  | 
+572u | sonar |  | 
+573t | banyan-vip |  | 
+574u | ftp-agent - FTP Software Agent System |  | 
+575t | vemmi |  | 
+576u | ipcd |  | 
+577u | vnas |  | 
+578t | ipdd |  | 
+579u | decbsrv |  | 
+580t | sntp-heartbeat |  | 
+581t | bdp - Bundle Discovery Protocol |  | 
+582t | scc-security |  | 
+583u | philips-vc - Philips Video-Conferencing |  | 
+584t | keyserver |  | 
+585u | imap4-ssl - use 993 instead) |  | 
+586u | password-chg |  | 
+587t | submission |  | 
+588t | cal |  | 
+589t | eyelink |  | 
+590u | tns-cml |  | 
+591t | http-alt - FileMaker, Inc. - HTTP Alternate |  | 
+592t | eudora-set |  | 
+593t | http-rpc-epmap - HTTP RPC Ep Map |  | 
+594t | tpip |  | 
+595u | cab-protocol |  | 
+596u | smsd |  | 
+597t | ptcnameservice - PTC Name Service |  | 
+598u | sco-websrvrmg3 - SCO Web Server Manager 3 |  | 
+599u | acp - Aeolon Core Protocol |  | 
+600u | ipcserver - Sun IPC server |  | 
+605t | Secret Service | http://www.simovits.com/trojans/tr_data/y1150.html | 2001-06-06
+606t | urm - Cray Unified Resource Manager |  | 
+607t | nqs |  | 
+608t | sift-uft - Sender-Initiated/Unsolicited File Transfer |  | 
+609t | npmp-trap |  | 
+610u | npmp-local |  | 
+611u | npmp-gui |  | 
+634u | ginad |  | 
+635u | mount - NFS Mount Service |  | 
+640u | pcnfs - PC-NFS DOS Authentication |  | 
+650u | bwnfs - BW-NFS DOS Authentication |  | 
+666u | doom - doom Id Software |  | 
+667t | SniperNet | http://www.simovits.com/trojans/tr_data/y1207.html | 2001-06-06
+669t | DP trojan | http://www.simovits.com/trojans/tr_data/y366.html | 2001-06-06
+692t | GayOL | http://www.simovits.com/trojans/tr_data/y514.html | 2001-06-06
+704t | elcsd - errlog copy/server daemon |  | 
+709u | entrustmanager - EntrustManager - NorTel DES auth network see 389t |  | 
+729t | netviewdm1 - IBM NetView DM/6000 Server/Client |  | 
+730u | netviewdm2 - IBM NetView DM/6000 sendt |  | 
+731u | netviewdm3 - IBM NetView DM/6000 receivet |  | 
+740u | netcp - NETscout Control Protocol |  | 
+741u | netgw |  | 
+742u | netrcs - Network based Rev. Cont. Sys. |  | 
+744t | flexlm - Flexible License Manager |  | 
+747u | fujitsu-dev - Fujitsu Device Control |  | 
+748u | ris-cm - Russell Info Sci Calendar Manager |  | 
+749t | kerberos-adm - Kerberos 5 admin/changepw |  | 
+750t | kerberos - kdc Kerberos (v4) |  | 
+751u | kerberos_master - Kerberos `kadmin' (v4) |  | 
+752t | qrh |  | 
+753t | rrh |  | 
+754t | krb_prop - kerberos/v5 server propagation |  | 
+758u | nlogin |  | 
+759t | con |  | 
+760t | krbupdate - kreg Kerberos (v4) registration |  | 
+761t | kpasswd - kpwd Kerberos (v4) "passwd" |  | 
+762u | quotad |  | 
+763t | cycleserv |  | 
+764t | omserv |  | 
+765t | webster |  | 
+767t | phonebook - phone |  | 
+769t | vid |  | 
+770t | cadlock |  | 
+771u | rtip |  | 
+772t | cycleserv2 |  | 
+773t | submit |  | 
+774t | rpasswd |  | 
+775u | acmaint_transd |  | 
+776t | wpages |  | 
+777t | AimSpy | http://www.simovits.com/trojans/tr_data/y52.html | 2001-06-06
+780u | wpgs |  | 
+781u | hp-collector - hp performance data collector |  | 
+782t | hp-managed-node - hp performance data managed node |  | 
+783u | hp-alarm-mgr - hp performance data alarm manager |  | 
+786u | concert |  | 
+800u | mdbs_daemon |  | 
+801t | device |  | 
+808t | WinHole | http://www.simovits.com/trojans/tr_data/y1468.html | 2001-06-06
+871t | supfilesrv - SUP server |  | 
+888u | accessbuilder |  | 
+911t | Dark Shadow | http://www.simovits.com/trojans/tr_data/y311.html | 2001-06-06
+993t | simap - IMAP over SSL |  | 
+996u | vsinet |  | 
+997t | maitrd |  | 
+998u | puparp |  | 
+999u | applix - Applix ac |  | 
+1000u | ock |  | 
+1001t | Der Späher  /  Der Spaeher | http://www.simovits.com/trojans/tr_data/y329.html | 2001-06-06
+1008t | ufsd - ufsd # UFS-aware server |  | 
+1010t | Doly Trojan | http://www.simovits.com/trojans/tr_data/y357.html | 2001-06-06
+1011t | Doly Trojan | http://www.simovits.com/trojans/tr_data/y357.html | 2001-06-06
+1012t | Doly Trojan | http://www.simovits.com/trojans/tr_data/y357.html | 2001-06-06
+1015t | Doly Trojan | http://www.simovits.com/trojans/tr_data/y357.html | 2001-06-06
+1016t | Doly Trojan | http://www.simovits.com/trojans/tr_data/y357.html | 2001-06-06
+1020t | Vampire | http://www.simovits.com/trojans/tr_data/y1420.html | 2001-06-06
+1024t | NetSpy | | 2000-05-30
+1025u | blackjack - network blackjack |  | 
+1026t | nterm - remote_login network_terminal |  | 
+1030u | iad1 - BBN IAD |  | 
+1031u | iad2 - BBN IAD |  | 
+1032t | iad3 - BBN IAD |  | 
+1035t | Multidropper | http://www.simovits.com/trojans/tr_data/y844.html | 2001-06-06
+1042t | BLA trojan | http://www.simovits.com/trojans/tr_data/y159.html | 2001-06-06
+1045t | Rasmin | http://www.simovits.com/trojans/tr_data/y1066.html | 2001-06-06
+1049t | /sbin/initd | http://www.simovits.com/trojans/tr_data/y1135.html | 2001-06-06
+1050t | MiniCommand | http://www.simovits.com/trojans/tr_data/y805.html | 2001-06-06
+1053t | The Thief | http://www.simovits.com/trojans/tr_data/y1338.html | 2001-06-06
+1054t | AckCmd | http://www.simovits.com/trojans/tr_data/y34.html | 2001-06-06
+1058u | nim |  | 
+1059u | nimreg |  | 
+1067u | instl_boots - Installation Bootstrap Proto. Serv. |  | 
+1068t | instl_bootc - Installation Bootstrap Proto. Cli. |  | 
+1080u | socks |  | 
+1081t | WinHole | http://www.simovits.com/trojans/tr_data/y1468.html | 2001-06-06
+1082t | WinHole | http://www.simovits.com/trojans/tr_data/y1468.html | 2001-06-06
+1083t | ansoft-lm-1 - Anasoft License Manager |  | 
+1084t | ansoft-lm-2 - Anasoft License Manager |  | 
+1090t | Xtreme | http://www.simovits.com/trojans/tr_data/y1527.html | 2001-06-06
+1095t | Remote Administration Tool - RAT | http://www.simovits.com/trojans/tr_data/y1084.html | 2001-06-06
+1097t | Remote Administration Tool - RAT | http://www.simovits.com/trojans/tr_data/y1084.html | 2001-06-06
+1098t | Remote Administration Tool - RAT | http://www.simovits.com/trojans/tr_data/y1084.html | 2001-06-06
+1099t | Blood Fest Evolution | http://www.simovits.com/trojans/tr_data/y168.html | 2001-06-06
+1103t | xaudio - Xaserver # X Audio Server |  | 
+1109t | kpop - Pop with Kerberos |  | 
+1110u | nfsd-keepalive - Client status info |  | 
+1112t | msql - mini-sql server |  | 
+1127t | supfiledbg - SUP debugging |  | 
+1150t | Orion | http://www.simovits.com/trojans/tr_data/y954.html | 2001-06-06
+1151t | Orion | http://www.simovits.com/trojans/tr_data/y954.html | 2001-06-06
+1155u | nfa - Network File Access |  | 
+1167u | phone - conference calling |  | 
+1170t | Psyber Stream Server - PSS | http://www.simovits.com/trojans/tr_data/y1035.html | 2001-06-06
+1178t | skkserv - SKK (kanji input) |  | 
+1200u | NoBackO | http://www.simovits.com/trojans/tr_data/y922.html | 2001-06-06
+1201u | NoBackO | http://www.simovits.com/trojans/tr_data/y922.html | 2001-06-06
+1207t | SoftWAR | http://www.simovits.com/trojans/tr_data/y1212.html | 2001-06-06
+1208t | Infector | http://www.simovits.com/trojans/tr_data/y641.html | 2001-06-06
+1212u | lupa |  | 
+1222u | nerv - SNI R&D network |  | 
+1234t | SubSeven Java client | http://www.simovits.com/trojans/tr_data/y1268.html | 2001-06-06
+1241t | msg - remote message server |  | 
+1243t | BackDoor-G, SubSeven, SubSeven Apocalypse | | 2000-05-30
+1245t | VooDoo Doll | http://www.simovits.com/trojans/tr_data/y1507.html | 2001-06-06
+1248u | hermes |  | 
+1255t | Scarab | http://www.simovits.com/trojans/tr_data/y1137.html | 2001-06-06
+1256t | Project nEXT | http://www.simovits.com/trojans/tr_data/y1030.html | 2001-06-06
+1269t | Matrix | http://www.simovits.com/trojans/tr_data/y778.html | 2001-06-06
+1272t | The Matrix | http://www.simovits.com/trojans/tr_data/y1332.html | 2001-06-06
+1313t | NETrojan | http://www.simovits.com/trojans/tr_data/y896.html | 2001-06-06
+1338t | Millenium Worm | http://www.simovits.com/trojans/tr_data/y800.html | 2001-06-06
+1346u | alta-ana-lm - Alta Analytics License Manager |  | 
+1347t | bbn-mmc - multi media conferencing |  | 
+1348u | bbn-mmx - multi media conferencing |  | 
+1349t | sbook - Registration Network Protocol |  | 
+1350t | editbench - Registration Network Protocol |  | 
+1351t | equationbuilder - Digital Tool Works (MIT) |  | 
+1352t | lotusnote - Lotus Note |  | 
+1353u | relief - Relief Consulting |  | 
+1354t | rightbrain - RightBrain Software |  | 
+1355t | intuitive-edge - Intuitive Edge |  | 
+1356t | cuillamartin - CuillaMartin Company |  | 
+1357u | pegboard - Electronic PegBoard |  | 
+1358u | connlcli |  | 
+1359u | ftsrv |  | 
+1360u | mimer |  | 
+1361u | linx |  | 
+1362t | timeflies |  | 
+1363t | ndm-requester - Network DataMover Requester |  | 
+1364t | ndm-server - Network DataMover Server |  | 
+1365t | adapt-sna - Network Software Associates |  | 
+1366u | netware-csp - Novell NetWare Comm Service Platform |  | 
+1367t | dcs |  | 
+1368t | screencast |  | 
+1369u | gv-us - GlobalView to Unix Shell |  | 
+1370t | us-gv - Unix Shell to GlobalView |  | 
+1371u | fc-cli - Fujitsu Config Protocol |  | 
+1372t | fc-ser - Fujitsu Config Protocol |  | 
+1373t | chromagrafx |  | 
+1374t | molly - EPI Software Systems |  | 
+1375u | bytex |  | 
+1376t | ibm-pps - IBM Person to Person Software |  | 
+1377t | cichlid - Cichlid License Manager |  | 
+1378t | elan - Elan License Manager |  | 
+1379t | dbreporter - Integrity Solutions |  | 
+1380t | telesis-licman - Telesis Network License Manager |  | 
+1381t | apple-licman - Apple Network License Manager |  | 
+1383u | gwha - GW Hannaway Network License Manager |  | 
+1384u | os-licman - Objective Solutions License Manager |  | 
+1385t | atex_elmd - Atex Publishing License Manager |  | 
+1386u | checksum - CheckSum License Manager |  | 
+1387u | cadsi-lm - Computer Aided Design Software Inc LM |  | 
+1388t | objective-dbc - Objective Solutions DataBase Cache |  | 
+1389u | iclpv-dm - Document Manager |  | 
+1390t | iclpv-sc - Storage Controller |  | 
+1391t | iclpv-sas - Storage Access Server |  | 
+1392t | iclpv-pm - Print Manager |  | 
+1393u | iclpv-nls - Network Log Server |  | 
+1394t | iclpv-nlc - Network Log Client |  | 
+1395t | iclpv-wsm - PC Workstation Manager software |  | 
+1396u | dvl-activemail - DVL Active Mail |  | 
+1397t | audio-activmail - Audio Active Mail |  | 
+1398u | video-activmail - Video Active Mail |  | 
+1399u | cadkey-licman - Cadkey License Manager |  | 
+1400u | cadkey-tablet - Cadkey Tablet Daemon |  | 
+1401t | goldleaf-licman - Goldleaf License Manager |  | 
+1402t | prm-sm-np - Prospero Resource Manager |  | 
+1403u | prm-nm-np - Prospero Resource Manager |  | 
+1404u | igi-lm - Infinite Graphics License Manager |  | 
+1405u | ibm-res - IBM Remote Execution Starter |  | 
+1406t | netlabs-lm - NetLabs License Manager |  | 
+1407u | dbsa-lm - DBSA License Manager |  | 
+1408t | sophia-lm - Sophia License Manager |  | 
+1409u | here-lm - Here License Manager |  | 
+1410u | hiq - HiQ License Manager |  | 
+1411u | af - AudioFile |  | 
+1412u | innosys |  | 
+1413t | innosys-acl |  | 
+1414u | ibm-mqseries - IBM MQSeries |  | 
+1415u | dbstar |  | 
+1416t | novell-lu6.2 - Novell LU6.2 |  | 
+1417t | timbuktu-srv1 - Timbuktu Service 1 Port |  | 
+1418u | timbuktu-srv2 - Timbuktu Service 2 Port |  | 
+1419t | timbuktu-srv3 - Timbuktu Service 3 Port |  | 
+1420t | timbuktu-srv4 - Timbuktu Service 4 Port |  | 
+1421u | gandalf-lm - Gandalf License Manager |  | 
+1422t | autodesk-lm - Autodesk License Manager |  | 
+1423t | essbase - Essbase Arbor Software |  | 
+1424u | hybrid - Hybrid Encryption Protocol |  | 
+1425u | zion-lm - Zion Software License Manager |  | 
+1426u | sas-1 - Satellite-data Acquisition System 1 |  | 
+1427t | mloadd - mloadd monitoring tool |  | 
+1428u | informatik-lm - Informatik License Manager |  | 
+1429t | nms - Hypercom NMS |  | 
+1430t | tpdu - Hypercom TPDU |  | 
+1431u | rgtp - Reverse Gossip Transport |  | 
+1432t | blueberry-lm - Blueberry Software License Manager |  | 
+1433t | ms-sql-s - Microsoft-SQL-Server |  | 
+1434t | ms-sql-m - Microsoft-SQL-Monitor |  | 
+1435u | ibm-cics |  | 
+1436u | sas-2 - Satellite-data Acquisition System 2 |  | 
+1437t | tabula |  | 
+1438u | eicon-server - Eicon Security Agent/Server |  | 
+1439u | eicon-x25 - Eicon X25/SNA Gateway |  | 
+1440u | eicon-slp - Eicon Service Location Protocol |  | 
+1441t | cadis-1 - Cadis License Management |  | 
+1442u | cadis-2 - Cadis License Management |  | 
+1443t | ies-lm - Integrated Engineering Software |  | 
+1444t | marcam-lm - Marcam License Management |  | 
+1445u | proxima-lm - Proxima License Manager |  | 
+1446t | ora-lm - Optical Research Associates License Manager |  | 
+1447u | apri-lm - Applied Parallel Research LM |  | 
+1448u | oc-lm - OpenConnect License Manager |  | 
+1449t | peport |  | 
+1450t | dwf - Tandem Distributed Workbench Facility |  | 
+1451u | infoman - IBM Information Management |  | 
+1452u | gtegsc-lm - GTE Government Systems License Man |  | 
+1453t | genie-lm - Genie License Manager |  | 
+1454u | interhdl_elmd - interHDL License Manager |  | 
+1455u | esl-lm - ESL License Manager |  | 
+1456t | dca |  | 
+1457u | valisys-lm - Valisys License Manager |  | 
+1458u | nrcabq-lm - Nichols Research Corp. |  | 
+1459u | proshare1 - Proshare Notebook Application |  | 
+1460t | proshare2 - Proshare Notebook Application |  | 
+1461t | ibm_wrless_lan - IBM Wireless LAN |  | 
+1462u | world-lm - World License Manager |  | 
+1463t | nucleus |  | 
+1464u | msl_lmd - MSL License Manager |  | 
+1465t | pipes - Pipes Platform |  | 
+1466t | oceansoft-lm - Ocean Software License Manager |  | 
+1467t | csdmbase |  | 
+1468u | csdm |  | 
+1469t | aal-lm - Active Analysis Limited License Manager |  | 
+1470u | uaiact - Universal Analytics |  | 
+1471u | csdmbase |  | 
+1472u | csdm |  | 
+1473u | openmath |  | 
+1474t | telefinder |  | 
+1475t | taligent-lm - Taligent License Manager |  | 
+1476t | clvm-cfg |  | 
+1477t | ms-sna-server |  | 
+1478u | ms-sna-base |  | 
+1479u | dberegister |  | 
+1480u | pacerforum |  | 
+1481t | airs |  | 
+1482u | miteksys-lm - Miteksys License Manager |  | 
+1483u | afs - AFS License Manager |  | 
+1484t | confluent - Confluent License Manager |  | 
+1485t | lansource |  | 
+1486u | nms_topo_serv |  | 
+1487t | localinfosrvr |  | 
+1488u | docstor |  | 
+1489u | dmdocbroker |  | 
+1490t | insitu-conf |  | 
+1491t | anynetgateway |  | 
+1492t | stone-design-1 |  | 
+1493t | netmap_lm |  | 
+1494u | ica |  | 
+1495t | cvc |  | 
+1496t | liberty-lm |  | 
+1497t | rfx-lm |  | 
+1498t | watcom-sql |  | 
+1499u | fhc - Federico Heinz Consultora |  | 
+1500t | vlsi-lm - VLSI License Manager |  | 
+1501t | sas-3 - Satellite-data Acquisition System 3 |  | 
+1502t | shivadiscovery - Shiva |  | 
+1503u | imtc-mcs - Databeam |  | 
+1504u | evb-elm - EVB Software Engineering License Manager |  | 
+1505u | funkproxy - Funk Software, Inc. |  | 
+1506t | utcd - Universal Time daemon (utcd) |  | 
+1507t | symplex |  | 
+1508t | diagmond |  | 
+1509u | robcad-lm - Robcad, Ltd. License Manager |  | 
+1510u | mvx-lm - Midland Valley Exploration Ltd. Lic. Man. |  | 
+1511u | 3l-l1 |  | 
+1512u | wins - Microsoft's Windows Internet Name Service |  | 
+1513t | fujitsu-dtc - Fujitsu Systems Business of America, Inc |  | 
+1514u | fujitsu-dtcns - Fujitsu Systems Business of America, Inc |  | 
+1515t | ifor-protocol |  | 
+1516u | vpad - Virtual Places Audio data |  | 
+1517t | vpac - Virtual Places Audio control |  | 
+1518u | vpvd - Virtual Places Video data |  | 
+1519t | vpvc - Virtual Places Video control |  | 
+1520u | atm-zip-office - atm zip office |  | 
+1521u | ncube-lm - nCube License Manager |  | 
+1522t | rna-lm - Ricardo North America License Manager |  | 
+1523t | cichild-lm |  | 
+1524t | ingreslock - ingres |  | 
+1525u | orasrv - oracle |  | 
+1526t | pdap-np - Prospero Data Access Prot non-priv |  | 
+1527u | tlisrv - oracle |  | 
+1528t | mciautoreg |  | 
+1529u | coauthor - oracle |  | 
+1530u | rap-service |  | 
+1531t | rap-listen |  | 
+1532u | miroconnect |  | 
+1533u | virtual-places - Virtual Places Software |  | 
+1534u | micromuse-lm |  | 
+1535u | ampr-info |  | 
+1536t | ampr-inter |  | 
+1537t | sdsc-lm |  | 
+1538u | 3ds-lm |  | 
+1539u | intellistor-lm - Intellistor License Manager |  | 
+1540u | rds |  | 
+1541t | rds2 |  | 
+1542u | gridgen-elmd |  | 
+1543u | simba-cs |  | 
+1544u | aspeclmd |  | 
+1545u | vistium-share |  | 
+1546u | abbaccuray |  | 
+1547t | laplink |  | 
+1548t | axon-lm - Axon License Manager |  | 
+1549u | shivasound - Shiva Sound |  | 
+1550t | 3m-image-lm - Image Storage license manager 3M Company |  | 
+1551t | hecmtl-db |  | 
+1552u | pciarray |  | 
+1568t | Remote Hack | http://www.simovits.com/trojans/tr_data/y1094.html | 2001-06-06
+1600t | issd |  | 
+1645u | radius - radius authentication |  | 
+1646u | radacct - radius accounting |  | 
+1650u | nkd |  | 
+1651t | shiva_confsrvr |  | 
+1652t | xnmp |  | 
+1661u | netview-aix-1 |  | 
+1662t | netview-aix-2 |  | 
+1663t | netview-aix-3 |  | 
+1664t | netview-aix-4 |  | 
+1665u | netview-aix-5 |  | 
+1666u | netview-aix-6 |  | 
+1667t | netview-aix-7 |  | 
+1668t | netview-aix-8 |  | 
+1669u | netview-aix-9 |  | 
+1670t | netview-aix-10 |  | 
+1671t | netview-aix-11 |  | 
+1672u | netview-aix-12 |  | 
+1703t | Exploiter | http://www.simovits.com/trojans/tr_data/y426.html | 2001-06-06
+1723t | pptp - Point-to-point tunnelling protocol |  | 
+1777t | Scarab | http://www.simovits.com/trojans/tr_data/y1137.html | 2001-06-06
+1807t | SpySender | http://www.simovits.com/trojans/tr_data/y1240.html | 2001-06-06
+1812u | radius - RADIUS authentication protocol (RFC 2138) |  | 
+1813u | radacct - RADIUS accounting protocol (RFC 2139) |  | 
+1966t | Fake FTP | http://www.simovits.com/trojans/tr_data/y439.html | 2001-06-06
+1967t | WM FTP Server | http://www.simovits.com/trojans/tr_data/y1498.html | 2001-06-06
+1969t | OpC BO | http://www.simovits.com/trojans/tr_data/y951.html | 2001-06-06
+1981t | Bowl | http://www.simovits.com/trojans/tr_data/y192.html | 2001-06-06
+1986u | licensedaemon - cisco license management |  | 
+1987u | tr-rsrb-p1 - cisco RSRB Priority 1 port |  | 
+1988t | tr-rsrb-p2 - cisco RSRB Priority 2 port |  | 
+1989t | tr-rsrb-p3 - cisco RSRB Priority 3 port |  | 
+1990u | stun-p1 - cisco STUN Priority 1 port |  | 
+1991u | stun-p2 - cisco STUN Priority 2 port |  | 
+1992t | stun-p3 - cisco STUN Priority 3 port |  | 
+1993t | snmp-tcp-port - cisco SNMP TCP port |  | 
+1994t | stun-port - cisco serial tunnel port |  | 
+1995t | perf-port - cisco perf port |  | 
+1996u | tr-rsrb-port - cisco Remote SRB port |  | 
+1997u | gdp-port - cisco Gateway Discovery Protocol |  | 
+1998u | x25-svc-port - cisco X.25 service (XOT) |  | 
+1999u | tcp-id-port - cisco identification port |  | 
+2000t | callbook |  | 
+2001u | wizard - curry |  | 
+2002t | globe |  | 
+2003t | cfingerd - GNU finger |  | 
+2004t | mailbox |  | 
+2005t | deslogin - encrypted symmetric telnet/login |  | 
+2006u | raid-cc - raid |  | 
+2007t | dectalk |  | 
+2008t | conf |  | 
+2009t | news |  | 
+2010t | search |  | 
+2011u | servserv |  | 
+2012u | raid-ac |  | 
+2013t | raid-am |  | 
+2014t | troff |  | 
+2015u | raid-cs |  | 
+2016t | bootserver |  | 
+2017t | cypress-stat |  | 
+2018u | rellpack |  | 
+2019t | whosockami |  | 
+2020u | xinupageserver |  | 
+2021t | servexec |  | 
+2022t | down |  | 
+2023u | xinuexpansion3 |  | 
+2024t | xinuexpansion4 |  | 
+2025t | ellpack |  | 
+2026t | scrabble |  | 
+2027t | shadowserver |  | 
+2028t | submitserver |  | 
+2030u | device2 |  | 
+2032t | blackboard |  | 
+2033u | glogger |  | 
+2034u | scoremgr |  | 
+2035u | imsldoc |  | 
+2038u | objectmanager |  | 
+2040t | lam |  | 
+2041u | interbase |  | 
+2042t | isis |  | 
+2043t | isis-bcast |  | 
+2044u | rimsl |  | 
+2045u | cdfunc |  | 
+2046t | sdfunc |  | 
+2047u | dls |  | 
+2048u | dls-monitor |  | 
+2049t | nfs - networked file system |  | 
+2064t | distrib-netassholes - A group of lamers working on a silly closed-source client for solving the RSA cryptographic challenge. This is the keyblock proxy port. |  | 
+2065u | dlsrpn - Data Link Switch Read Port Number |  | 
+2067t | dlswpn - Data Link Switch Write Port Number |  | 
+2080t | WinHole | http://www.simovits.com/trojans/tr_data/y1468.html | 2001-06-06
+2103u | zephyr-clt - Zephyr serv-hm connection |  | 
+2104u | zephyr-hm - Zephyr hostmanager |  | 
+2105u | eklogin - Kerberos (v4) encrypted rlogin |  | 
+2106u | ekshell - Kerberos (v4) encrypted rshell |  | 
+2108u | rkinit - Kerberos (v4) remote initialization |  | 
+2111t | kx - X over kerberos |  | 
+2112t | kip - IP over kerberos |  | 
+2115t | Bugs | http://www.simovits.com/trojans/tr_data/y208.html | 2001-06-06
+2120t | kauth - Remote kauth |  | 
+2130u | Mini Backlash | http://www.simovits.com/trojans/tr_data/y804.html | 2001-06-06
+2140t | Deep Throat, | | 2000-05-30
+2155t | Illusion Mailer | http://www.simovits.com/trojans/tr_data/y632.html | 2001-06-06
+2201t | ats - Advanced Training System Program |  | 
+2232u | ivs-video - IVS Video default |  | 
+2241t | ivsd - IVS Daemon |  | 
+2255t | Nirvana | http://www.simovits.com/trojans/tr_data/y919.html | 2001-06-06
+2283t | Hvl RAT | http://www.simovits.com/trojans/tr_data/y603.html | 2001-06-06
+2300t | Xplorer | http://www.simovits.com/trojans/tr_data/y1523.html | 2001-06-06
+2307u | pehelp |  | 
+2311t | Studio 54 | http://www.simovits.com/trojans/tr_data/y1259.html | 2001-06-06
+2330t | Contact | http://www.simovits.com/trojans/tr_data/y276.html | 2001-06-06
+2331t | Contact | http://www.simovits.com/trojans/tr_data/y276.html | 2001-06-06
+2332t | Contact | http://www.simovits.com/trojans/tr_data/y276.html | 2001-06-06
+2333t | Contact | http://www.simovits.com/trojans/tr_data/y276.html | 2001-06-06
+2334t | Contact | http://www.simovits.com/trojans/tr_data/y276.html | 2001-06-06
+2335t | Contact | http://www.simovits.com/trojans/tr_data/y276.html | 2001-06-06
+2336t | Contact | http://www.simovits.com/trojans/tr_data/y276.html | 2001-06-06
+2337t | Contact | http://www.simovits.com/trojans/tr_data/y276.html | 2001-06-06
+2338t | Contact | http://www.simovits.com/trojans/tr_data/y276.html | 2001-06-06
+2339u | Voice Spy | http://www.simovits.com/trojans/tr_data/y1505.html | 2001-06-06
+2345t | Doly Trojan | http://www.simovits.com/trojans/tr_data/y357.html | 2001-06-06
+2401t | cvspserver - CVS network server |  | 
+2430u | venus |  | 
+2431u | venus-se |  | 
+2432t | codasrv |  | 
+2433t | codasrv-se |  | 
+2500t | rtsserv - Resource Tracking system server |  | 
+2501u | rtsclient - Resource Tracking system client |  | 
+2564t | hp-3000-telnet - HP 3000 NS/VT block mode telnet |  | 
+2565t | Striker trojan | http://www.simovits.com/trojans/tr_data/y1257.html | 2001-06-06
+2583t | WinCrash | | 2000-05-30
+2600t | zebrasrv - zebra service |  | 
+2601t | zebra - zebra vty |  | 
+2602t | ripd - RIPd vty |  | 
+2603t | ripngd - RIPngd vty |  | 
+2604t | ospfd - OSPFd vty |  | 
+2605t | bgpd - BGPd vty |  | 
+2627u | webster |  | 
+2716t | The Prayer | http://www.simovits.com/trojans/tr_data/y1334.html | 2001-06-06
+2766t | listen - System V listener port |  | 
+2773t | SubSeven | http://www.simovits.com/trojans/tr_data/y1264.html | 2001-06-06
+2774t | SubSeven | http://www.simovits.com/trojans/tr_data/y1264.html | 2001-06-06
+2784u | www-dev - world wide web - development |  | 
+2801t | Phineas Phucker | http://www.simovits.com/trojans/tr_data/y989.html | 2001-06-06
+2989u | Remote Administration Tool - RAT | http://www.simovits.com/trojans/tr_data/y1084.html | 2001-06-06
+3000t | ppp - User-level ppp daemon |  | 
+3005t | deslogin - encrypted symmetric telnet/login |  | 
+3006t | deslogind |  | 
+3024t | WinCrash | | 2000-05-30
+3031t | Microspy | http://www.simovits.com/trojans/tr_data/y795.html | 2001-06-06
+3049t | cfs - cryptographic file system (nfs) (proposed) |  | 
+3086t | sj3 - SJ3 (kanji input) |  | 
+3128t | squid-http |  | 
+3129t | Masters Paradise | http://www.simovits.com/trojans/tr_data/y776.html | 2001-06-06
+3130u | squid-ipc |  | 
+3141t | vmodem |  | 
+3150t | Deep Throat, The Invasor | | 2000-05-30
+3264t | ccmail - cc:mail/lotus |  | 
+3333t | dec-notes - DEC Notes |  | 
+3421u | bmap - Bull Apprise portmapper |  | 
+3455t | prsvp - RSVP Port |  | 
+3456t | vat - VAT default data |  | 
+3457t | vat-control - VAT default control |  | 
+3459t | Eclipse 2000 | http://www.simovits.com/trojans/tr_data/y392.html | 2001-06-06
+3462t | track - software distribution |  | 
+3700t | Portal of Doom | | 2000-05-30
+3777t | PsychWard | http://www.simovits.com/trojans/tr_data/y1037.html | 2001-06-06
+3791t | Eclypse | | 2000-05-30
+3801u | Eclypse | | 2000-05-30
+3900t | udt_os - Unidata UDT OS |  | 
+3984t | mapper-nodemgr - MAPPER network node manager |  | 
+3985u | mapper-mapethd - MAPPER TCP/IP server |  | 
+3986u | mapper-ws_ethd - MAPPER workstation server |  | 
+4000t | SkyDance | http://www.simovits.com/trojans/tr_data/y1197.html | 2001-06-06
+4008u | netcheque - NetCheque accounting |  | 
+4045t | lockd |  | 
+4092t | WinCrash | | 2000-05-30
+4132t | nuts_dem - NUTS Daemon |  | 
+4133u | nuts_bootp - NUTS Bootp Server |  | 
+4144t | wincim - pc windows compuserve.com protocol |  | 
+4242t | Virtual Hacking Machine - VHM | http://www.simovits.com/trojans/tr_data/y1492.html | 2001-06-06
+4321t | rwhois - Remote Who Is |  | 
+4333t | msql - mini-sql server |  | 
+4343t | unicall |  | 
+4444t | krb524 - Kerberos 5 to 4 ticket xlator |  | 
+4500t | sae-urn |  | 
+4557t | fax - FlexFax FAX transmission service |  | 
+4559t | hylafax - HylaFAX client-server protocol |  | 
+4567t | File Nail | http://www.simovits.com/trojans/tr_data/y455.html | 2001-06-06
+4590t | ICQTrojan | | 2000-05-30
+4672u | rfa - remote file access server |  | 
+4950t | ICQ Trogen (Lm) | http://www.simovits.com/trojans/tr_data/y621.html | 2001-06-06
+5000u | commplex-main |  | 
+5001t | commplex-link |  | 
+5002t | rfe - Radio Free Ethernet |  | 
+5010u | telelpathstart |  | 
+5011t | telelpathattack |  | 
+5025t | WM Remote KeyLogger | http://www.simovits.com/trojans/tr_data/y1499.html | 2001-06-06
+5031t | Net Metropolitan | http://www.simovits.com/trojans/tr_data/y873.html | 2001-06-06
+5032t | Net Metropolitan | http://www.simovits.com/trojans/tr_data/y873.html | 2001-06-06
+5050u | mmcc - multimedia conference control tool |  | 
+5145t | rmonitor_secure |  | 
+5190u | aol - America-Online |  | 
+5191u | aol-1 - AmericaOnline1 |  | 
+5192u | aol-2 - AmericaOnline2 |  | 
+5193u | aol-3 - AmericaOnline3 |  | 
+5232t | sgi-dgl - SGI Distributed Graphics |  | 
+5236u | padl2sim |  | 
+5300t | hacl-hb - HA cluster heartbeat |  | 
+5301u | hacl-gs - HA cluster general services |  | 
+5302u | hacl-cfg - HA cluster configuration |  | 
+5303t | hacl-probe - HA cluster probing |  | 
+5304u | hacl-local |  | 
+5305u | hacl-test |  | 
+5308t | cfengine |  | 
+5321t | Firehotcker | http://www.simovits.com/trojans/tr_data/y462.html | 2001-06-06
+5333t | Backage | http://www.simovits.com/trojans/tr_data/y127.html | 2001-06-06
+5343t | wCrat - WC Remote Administration Tool | http://www.simovits.com/trojans/tr_data/y1433.html | 2001-06-06
+5400t | Back Construction | http://www.simovits.com/trojans/tr_data/y115.html | 2001-06-06
+5401t | Back Construction | http://www.simovits.com/trojans/tr_data/y115.html | 2001-06-06
+5402t | Back Construction | http://www.simovits.com/trojans/tr_data/y115.html | 2001-06-06
+5432t | postgres - postgres database server |  | 
+5500u | securid - SecurID |  | 
+5510t | secureidprop - ACE/Server services |  | 
+5512t | Illusion Mailer | http://www.simovits.com/trojans/tr_data/y632.html | 2001-06-06
+5520t | sdlog - ACE/Server services |  | 
+5530t | sdserv - ACE/Server services |  | 
+5534t | The Flu | http://www.simovits.com/trojans/tr_data/y1325.html | 2001-06-06
+5540u | sdxauthd - ACE/Server services |  | 
+5550t | sdadmind - ACE/Server services |  | 
+5555u | rplay |  | 
+5556t | BO Facil | | 2000-05-30
+5557t | BO Facil | | 2000-05-30
+5569t | Robo-Hack | http://www.simovits.com/trojans/tr_data/y1117.html | 2001-06-06
+5637t | PC Crasher | http://www.simovits.com/trojans/tr_data/y975.html | 2001-06-06
+5638t | PC Crasher | http://www.simovits.com/trojans/tr_data/y975.html | 2001-06-06
+5680t | canna - Canna (Japanese Input) |  | 
+5713u | proshareaudio - proshare conf audio |  | 
+5714u | prosharevideo - proshare conf video |  | 
+5715u | prosharedata - proshare conf data |  | 
+5716u | prosharerequest - proshare conf request |  | 
+5717u | prosharenotify - proshare conf notify |  | 
+5742t | WinCrash | | 2000-05-30
+5760t | Portmap Remote Root Linux Exploit | http://www.simovits.com/trojans/tr_data/y1013.html | 2001-06-06
+5880t | Y3K RAT | http://www.simovits.com/trojans/tr_data/y1530.html | 2001-06-06
+5882u | Y3K RAT | http://www.simovits.com/trojans/tr_data/y1530.html | 2001-06-06
+5888u | Y3K RAT | http://www.simovits.com/trojans/tr_data/y1530.html | 2001-06-06
+5889t | Y3K RAT | http://www.simovits.com/trojans/tr_data/y1530.html | 2001-06-06
+5977t | ncd-pref-tcp - NCD preferences tcp port |  | 
+5978t | ncd-diag-tcp - NCD diagnostic tcp port |  | 
+5979t | ncd-conf-tcp - NCD configuration tcp port |  | 
+5997t | ncd-pref - NCD preferences telnet port |  | 
+5998t | ncd-diag - NCD diagnostic telnet port |  | 
+5999t | ncd-conf - NCD configuration telnet port |  | 
+6000t | X11 - X Window server |  | 
+6001t | X11:1 - X Window server |  | 
+6002t | X11:2 - X Window server |  | 
+6003t | X11:3 - X Window server |  | 
+6004t | X11:4 - X Window server |  | 
+6005t | X11:5 - X Window server |  | 
+6006t | X11:6 - X Window server |  | 
+6007t | X11:7 - X Window server |  | 
+6110t | softcm - HP SoftBench CM |  | 
+6111u | spc - HP SoftBench Sub-Process Control |  | 
+6112t | dtspc - CDE subprocess control |  | 
+6141u | meta-corp - Meta Corporation License Manager |  | 
+6142t | aspentec-lm - Aspen Technology License Manager |  | 
+6143t | watershed-lm - Watershed License Manager |  | 
+6144t | statsci1-lm - StatSci License Manager - 1 |  | 
+6145u | statsci2-lm - StatSci License Manager - 2 |  | 
+6146u | lonewolf-lm - Lone Wolf Systems License Manager |  | 
+6147u | montage-lm - Montage License Manager |  | 
+6148u | ricardo-lm - Ricardo North America License Manager |  | 
+6272t | Secret Service | http://www.simovits.com/trojans/tr_data/y1150.html | 2001-06-06
+6346t | gnutella | http://gnutella.wego.com | 2000-06-19
+6400t | The Thing | http://www.simovits.com/trojans/tr_data/y1339.html | 2001-06-06
+6558t | xdsxdm |  | 
+6661t | TEMan | http://www.simovits.com/trojans/tr_data/y1312.html | 2001-06-06
+6666t | irc-serv - internet relay chat server |  | 
+6667t | irc - Internet Relay Chat |  | 
+6668t | irc - Internet Relay Chat |  | 
+6669t | Host Control | http://www.simovits.com/trojans/tr_data/y596.html | 2001-06-06
+6670t | DeepThroat | | 2000-05-30
+6711t | BackDoor-G | http://www.simovits.com/trojans/tr_data/y129.html | 2001-06-06
+6712t | Funny trojan | http://www.simovits.com/trojans/tr_data/y503.html | 2001-06-06
+6713t | SubSeven | http://www.simovits.com/trojans/tr_data/y1264.html | 2001-06-06
+6723t | Mstream | http://www.simovits.com/trojans/tr_data/y838.html | 2001-06-06
+6771t | DeepThroat | | 2000-05-30
+6776t | BackDoor-G, SubSeven | | 2000-05-30
+6838u | Mstream | http://www.simovits.com/trojans/tr_data/y838.html | 2001-06-06
+6883t | Delta Source DarkStar  (??) | http://www.simovits.com/trojans/tr_data/y327.html | 2001-06-06
+6912t | Shit Heep | http://www.simovits.com/trojans/tr_data/y1183.html | 2001-06-06
+6939t | Indoctrination | http://www.simovits.com/trojans/tr_data/y638.html | 2001-06-06
+6969t | acmsoda |  | 
+6970t | GateCrasher | http://www.simovits.com/trojans/tr_data/y512.html | 2001-06-06
+7000t | afs3-fileserver - file server itself, msdos |  | 
+7001t | afs3-callback - callbacks to cache managers |  | 
+7002t | afs3-prserver - users & groups database |  | 
+7003u | afs3-vlserver - volume location database |  | 
+7004t | afs3-kaserver - AFS/Kerberos authentication service |  | 
+7005u | afs3-volser - volume managment server |  | 
+7006u | afs3-errors - error interpretation service |  | 
+7007t | afs3-bos - basic overseer process |  | 
+7008t | afs3-update - server-to-server updater |  | 
+7009u | afs3-rmtsys - remote cache manager service |  | 
+7010t | ups-onlinet - onlinet uninterruptable power supplies |  | 
+7100u | font-service - X Font Service |  | 
+7200t | fodms - FODMS FLIP |  | 
+7201t | dlip |  | 
+7215t | SubSeven | http://www.simovits.com/trojans/tr_data/y1264.html | 2001-06-06
+7300t | NetMonitor | | 2000-05-30
+7301t | NetMonitor | | 2000-05-30
+7306t | NetMonitor | | 2000-05-30
+7307t | NetMonitor | | 2000-05-30
+7308t | NetMonitor | | 2000-05-30
+7326t | icb - Internet Citizen's Band |  | 
+7424u | Host Control | http://www.simovits.com/trojans/tr_data/y596.html | 2001-06-06
+7597t | Qaz | http://www.simovits.com/trojans/tr_data/y1048.html | 2001-06-06
+7626t | Glacier | http://www.simovits.com/trojans/tr_data/y530.html | 2001-06-06
+7648u | cucme-1 - cucme live video/audio server |  | 
+7649u | cucme-2 - cucme live video/audio server |  | 
+7650u | cucme-3 - cucme live video/audio server |  | 
+7651u | cucme-4 - cucme live video/audio server |  | 
+7777t | God Message | http://www.simovits.com/trojans/tr_data/y535.html | 2001-06-06
+7789t | Back Door Setup | http://www.simovits.com/trojans/tr_data/y117.html | 2001-06-06
+7891t | The ReVeNgEr | http://www.simovits.com/trojans/tr_data/y1335.html | 2001-06-06
+7983t | Mstream | http://www.simovits.com/trojans/tr_data/y838.html | 2001-06-06
+8040t | shortcast | | 
+8080t | Brown Orifice | http://www.simovits.com/trojans/tr_data/y196.html | 2001-06-06
+8787t | Back Orifice 2000 | http://www.simovits.com/trojans/tr_data/y123.html | 2001-06-06
+8988t | BacHack | http://www.simovits.com/trojans/tr_data/y114.html | 2001-06-06
+8989t | Rcon, Recon, Xcon | http://www.simovits.com/trojans/tr_data/y1075.html | 2001-06-06
+9000t | Netministrator | http://www.simovits.com/trojans/tr_data/y890.html | 2001-06-06
+9100t | jetdirect - HP JetDirect card |  | 
+9325u | Mstream | http://www.simovits.com/trojans/tr_data/y838.html | 2001-06-06
+9400t | InCommand | http://www.simovits.com/trojans/tr_data/y636.html | 2001-06-06
+9535t | man |  | 
+9872t | Portal of Doom | | 2000-05-30
+9873t | Portal of Doom | | 2000-05-30
+9874t | Portal of Doom | | 2000-05-30
+9875t | Portal of Doom | | 2000-05-30
+9876u | sd - Session Director |  | 
+9878t | TransScout | http://www.simovits.com/trojans/tr_data/y1371.html | 2001-06-06
+9989t | Ini-Killer | http://www.simovits.com/trojans/tr_data/y645.html | 2001-06-06
+9999t | The Prayer | http://www.simovits.com/trojans/tr_data/y1334.html | 2001-06-06
+10000t | OpwinTRojan | http://www.simovits.com/trojans/tr_data/y952.html | 2001-06-06
+10005t | stel - Secure telnet |  | 
+10067u | Portal of Doom | | 2000-05-30
+10080u | amanda - Amanda Backup Util |  | 
+10082t | amandaidx - Amanda indexing |  | 
+10083t | amidxtape - Amanda tape indexing |  | 
+10085t | Syphillis | http://www.simovits.com/trojans/tr_data/y1282.html | 2001-06-06
+10086t | Syphillis | http://www.simovits.com/trojans/tr_data/y1282.html | 2001-06-06
+10100t | Control Total | http://www.simovits.com/trojans/tr_data/y279.html | 2001-06-06
+10101t | BrainSpy | http://www.simovits.com/trojans/tr_data/y194.html | 2001-06-06
+10167u | Portal of Doom | | 2000-05-30
+10520t | Acid Shivers | http://www.simovits.com/trojans/tr_data/y32.html | 2001-06-06
+10528t | Host Control | http://www.simovits.com/trojans/tr_data/y596.html | 2001-06-06
+10607t | Coma | http://www.simovits.com/trojans/tr_data/y267.html | 2001-06-06
+10666u | Ambush | http://www.simovits.com/trojans/tr_data/y57.html | 2001-06-06
+11000t | Senna Spy Trojan Generator | http://www.simovits.com/trojans/tr_data/y1163.html | 2001-06-06
+11050t | Host Control | http://www.simovits.com/trojans/tr_data/y596.html | 2001-06-06
+11051t | Host Control | http://www.simovits.com/trojans/tr_data/y596.html | 2001-06-06
+11223t | Progenic trojan | http://www.simovits.com/trojans/tr_data/y1029.html | 2001-06-06
+12076t | Gjamer | http://www.simovits.com/trojans/tr_data/y528.html | 2001-06-06
+12223t | Hack´99 KeyLogger | http://www.simovits.com/trojans/tr_data/y556.html | 2001-06-06
+12345t | NetBus - NetBus backdoor trojan |  | 
+12346t | NetBus - NetBus backdoor trojan |  | 
+12349t | BioNet | http://www.simovits.com/trojans/tr_data/y155.html | 2001-06-06
+12361t | Whack-a-mole | http://www.simovits.com/trojans/tr_data/y1444.html | 2001-06-06
+12362t | Whack-a-mole | http://www.simovits.com/trojans/tr_data/y1444.html | 2001-06-06
+12363t | Whack-a-mole | http://www.simovits.com/trojans/tr_data/y1444.html | 2001-06-06
+12623u | DUN Control | http://www.simovits.com/trojans/tr_data/y382.html | 2001-06-06
+12624t | ButtMan | http://www.simovits.com/trojans/tr_data/y219.html | 2001-06-06
+12631t | Whack Job | http://www.simovits.com/trojans/tr_data/y1443.html | 2001-06-06
+12754t | Mstream | http://www.simovits.com/trojans/tr_data/y838.html | 2001-06-06
+13000t | Senna Spy Trojan Generator | http://www.simovits.com/trojans/tr_data/y1163.html | 2001-06-06
+13010t | Hacker Brasil - HBR | http://www.simovits.com/trojans/tr_data/y562.html | 2001-06-06
+13013t | PsychWard | http://www.simovits.com/trojans/tr_data/y1037.html | 2001-06-06
+13014t | PsychWard | http://www.simovits.com/trojans/tr_data/y1037.html | 2001-06-06
+13223t | Hack´99 KeyLogger | http://www.simovits.com/trojans/tr_data/y556.html | 2001-06-06
+13473t | Chupacabra | http://www.simovits.com/trojans/tr_data/y258.html | 2001-06-06
+14500t | PC Invader | http://www.simovits.com/trojans/tr_data/y976.html | 2001-06-06
+14501t | PC Invader | http://www.simovits.com/trojans/tr_data/y976.html | 2001-06-06
+14502t | PC Invader | http://www.simovits.com/trojans/tr_data/y976.html | 2001-06-06
+14503t | PC Invader | http://www.simovits.com/trojans/tr_data/y976.html | 2001-06-06
+15000t | NetDemon | http://www.simovits.com/trojans/tr_data/y886.html | 2001-06-06
+15092t | Host Control | http://www.simovits.com/trojans/tr_data/y596.html | 2001-06-06
+15104t | Mstream | http://www.simovits.com/trojans/tr_data/y838.html | 2001-06-06
+15382t | SubZero | http://www.simovits.com/trojans/tr_data/y1274.html | 2001-06-06
+15858t | CDK | http://www.simovits.com/trojans/tr_data/y241.html | 2001-06-06
+16484t | Mosucker | http://www.simovits.com/trojans/tr_data/y823.html | 2001-06-06
+16660t | Stacheldraht | http://www.simovits.com/trojans/tr_data/y1243.html | 2001-06-06
+16772t | ICQ Revenge | http://www.simovits.com/trojans/tr_data/y618.html | 2001-06-06
+16959t | SubSeven | http://www.simovits.com/trojans/tr_data/y1264.html | 2001-06-06
+16969t | Priority | http://www.simovits.com/trojans/tr_data/y1024.html | 2001-06-06
+17007u | isode-dua |  | 
+17166t | Mosaic | http://www.simovits.com/trojans/tr_data/y821.html | 2001-06-06
+17300t | Kuang2 the virus | http://www.simovits.com/trojans/tr_data/y715.html | 2001-06-06
+17449t | Kid Terror | http://www.simovits.com/trojans/tr_data/y696.html | 2001-06-06
+17499t | CrazzyNet | http://www.simovits.com/trojans/tr_data/y288.html | 2001-06-06
+17500t | CrazzyNet | http://www.simovits.com/trojans/tr_data/y288.html | 2001-06-06
+17569t | Infector | http://www.simovits.com/trojans/tr_data/y641.html | 2001-06-06
+17593t | Audiodoor | http://www.simovits.com/trojans/tr_data/y107.html | 2001-06-06
+17777t | Nephron | http://www.simovits.com/trojans/tr_data/y868.html | 2001-06-06
+18000u | biimenu - Beckman Instruments, Inc. |  | 
+18753u | Shaft | http://www.simovits.com/trojans/tr_data/y1176.html | 2001-06-06
+19864t | ICQ Revenge | http://www.simovits.com/trojans/tr_data/y618.html | 2001-06-06
+20000t | Millenium | http://www.simovits.com/trojans/tr_data/y798.html | 2001-06-06
+20001t | Millenium | http://www.simovits.com/trojans/tr_data/y798.html | 2001-06-06
+20002t | AcidkoR | http://www.simovits.com/trojans/tr_data/y33.html | 2001-06-06
+20005t | Mosucker | http://www.simovits.com/trojans/tr_data/y823.html | 2001-06-06
+20023t | VP Killer | http://www.simovits.com/trojans/tr_data/y1512.html | 2001-06-06
+20034t | NetBus 2 Pro | | 2000-05-30
+20203t | Chupacabra | http://www.simovits.com/trojans/tr_data/y258.html | 2001-06-06
+20331t | BLA trojan | http://www.simovits.com/trojans/tr_data/y159.html | 2001-06-06
+20432t | Shaft | http://www.simovits.com/trojans/tr_data/y1176.html | 2001-06-06
+20433u | Shaft | http://www.simovits.com/trojans/tr_data/y1176.html | 2001-06-06
+21544t | GirlFriend | http://www.simovits.com/trojans/tr_data/y527.html | 2001-06-06
+21554t | Exploiter | http://www.simovits.com/trojans/tr_data/y426.html | 2001-06-06
+22222t | Donald Dick | http://www.simovits.com/trojans/tr_data/y358.html | 2001-06-06
+22273t | wnn6 - Wnn6 (Japanese input) |  | 
+22289t | wnn6_Cn - Wnn6 (Chinese input) |  | 
+22305t | wnn6_Kr - Wnn6 (Korean input) |  | 
+22321t | wnn6_Tw - Wnn6 (Taiwanse input) |  | 
+23005t | NetTrash | http://www.simovits.com/trojans/tr_data/y903.html | 2001-06-06
+23006t | NetTrash | http://www.simovits.com/trojans/tr_data/y903.html | 2001-06-06
+23023t | Logged | http://www.simovits.com/trojans/tr_data/y742.html | 2001-06-06
+23032t | Amanda | http://www.simovits.com/trojans/tr_data/y55.html | 2001-06-06
+23432t | Asylum | http://www.simovits.com/trojans/tr_data/y101.html | 2001-06-06
+23456t | Evil FTP | http://www.simovits.com/trojans/tr_data/y415.html | 2001-06-06
+23476u | Donald Dick | http://www.simovits.com/trojans/tr_data/y358.html | 2001-06-06
+23477t | Donald Dick | http://www.simovits.com/trojans/tr_data/y358.html | 2001-06-06
+23777t | InetSpy | http://www.simovits.com/trojans/tr_data/y640.html | 2001-06-06
+24000t | Infector | http://www.simovits.com/trojans/tr_data/y641.html | 2001-06-06
+25685t | Moonpie | http://www.simovits.com/trojans/tr_data/y818.html | 2001-06-06
+25686t | Moonpie | http://www.simovits.com/trojans/tr_data/y818.html | 2001-06-06
+25982t | Moonpie | http://www.simovits.com/trojans/tr_data/y818.html | 2001-06-06
+26208t | wnn6_DS - Wnn6 (Dserver) |  | 
+26274u | Delta Source | http://www.simovits.com/trojans/tr_data/y326.html | 2001-06-06
+26681t | Voice Spy | http://www.simovits.com/trojans/tr_data/y1505.html | 2001-06-06
+27016u | Half-Life |  | 
+27374t | Bad Blood | http://www.simovits.com/trojans/tr_data/y134.html | 2001-06-06
+27444u | Trinoo Master->Daemon | http://staff.washington.edu/dittrich/misc/trinoo.analysis | 2000-05-30
+27573t | SubSeven | http://www.simovits.com/trojans/tr_data/y1264.html | 2001-06-06
+27665t | Trinoo ->Master | http://staff.washington.edu/dittrich/misc/trinoo.analysis | 2000-05-30
+28678t | Exploiter | http://www.simovits.com/trojans/tr_data/y426.html | 2001-06-06
+29104t | NetTrojan | http://www.simovits.com/trojans/tr_data/y904.html | 2001-06-06
+29369t | ovasOn | http://www.simovits.com/trojans/tr_data/y959.html | 2001-06-06
+29891t | The Unexplained | http://www.simovits.com/trojans/tr_data/y1341.html | 2001-06-06
+30000t | Infector | http://www.simovits.com/trojans/tr_data/y641.html | 2001-06-06
+30001t | ErrOr32 | http://www.simovits.com/trojans/tr_data/y412.html | 2001-06-06
+30003t | Lamers Death | http://www.simovits.com/trojans/tr_data/y718.html | 2001-06-06
+30029t | AOL trojan | http://www.simovits.com/trojans/tr_data/y72.html | 2001-06-06
+30100t | NetSphere | | 2000-05-30
+30101t | NetSphere | | 2000-05-30
+30102t | NetSphere | | 2000-05-30
+30103u | NetSphere | http://www.simovits.com/trojans/tr_data/y898.html | 2001-06-06
+30133t | NetSphere | http://www.simovits.com/trojans/tr_data/y898.html | 2001-06-06
+30303t | Sockets des Troie | http://www.simovits.com/trojans/tr_data/y1210.html | 2001-06-06
+30947t | Intruse | http://www.simovits.com/trojans/tr_data/y653.html | 2001-06-06
+30999t | Kuang2 | http://www.simovits.com/trojans/tr_data/y712.html | 2001-06-06
+31335u | Trinoo Daemon->Master | http://staff.washington.edu/dittrich/misc/trinoo.analysis | 2000-05-30
+31336t | Bo Whack | | 2000-05-30
+31337t | BO client, BO2, Bo Facil | | 2000-05-30
+31338u | Back Orifice, DeepBO | | 2000-05-30
+31339t | NetSpy  (DK) | http://www.simovits.com/trojans/tr_data/y901.html | 2001-06-06
+31666t | BOWhack | | 2000-05-30
+31785t | Hack´a´Tack | http://www.simovits.com/trojans/tr_data/y557.html | 2001-06-06
+31787t | Hack´a´Tack | http://www.simovits.com/trojans/tr_data/y557.html | 2001-06-06
+31788t | Hack´a´Tack | http://www.simovits.com/trojans/tr_data/y557.html | 2001-06-06
+31789u | Hack´a´Tack | http://www.simovits.com/trojans/tr_data/y557.html | 2001-06-06
+31790t | Hack´a´Tack | http://www.simovits.com/trojans/tr_data/y557.html | 2001-06-06
+31791u | Hack´a´Tack | http://www.simovits.com/trojans/tr_data/y557.html | 2001-06-06
+31792t | Hack´a´Tack | http://www.simovits.com/trojans/tr_data/y557.html | 2001-06-06
+32001t | Donald Dick | http://www.simovits.com/trojans/tr_data/y358.html | 2001-06-06
+32100t | Peanut Brittle | http://www.simovits.com/trojans/tr_data/y980.html | 2001-06-06
+32418t | Acid Battery | http://www.simovits.com/trojans/tr_data/y27.html | 2001-06-06
+33270t | Trinity | http://www.simovits.com/trojans/tr_data/y1376.html | 2001-06-06
+33333t | Blakharaz | http://www.simovits.com/trojans/tr_data/y163.html | 2001-06-06
+33577t | Son of PsychWard | http://www.simovits.com/trojans/tr_data/y1216.html | 2001-06-06
+33777t | Son of PsychWard | http://www.simovits.com/trojans/tr_data/y1216.html | 2001-06-06
+33911t | Spirit 2000,  Spirit 2001 | http://www.simovits.com/trojans/tr_data/y1232.html | 2001-06-06
+34324t | Big Gluck | http://www.simovits.com/trojans/tr_data/y154.html | 2001-06-06
+34444t | Donald Dick | http://www.simovits.com/trojans/tr_data/y358.html | 2001-06-06
+34555u | Trinoo (for Windows) | http://www.simovits.com/trojans/tr_data/y1378.html | 2001-06-06
+35555u | Trinoo (for Windows) | http://www.simovits.com/trojans/tr_data/y1378.html | 2001-06-06
+37237t | Mantis | http://www.simovits.com/trojans/tr_data/y770.html | 2001-06-06
+37651t | Yet Another Trojan - YAT | http://www.simovits.com/trojans/tr_data/y1534.html | 2001-06-06
+40412t | The Spy | http://www.simovits.com/trojans/tr_data/y1336.html | 2001-06-06
+40421t | Agent 40421 | http://www.simovits.com/trojans/tr_data/y46.html | 2001-06-06
+40422t | Masters Paradise | http://www.simovits.com/trojans/tr_data/y776.html | 2001-06-06
+40423t | Masters Paradise | http://www.simovits.com/trojans/tr_data/y776.html | 2001-06-06
+40425t | Masters Paradise | http://www.simovits.com/trojans/tr_data/y776.html | 2001-06-06
+40426t | Masters Paradise | http://www.simovits.com/trojans/tr_data/y776.html | 2001-06-06
+41337t | Storm | http://www.simovits.com/trojans/tr_data/y1254.html | 2001-06-06
+41666t | Remote Boot Tool - RBT | http://www.simovits.com/trojans/tr_data/y1089.html | 2001-06-06
+44444t | Prosiak | http://www.simovits.com/trojans/tr_data/y1033.html | 2001-06-06
+44575t | Exploiter | http://www.simovits.com/trojans/tr_data/y426.html | 2001-06-06
+47262u | Delta Source | http://www.simovits.com/trojans/tr_data/y326.html | 2001-06-06
+47557u | dbbrowse - Databeam Corporation |  | 
+49301t | OnLine KeyLogger | http://www.simovits.com/trojans/tr_data/y950.html | 2001-06-06
+50130t | Enterprise | http://www.simovits.com/trojans/tr_data/y408.html | 2001-06-06
+50505t | Sockets des Troie | http://www.simovits.com/trojans/tr_data/y1210.html | 2001-06-06
+50766t | Fore | http://www.simovits.com/trojans/tr_data/y480.html | 2001-06-06
+51966t | Cafeini | http://www.simovits.com/trojans/tr_data/y224.html | 2001-06-06
+52317t | Acid Battery 2000 | http://www.simovits.com/trojans/tr_data/y28.html | 2001-06-06
+53001t | Remote Windows Shutdown | | 2000-05-30
+54283t | SubSeven | http://www.simovits.com/trojans/tr_data/y1264.html | 2001-06-06
+54320t | Back Orifice 2000 | | 2000-05-30
+54321u | Back Orifice 2000t | | 2000-05-30
+55165t | File Manager trojan | http://www.simovits.com/trojans/tr_data/y454.html | 2001-06-06
+55166t | WM Trojan Generator | http://www.simovits.com/trojans/tr_data/y1500.html | 2001-06-06
+57341t | NetRaider | http://www.simovits.com/trojans/tr_data/y893.html | 2001-06-06
+58339t | Butt Funnel | http://www.simovits.com/trojans/tr_data/y218.html | 2001-06-06
+60000t | Deep Throat | | 2000-05-30
+60001t | Trinity | http://www.simovits.com/trojans/tr_data/y1376.html | 2001-06-06
+60068t | Xzip 6000068 | http://www.simovits.com/trojans/tr_data/y1528.html | 2001-06-06
+60411t | Connection | http://www.simovits.com/trojans/tr_data/y274.html | 2001-06-06
+61348t | Bunker-Hill | http://www.simovits.com/trojans/tr_data/y211.html | 2001-06-06
+61466t | TeleCommando | http://www.simovits.com/trojans/tr_data/y1307.html | 2001-06-06
+61603t | Bunker-Hill | http://www.simovits.com/trojans/tr_data/y211.html | 2001-06-06
+63485t | Bunker-Hill | http://www.simovits.com/trojans/tr_data/y211.html | 2001-06-06
+64101t | Taskman | http://www.simovits.com/trojans/tr_data/y1302.html | 2001-06-06
+65000t | Devil | http://www.simovits.com/trojans/tr_data/y334.html | 2001-06-06
+65390t | Eclypse | http://www.simovits.com/trojans/tr_data/y393.html | 2001-06-06
+65421t | Jade | http://www.simovits.com/trojans/tr_data/y665.html | 2001-06-06
+65432u | The Traitor  (= th3tr41t0r) | http://www.simovits.com/trojans/tr_data/y1340.html | 2001-06-06
+65534t | /sbin/initd | http://www.simovits.com/trojans/tr_data/y1135.html | 2001-06-06
+65535t | RC1 trojan | http://www.simovits.com/trojans/tr_data/y1073.html | 2001-06-06
+0i | ICMP: Echo reply | |
+768i | ICMP: Network unreachable | |
+769i | ICMP: Host unreachable | |
+770i | ICMP: Protocol unreachable | |
+771i | ICMP: Port unreachable | |
+772i | ICMP: Fragmentation needed but don't-fragment bit set | |
+773i | ICMP: Source route failed | |
+774i | ICMP: Destination network Unknown | |
+775i | ICMP: Destination host Unknown | |
+776i | ICMP: Source host isolated (obsolete) | |
+777i | ICMP: Destination network administratively prohibited | |
+778i | ICMP: Destination host administratively prohibited | |
+779i | ICMP: Network Unreachable for TOS | |
+780i | ICMP: Host unreachable for TOS | |
+781i | ICMP: Communication administratively prohited by filtering | |
+782i | ICMP: Host precedence Violation | |
+783i | ICMP: Precedence cutoff in effect | |
+1024i | ICMP: Source quench | |
+1280i | ICMP: Redirect for network | |
+1281i | ICMP: Redirect for host | |
+1282i | ICMP: Redirect for type-of-service and network | |
+1283i | ICMP: Redirect for type-of-service and host | |
+2048i | ICMP: Echo request | |
+2304i | ICMP: Router advertisement | |
+2560i | ICMP: Router solicitation | |
+2816i | ICMP: Time-to-live equals 0 during transit | |
+2817i | ICMP: Time-to-live equals 0 during reassembly | |
+3072i | ICMP: IP header bad | |
+3073i | ICMP: Required option missing | |
+3328i | ICMP: Time stamp request | |
+3584i | ICMP: Time stamp reply | |
+3840i | ICMP: Information request (obsolete) | |
+4096i | ICMP: Information reply (obsolete) | |
+4352i | ICMP: Address mask request | |
+4608i | ICMP: Address mask reply | |

@@ -1,0 +1,5 @@
+0,30 * * * * cron/cron30min
+15 0 * * *   cron/crondaily
+15 1 * * *   cron/cronclean
+45 1 * * 0   cron/cronweekly
+45 2 1 * *   cron/cronmonthly

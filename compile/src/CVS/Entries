@@ -1,0 +1,15 @@
+/Makefile.in/1.4/Sat May 31 18:39:35 2003//
+/calcbytes.c/1.2/Tue Sep 30 03:53:09 2003//
+/hash.c/1.2/Tue Sep 30 03:53:09 2003//
+/hash.h/1.1/Fri Feb 21 01:14:14 2003//
+/ipaudit.c/1.13/Sun Oct 19 18:41:58 2003//
+/ipaudit.conf.sample/1.1/Fri Feb 21 01:14:14 2003//
+/ipaudit.h/1.2/Mon Nov  3 11:06:23 2003//
+/ipdbase.c/1.5/Sat Nov  8 05:28:23 2003//
+/ipdbase.h/1.1/Sat May 31 16:03:44 2003//
+/ipstrings.c/1.3/Wed Oct  8 03:00:37 2003//
+/lookforzero.c/1.2/Tue Sep 30 03:53:09 2003//
+/makelocal.c/1.4/Wed Oct  8 02:31:04 2003//
+/pdate.c/1.4/Wed Dec 10 05:23:30 2003//
+/total.c/1.3/Tue Sep 30 03:53:09 2003//
+D

@@ -1,0 +1,22 @@
+#!/usr/bin/perl
+
+#  igf -c5 <file>
+#
+#  Insert blank line before lines containing
+#  a value in column <col> that differs from 
+#  value in previous line.
+#
+
+use Getopt::Std;
+
+getopts ("c:");
+
+$opt_c = 0 unless defined $opt_c;
+$opt_c--;
+
+while (<>) {
+@F=split;
+print "\n" if $a ne $F[$opt_c]; 
+print; 
+$a=$F[$opt_c];
+}

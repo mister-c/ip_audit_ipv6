@@ -1,0 +1,108 @@
+#!/usr/bin/perl
+
+use POSIX;
+
+#  Get path name of gnuplot executable from environment
+$GNUPLOT= defined $ENV{GNUPLOT} ? $ENV{GNUPLOT} : "gnuplot";
+
+die "Need arguments\n" unless @ARGV>=3;
+
+($LOG_NAME, $PLOT_NAME, $DATE, $YMAX, $PLOT_TITLE) = @ARGV;
+
+#
+#  Make Plot
+#
+$PLOT_NAME=~s/\.png$//;
+&MakePlot("$PLOT_NAME.png");
+&MakePlot("$PLOT_NAME-large.png","set size 1,0.6");
+
+
+
+#
+#  Plot previous week  values from log usin Gnuplot
+#
+sub MakePlot {
+	my ($plot_name, $size_option) = @_;
+	#  Determine min and max date/time (use 1 week interval)
+	($LastDate, undef) = 
+		($DATE=~ /(\d{4}-\d\d-\d\d)-*(\d\d:\d\d)*/);
+	$MaxDateTime = &date ($LastDate,   "1d");
+	$MinDateTime = &date ($LastDate, "-13d");
+	$UpdateDateTime = &date();
+
+        #  Default size option
+        $size_option = "set size 1.0, 0.3125"  if  $size_option eq "";
+
+	#  Number of seconds in day (needed for Gnuplot 'set xtics'
+	$Sec = 60*60*24;
+
+	open (GNUPLOT, "| $GNUPLOT") || die "Cannot run GNUPLOT\n";
+
+	#  Make GNUPLOT print immediately
+	select (GNUPLOT);
+	$| = 1;
+	$yrange_statement = "set yrange [0:$YMAX]" if $YMAX;
+
+print GNUPLOT <<"EOM";
+set xdata time
+set timefmt "%Y-%m-%d-%H:%M"
+set format x "%m-%d"
+set key left
+set xrange [ \"$MinDateTime\" : \"$MaxDateTime\" ]
+$yrange_statement
+set xtics  $Sec
+set ytics
+set mxtics 1
+set grid xtics
+set title "$PLOT_TITLE (updated $UpdateDateTime)"
+set xlabel "Date"
+set ylabel "Host Count"
+$size_option
+set term png small color
+set output \"$plot_name\"
+plot \\
+ "< tail -1000 $LOG_NAME" u 1:(\$2) t "Send-Only" w i lt 3, \\
+ "< tail -1000 $LOG_NAME" u 1:(\$3) t "Send+Recv" w i lt 8, \\
+ "< tail -1000 $LOG_NAME" u 1:(\$2-\$4) t "Recv-Only" w i lt 16
+quit
+EOM
+
+}
+
+
+# Local date command  &date(format,date,incr)
+#
+#  date   in format  yyyy-mm-dd ("" -> current date/time)
+#  incr   seconds, minutes, hours or days to add/sub from date/time
+#  rond   seconds, minutes, hours or days to round-off date/time
+#
+sub date {
+   my ($date,$incr,$round) = @_;
+   my ($time);
+   %factor = ('s'=>1, 'm'=>60, 'h'=>3600, 'd'=>24*3600);
+
+
+   if ($date=~/^(\d{4})-(\d{1,2})-(\d{1,2})-(\d{1,2}):(\d{1,2})/) {
+      #  mktime() needs -1 in isdst (is daylight saving time)
+      #  so it doesn't try to adjust time
+      $time = mktime (0,$5,$4,$3,$2-1,$1-1900,0,0,-1);
+   } elsif ($date=~/^(\d{4})-(\d{1,2})-(\d{1,2})$/) {
+      $time = mktime (0,0,0,$3,$2-1,$1-1900);
+   } else {
+      $time = time;
+   }
+   #  Increment time
+   ($value,$unit) = ($incr=~/^([+0-9-]+)(\D.*)$/);
+   $unit   = lc $unit;
+   $value *= $factor{$unit};
+   $time  += $value;
+   #  Round time
+   ($value,$unit) = ($round=~/^([+0-9-]+)(\D.*)$/);
+   if ($value>0) {
+      $unit   = lc $unit;
+      $value *= $factor{$unit};
+      $time  -= $time % $value;
+   }
+   # return
+   return strftime "%Y-%m-%d-%H:%M", localtime($time);
+}

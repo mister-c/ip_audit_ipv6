@@ -1,0 +1,294 @@
+CONTENTS
+========
+   What is this?
+   Requirements
+   Basic Installation
+   Optional Installation
+   Running
+   Configuring Your Web Server to us CGI-Scripts
+   Configuring the Apache Web Server to use Suexec
+   Security - Securing cgi-scripts with passwords using Apache
+   Recommendations
+   Documentation
+   Portability
+
+
+
+WHAT IS THIS?
+=============
+This is ipaudit-web, a package of C programs and perl scripts
+that summarize traffic seen on one or more network interfaces,
+keeps extensive logs on said traffic, and produces web accessible
+reports at intervals of 30 minutes, daily, weekly and monthly.
+
+
+
+REQUIREMENTS
+============
+ -  Unix (system developed under Linux).
+ -  C compiler
+ -  Pcap library installed to read your network traffic. 
+ -  Perl to enable the scripts to run.
+ -  Web server to view reports online (without web server you can always
+        view data files via the shell). 
+ -  Web and cgi access to directories ~ipaudit/public_html/ and
+       ~ipaudit/public_html/cgi-bin/.
+ -  Gnuplot installed to draw web accessible graphs
+ -  OPTIONAL: Perl module Time::ParseDate for the cgi-scripts
+       SearchIpauditData to work (can omit if necessary)
+
+
+
+BASIC INSTALLATION
+==================
+
+(1) Create ipaudit user
+
+
+(2) If using a tar file, unpack it
+
+        > tar xzf ipaudit-web-*.tgz
+
+    OR if using CVS, download it with
+
+        > ADDR=pserver:anonymous@cvs.ipaudit.sourceforge.net:/cvsroot/ipaudit
+        > cvs -d:$ADDR login 
+        > cvs -d:$ADDR co ipaudit-web
+
+       When you're prompted for
+           CVS password: _ 
+       just hit enter.
+
+
+(3) Change to  compile/  directory.
+
+        > cd ipaudit-web/compile
+
+
+(4) Run ./configure and make
+
+    (Type ./configure --help for various configuration options)
+
+        > ./configure
+        > make
+
+
+(5) Log in as root
+
+        > su
+        > make install
+        > make install-cron
+        > exit   (to leave root)
+
+ 
+(6) IMPORTANT! Set your network in ipaudit-web.conf 
+
+        edit the line in the file ipaudit-web.conf 
+
+           LOCALRANGE=127.0.0
+
+        to correspond to your network. See the comments in ipaudit-web.conf
+        file or type 
+
+           man -M ~ipaudit/man ipaudit 
+
+        for more info. 
+
+
+(7)  You're Done!  (but see next optional step)
+
+     You're done now - at this point you should have a working installation.
+     Assuming your web server is operational you can point your web browser at
+     
+        http://(your-address)/~ipaudit/
+     
+     to view collected data. It will take between 30 and 60 minutes for ipaudit
+     to display live data. 
+
+
+
+OPTIONAL INSTALLATION
+=====================
+
+(1) The web script SearchIpauditData can use an optional Perl module that
+    allows flexible date entry.  You can install the module from the URL
+
+         http://theoryx5.uwinnipeg.ca/scripts/CPAN/authors/id/M/MU/MUIR/
+             modules/Time-modules-101.062101.tar.gz
+
+    An alternative method of downloading and installing this module is
+    to use CPAN on the command line by typing:
+
+         perl -e shell -MCPAN
+
+    If this is the first time you have used this command, you will be
+    prompted with configuration questions before you can begin. When the
+    "cpan> " prompt appears, you're ready to go. Just type:
+
+         install Time::ParseDate
+
+    This will begin the downloading, compiling, and installation of
+    Time::ParseDate.
+
+
+(2) Moving CGI scripts
+
+    If you want to place the ipauit-web CGI scripts in a directory
+    different from /home/ipaudit/public_html/, you may find it
+    convenient to add this line to your Apache configuraiton file,
+
+       Alias /~ipaudit/ /<your-new-cgi-directory/
+
+    This way Apache will redirect links which point to /~ipaudit/... 
+    to their actual location.
+
+
+
+RUNNING
+=======
+Once installed, ipaudit-web runs as a cron job.  Within 30 minutes to
+one hour after installation the first network report will be produced
+and should be accessible via your web server.  Typically you can point
+your web browser to <your-machine>/~ipaudit, but this is configurable.
+
+
+
+CONFIGURING YOUR WEB SERVER TO USE CGI-SCRIPTS
+==============================================
+Depending upon your installation, you may need to configure your Web
+Server to allow access to the ipaudit home page and to enable execution
+of the CGI scripts.  As an example, here are the relevant lines from the
+file 
+
+   /etc/httpd/conf/httpd.conf
+   /etc/httpd/conf/commonhttpd.conf
+
+as shipped with Red Hat (first line above) or Mandrake (second line above),
+
+   <Directory /home/*/public_html>
+      AllowOverride All
+      Options MultiViews Indexes Includes FollowSymLinks
+      Order allow,deny
+      Allow from all
+   </Directory>
+   
+   <Directory /home/*/public_html/cgi-bin>
+      Options +ExecCGI -Includes -Indexes
+      SetHandler cgi-script
+   </Directory>
+
+Your Apache web server should be similar.
+
+
+
+CONFIGURING THE APACHE WEB SERVER TO USE SUEXEC
+===============================================
+It's recommended (but not necessary) that Apache be set up to use
+"suexec."  Suexec provides a means to run executable scripts (such as
+CGI) under a different user than what the web server runs as. Redhat
+7.1, and Debian (woody) both install suexec as part of their package.
+Under Mandrake, it's in the "apache-suexec" RPM.  Several of the FreeBSD
+Apache ports also include suexec. However, the Apache13-modssl port
+doesn't seem to have an easily established method of enabling it, so
+adding:
+
+CONFIGURE_ARGS+= --enable-suexec \
+                 --suexec-caller=nobody \
+                 --suexec-docroot=${PREFIX}/www/data \
+                 --suexec-logfile=/var/log/httpd-suexec.log \
+                 --suexec-userdir=public_html \
+                 --suexec-safepath='/bin:/usr/bin:${PREFIX}/bin'
+
+somewhere underneath the CONFIGURE= lines in the Makefile will take care
+of it.  Change the values accordingly - if your webserver doesn't run as
+"nobody," then change "nobody" to your webserver user, etc. Once Apache
+has been installed and started, the presense of
+
+[notice] suEXEC mechanism enabled (wrapper: /usr/local/sbin/suexec)
+
+in the server logs indicates that suexec is installed and ready. Place
+the following PERL script into the /home/ipaudit/public_html/cgi-bin
+directory, chmod 555, and run it.  If it reports back that you're
+running CGI as the ipaudit user, then all is working as it should:
+
+----- begin id.pl
+#!/usr/bin/perl -wT
+$ENV{PATH} = "/bin/:/usr/bin";
+$me = `id -nu`;
+print("Content-type: text/html\n\n");
+print("This process runs as $me\n");
+----- end id.pl
+
+Troubleshooting tips and instructions on how to compile suexec from
+source can be found at 
+
+   http://httpd.apache.org/docs-2.0/suexec.html.
+
+Be sure to take a look at your suexec.log file if problems (such as
+internal server errors) occur.
+
+
+
+SECURITY - SECURING CGI-SCRIPTS WITH PASSWORDS USING APACHE
+===========================================================
+
+If you want to restrict who can see your reports, you can use Apache's
+password system as follows.
+
+As ipaudit ..
+
+(1)  Create a file  public_html/cgi-bin/.htaccess with the following
+content:
+
+   AuthType Basic
+   AuthName IPAUDIT
+   AuthUserFile /home/httpd/passwd
+   require user   myself friend boss
+
+This tells Apache to only let users 'myself', 'myfriend' and 'myboss' to
+run the ipaudit-report scripts.  You can place the encrypted passwords
+for these users using the command
+
+   htpasswd -c passwd myself
+   htpasswd    passwd friend
+   htpasswd    passwd boss
+
+The htpasswd command (which comes with Apache) will prompt you for the
+users passwords and store the encrypted version in the file passwd.
+
+
+
+RECOMMENDATIONS
+===============
+If you save raw pcap data files (controlled by the PORT_LIST option in the
+ipaudit-web.conf file) you can use the following programs to read them
+
+  Supplied with ipaudit
+
+    ipaudit   - will resummarize data found in pcap file
+    ipstrings - will print text strings within packets
+
+  Other
+
+    tcpdump   - command-line program to for analyzing packets
+    ethereal  - GUI program for analyzing packets, available
+                from  http://www.ethereal.com.
+
+
+
+DOCUMENTATION
+=============
+Look at configuration file  ipaudit-web.conf for useful settings.  Also
+see ipaudit and ipaudit-web home pages, 
+
+   http://ipaudit.sf.net/
+   http://ipaudit.sf.net/ipaudit-web/
+
+
+
+PORTABILITY
+===========
+Ipaudit is known to compile and work under FreeBSD 4.2/4.3-RELEASE on
+Intel, as well as Solaris 8 on an ultra sparc 10 (using GNU tools). 
+If you're running Ipaudit successfully (or even unsuccessfully) on other
+versions or other OSes, drop me (jh at dok.org) a line and let me know.

@@ -1,0 +1,201 @@
+#!/usr/bin/perl
+
+use POSIX;
+
+#
+#  ReportLog <HTML_DIR> <LOG_NAME> <LABEL1[/LABEL2]> <COUNT> <PATTERN>
+#
+#     Extract information from files in <HTML_DIR> and store in 
+#  log file <LOG_NAME>.  Each file in <HTML_DIR> begins with
+#  date/time string of form yyyy-mm-dd-hh:mm (ex: 2001-08-17-12:30)
+#  which determines time of file data.  This program ReportLog
+#  scans files in chronological order and stores extracted numbers
+#  in log file - one line in the log file corresponds to data
+#  extracted from one HTML file.
+#  
+#     When called ReportLog scans the log file <LOG_NAME> for the
+#  last entry logged, and proceeds to search for entries with
+#  later data/times.
+#
+#     The arguments LABEL, COUNT and PATTERN determine which
+#  data is extracted from the HTML file.  They work as follows
+#    LABEL1  - tells program to ignore all input lines before line
+#              containing string LABEL1
+#    LABEL2  - tells program to ignore all input lines following
+#              line containing string LABEL2
+#    COUNT   - actually consists of three numbers, COUNT,SKIP0,SKIP
+#              separated by commas with _no_blanks_.  If SKIP0 and SKIP
+#              are omitted, they are taken to be zero.  COUNT is
+#              the number of values to record, SKIP0 is the number of
+#              values to skip before the first recorded value,
+#              SKIP is the number of values to skip between remaining
+#              recorded vlaues.
+#    PATTERN - perl regular expression which must match the value.
+#              (ex: />(\[0-9,\]+)</g  matches numbers and commas
+#              which appear between the characters > and <
+#
+
+die "Need arguments\n" unless @ARGV>=5;
+
+($HTML_DIR, $LOG_NAME, $LABEL, $COUNT, $PATTERN) = @ARGV;
+
+#  Final date to search log for, 30 minutes before last time on half-hour
+$LastDateTime = &date("",-30,30);
+
+
+#
+#  Find first and last date/time for updating log
+#
+#  Get last line from current output file
+$StartDateTime="";
+if ( open (LOG, $LOG_NAME) ) {
+	while (<LOG>) { $line = $_ if (! /^\s*#/ ); }
+	close (LOG);
+	($StartDateTime) = split (/ /, $line);
+}
+
+#  First date/time to use (two weeks previous if no previous entry)
+$StartDateTime = &date("",-60*24*14,30) if $StartDateTime eq "";
+
+#
+#  Update log
+#
+
+#  Loop from $FirstDateTime to $LastDateTime
+($CurDate,$CurTime) = ($StartDateTime=~/(\d{4}-\d\d-\d\d)-(\d\d:\d\d)/);
+$CurDateTime = $CurDate . "-" . $CurTime;
+
+
+#  Open log for appending
+open (LOG, ">> $LOG_NAME") || 
+	die "$0: Cannot open $LOG_NAME for appending";
+
+$limit = 0;
+while ( $CurDateTime ne $LastDateTime ) {
+
+	#  Increase current date/time by 30 min
+	$CurDateTime = &add30min ($CurDateTime);
+
+	#  Prevent runaway loop (this time stuff can easily go wrong)
+	last if ++$limit>1000;
+
+	#  Read Info from 30min HTML file
+	$FileName = "$HTML_DIR/$CurDateTime.html";
+	@f = &ReadFileInfo ($FileName,$LABEL,$COUNT,$PATTERN);
+	print LOG $CurDateTime, " ", join(" ",@f), "\n"  
+		if defined(@f) && $f[0] ne "";
+}
+
+close (LOG);
+
+exit;
+
+
+
+#
+#  Read file, search for $LABEL, and then return next
+#    $COUNT strings which match $PATTERN
+#
+sub ReadFileInfo {
+	my ($FileName,$LABEL,$COUNT,$PATTERN) = @_;
+	my (@f) = ();
+	my (@t,$LABEL1,$LABEL2);
+
+	#  Split $COUNT in to components
+	#  SKIP0 - number of values to skip before first value read
+	#  SKIP  - number of values to skip before second, third, ...
+	#  NFIELD - total number of fields needed to read 
+	($COUNT,$SKIP0,$SKIP) = split(/,/,$COUNT);
+	$NFIELD = $COUNT + $SKIP0 + ($COUNT-1)*$SKIP;
+	($LABEL1,$LABEL2) = split(/\//,$LABEL);
+
+	#  Cannot open file, return blank fields
+	open (HTML, $FileName) or 
+		return @f;
+
+	#  Find LocalHosts line
+	my ($label_found) = 0;
+	while (<HTML>) {
+		#  Stop reading file of LABEL2 found
+		last if $LABEL2 && /$LABEL2/;
+		#  Start collecting values if LABEL1 found
+		unless ($label_found) {
+			$label_found = /$LABEL1/;
+			next unless $label_found;
+		}
+		eval ("push \@f, $PATTERN");
+		last if @f >= $NFIELD;
+	}
+	close (HTML);
+
+	#  Keep only $COUNT elements
+	$j=0;
+	for ($i=$SKIP0;$i<=$NFIELD;$i+=$SKIP+1) {
+		$f[$j++] = $f[$i];
+	}
+	@f = @f[0..$COUNT-1];
+
+	#  Remove comma's from numbers
+	for (@f) { s/,//g; }
+	return @f;
+}
+
+
+
+# Local date command  &date(format,date,incr)
+#
+#  date   in format  yyyy-mm-dd
+#  incr   minutes to add/sub from date
+#  round  round of date/time to ? minutes
+#
+sub date {
+   my ($date,$incr,$round) = @_;
+   my ($time);
+
+   if ($date=~/^(\d{4})-(\d{1,2})-(\d{1,2})-(\d{1,2}):(\d{1,2})/) {
+      #  TROUBLE-TROUBLE
+      #  The 9th argument to mktime is the isdst (is daylight savings time)
+      #  flag.  When it is -1 mktime() returns unworkable time when
+      #  daylight time changes to standard time.  0 seems to work ok.
+      #  It remains to be seen how this behaves when the change reverses,
+      #  that is when standard time changes to daylight time.  May have
+      #  to change to another value.  This stinks (solution: see add30min()
+      #  below).
+      $time = mktime (0,$5,$4,$3,$2-1,$1-1900,0,0,0);
+   } elsif ($date=~/^(\d{4})-(\d{1,2})-(\d{1,2})$/) {
+      $time = mktime (0,0,0,$3,$2-1,$1-1900);
+   } else {
+      $time = time;
+   }
+   $time += $incr * 60;
+   $time -= $time % (60*$round) if $round>0;
+   return strftime "%Y-%m-%d-%H:%M", localtime($time);
+}
+
+
+
+#  Add 30min to date, rounds down to 30 minutes 
+#    - this implementation avoids trouble with Daylight<->Standard time conversions.
+#  2002-04-11 - Still needed work ... JR
+sub add30min {
+	my ($curdate) = @_;
+	my ($year,$month,$day,$hour,$min,$minofday,$newdate);
+	($year,$month,$day,$hour,$min) = 
+		$curdate=~/^(\d{4})-(\d{1,2})-(\d{1,2})-(\d{1,2}):(\d{1,2})/;
+	$min -= $min%30;
+	$minofday = $hour*60+$min;
+	#  Date doesn't change, just change time
+	if ( $minofday < 60*24-30 ) {
+		$minofday += 30;
+		$hour      = $minofday / 60;
+		$min       = $minofday % 60;
+		return sprintf "%04d-%02d-%02d-%02d:%02d", 
+			$year, $month,$day,$hour,$min;
+	#  Date change, use system date routine to get date,
+	#  but DON'T trust the time (Daylight Savings Bug?)
+	} else {
+		$newdate = &date($curdate,30);
+		$newdate=~s/-\d\d:\d\d/-00:00/;
+		return $newdate;
+	}
+}

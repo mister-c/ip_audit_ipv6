@@ -1,0 +1,1044 @@
+.TH ipaudit 1 "Feb 12, 2003" "ipaudit 0.98"
+
+.SH NAME
+ipaudit \- IP traffic summarizer
+
+.SH SYNOPSIS
+.BI ipaudit  [options]  \fIINTERFACE\fR[:\fIINTERFACE\fR[: .. ] ]
+.sp
+
+.SH DESCRIPTION
+.B ipaudit 
+is an IP traffic monitor.  It listens to a network interface
+in promiscuous mode (or reads data previously dumped to a file)
+and tallies the total traffic for every "connection".  A connection
+is a combination of ip address pairs, protocol and for tcp/udp protocols,
+the ports numbers.  
+
+.SH OUTPUT 
+If hosts 105.33.41.107 telnets to
+211.117.5.11 this creates a single connection.  
+.B ipaudit
+will tally
+the total bytes of traffic and total packet count in each direction
+between the two hosts.  
+
+When 
+.B ipaudit 
+reports its findings, this
+telnet connection will be listed as
+
+105.033.041.107 211.117.005.011 6 1105 23 19934 2993 41 33
+
+The columns are 
+(1) host 1 ip 
+(2) host 2 ip, 
+(3) protocol, 
+(4) host 1 port, 
+(5) host 2 port, 
+(6) host 1 bytes received,
+(7) host 2 bytes received, 
+(8) host 1 packets received, 
+(9) host 2 packets received.
+
+For protocol other then tcp/udp where there are no ports, the port
+numbers are set to 0 in the output.  Note that the host ip
+octets are padded on the left with 0 to make 3 digits.  This
+help make the output more readable.
+
+As another example, if the first host now sends 10 ping
+packets to a non-existent host 105.33.41.188 then it will be
+reported as an output line
+
+105.033.041.107 105.033.041.188 1 0 0 0 680 0 10
+
+This says that address 105.33.41.188 received 680 bytes in
+10 packets of protocol 1 - even though there is no such
+address!
+
+The output is extended using the options.  The -t option adds
+the connection starting and ending times to each output line, 
+for example
+
+105.033.041.107 211.117.005.011 6 1105 23 19934 2993 41 33 \
+   14:01:32.0495 14:04:23.9491 2 1
+
+The -e option adds the Ethernet address for the two hosts to
+each output line,
+
+105.033.041.107 211.117.005.011 6 1105 23 19934 2993 41 33 \
+   005000c0fa45 005000d1cc21
+
+
+.SH COMMAND LINE OPTIONS
+
+.TP
+.B "-b"
+Write traffic list in binary format (experimental).
+
+.TP
+.B "-c \fInpacket\fR"
+Terminate program after reading \fInpacket\fR packets.
+
+.TP
+.B "-d"
+Turn on debugging output.
+
+.TP
+.B "-e"
+Write Ethernet addresses for each host.  Program stops with
+an error if you are using a non-Ethernet interface.
+
+.TP
+.B "-f"
+Filter incoming packets according to filter string.  For example,
+
+   ipaudit -f "host 137.99.17.17" eth0
+
+will pass the string "host 137.99.17.17" to the pcap library's 
+filter routine.  Thus ipaudit will only see packets with 137.99.17.17
+in one of the two ip addresses.  The filter commands are extensive and
+are explained fully in the 
+.B tcpdump
+man page.
+
+Note that if you are trying to observe vlan traffic with your filter,
+you will have to specify the 'vlan' filter before other filters.  In
+fact if all your traffic was vlan tagged, the command above would
+filter out all traffic, because the 'vlan' specifier was not included.
+To see vlan traffic the example above would need to change to
+
+   ipaudit -f "vlan and host 137.99.17.17" eth0
+
+Note that the -f command is different from the -p command.  The -f 
+command filters packets 
+.I before
+.B ipaudit
+reads them.  Thus -f affects what is stored in the normal
+output (directed by the -o command) AND in the packet dump
+(directed by the -w command).
+The -p command filter packets 
+.I after
+.B ipaudit
+reads them, but before it writes them to the dump file.  Thus
+the normal output (-o) is not affected, but the packet dump (-w)
+is.
+
+.TP
+.B "-g \fIconfig_file\fR"
+Reads configuration from \fIconfig_file\fR.  See CONFIGURATION FILE section below.
+
+.TP
+.B "-i \fIpidfile\fR"
+Save the program process id to \fIpidfile\fR.  This is used to terminate
+program execution when sampling time has expired.  Use command like
+
+.B "kill -2 `cat \fIpidfile\fR`"
+
+to signal
+.B ipaudit
+to stop.  Once 
+.B ipaudit 
+receives this signal, it will print a list
+of traffic that it has seen.
+
+.TP
+.B "-l \fIip-range[:ip-range[:ip-range[..]]]\fR"
+Normally, the two ip address within a line of output are printed
+in ip sorted order.
+But if you are monitoring a link between two networks, you
+might want the addresses of one (local) network to come first on an output
+line.  \fIip-range\fR is list of ip ranges that defines the local network.
+Any ip address in this range is considered local and is printed first
+on the output line.
+If neither or both ip address belongs to
+the group of \fIip-range\fR then they are printed in the default sorted order.
+
+There can be many ip-ranges separate by colons.  No spaces
+may appear in the argument.  Each ip-range can be either
+a single ip address such as 127.0.0.23 which indicates
+a range of one, 
+a partial ip address such as 127.0.5 which indicates a range from 127.0.5.0
+to 127.0.5.255, 
+a low and high ip address
+separate by a hypen (-),
+and
+a single ip address with 
+a slash (/) and either an integer between 0 and 32 (a
+"net address") or a network such as
+255.255.255.128 which indicates a network.
+
+If you run ipaudit with the debug option (-d)
+the program will print the entire list of ip ranges, so you can check
+their values.
+
+Here is a list of arguments to -l along with the corresponding
+range.
+
+   COMMAND: \fBipaudit -l 137.99.11\fR
+   RANGE:   137.99.11.0-137.99.11.255
+
+   COMMAND: \fBipaudit -l 137.99.11:127.0.5/23\fR
+   RANGE:   137.99.11.0-137.99.11.255,127.0.4.0-127.0.5.255
+
+   COMMAND: \fBipaudit -l 127.1.5.17-127.1.7.131\fR
+   RANGE:   127.1.5.17-127.1.7.131
+
+   COMMAND: \fBipaudit -l 10.10.10.0-10.10.10.127:10.10.10.129-10.10.10.255
+   RANGE:   from 10.10.10.0 to 10.10.10.255 but excluding 10.10.10.128
+
+
+The following example, 
+
+.B ipaudit -c 10000 -l 137.11 eth0
+
+will tally 10,000 packets and list the results on-screen, placing
+ip addresses beginning with 137.11 first on each output line.  
+Note that
+.B ipaudit
+pads the bytes with leading zeros, so that the output will actually
+start like
+
+137.011.nnn.nnn ...
+
+You can turn off this padding with the -S option.
+
+.TP
+.B "-m"
+Does not turn on promiscuous mode on interface.  By default promiscuous
+mode is enabled.  Note that interface may be in promiscuous mode for
+other reasons.
+
+.TP
+.B "-o \fIoutfile\fR"
+Writes traffic list to \fIoutfile\fR upon completion.  By default, 
+it writes traffic to stdout.  
+The file name \fIoutfile\fR can contain
+time format strings (see 'man strftime' for format options) that
+represent time at the start of ipaudit.
+
+.TP
+.B "-p \fIprot[,port..][:prot[,port..]..\fB"
+Only dump packets with specific protocols and ports.  For example,
+-p1:6:17 dumps only packets with protocols 1 (icmp), 6 (tcp) and
+17 (udp).   You can also break down udp and tcp packets by port
+numbers - for example -p1:6,21,23 will only dump icmp packets,
+ftp packets (protocol 6, port 21) and telnet packets 
+(protocol 6, port 23).
+
+.TP
+.B -q
+formats output as SQL statements which can be directly piped into any SQL type database. 
+It should work just fine for MySQL, Postgress and Oracle. Tested against MySQL
+currently. All that happens is that instead of a column display, output is
+formatted as INSERT statements that can be fed into a database as follows:
+
+   ipaudit -q eth0 | mysql -ppassword ipaudit
+
+or to save traffic info every 60 seconds
+
+   ipaudit -q -D60 eth0 | mysql -ppassword ipaudit
+
+This assumes that the table name is ipaudit and the database is also called ipaudit. The INSERT statements look as follows:
+
+   INSERT INTO ipaudit SET ip1='147.110.052.037',ip2='196.022.188.197',
+     protocol=6,ip1port=25,ip2port=1888,
+     ip1bytes=1514,ip2bytes=54,ip1pkts=1,ip2pkts=1;
+   INSERT INTO ipaudit SET ip1='147.110.052.037',ip2='196.023.147.049',
+     protocol=6,ip1port=25,ip2port=3477,
+     ip1bytes=4302,ip2bytes=66,ip1pkts=3,ip2pkts=1;
+
+The table structure for the database is as follows:
+
+
+   CREATE TABLE ipaudit (
+     ip1 varchar(15) DEFAULT '' NOT NULL,
+     ip2 varchar(15) DEFAULT '' NOT NULL,
+     protocol tinyint(3) unsigned DEFAULT '0' NOT NULL,
+     ip1port smallint(5) unsigned DEFAULT '0' NOT NULL,
+     ip2port smallint(5) unsigned DEFAULT '0' NOT NULL,
+     ip1bytes int(10) unsigned DEFAULT '0' NOT NULL,
+     ip2bytes int(10) unsigned DEFAULT '0' NOT NULL,
+     ip1pkts int(10) unsigned DEFAULT '0' NOT NULL,
+     ip2pkts int(10) unsigned DEFAULT '0' NOT NULL,
+     eth1 varchar(12) DEFAULT '' NOT NULL,
+     eth2 varchar(12) DEFAULT '' NOT NULL,
+     constart time DEFAULT '00:00:00' NOT NULL,
+     constartmsec smallint(5) unsigned DEFAULT '0' NOT NULL,
+     constop time DEFAULT '00:00:00' NOT NULL,
+     constopmsec smallint(5) unsigned DEFAULT '0' NOT NULL,
+     probename varchar(80) DEFAULT '' NOT NULL
+   );
+
+The above structure describes the full table required if all the options are
+enabled. In most cases, the start, stop, ethernet addresses and probename are
+not required as these have to be explicitly enabled via command line options.
+They can be dropped from the table for faster database inputs and queries if
+they are not required.
+
+Based on the info in the table all manner of computations can be done and
+graphs can be drawn.
+
+.TP
+.B "-r \fIdumpfile\fR"
+Reads network info from \fIdumpfile\fR instead of reading live from network.
+Such a dumpfile could have been produced by the programs
+.B "ipaudit",
+.B "tcpdump"
+or
+.B "ethereal"
+among others.
+You can read from standard input using '-' as the file name.
+
+.TP
+.B "-s \fInlen\fR"
+Save no more than first \fInlen\fR packet bytes.  Default is 96,
+minimum is 68.
+
+.TP
+.B "-t"
+Adds packets connection times to each line of traffic output.  The
+time are in the format HH:MM:SS.SSSS where HH, MM and SS are hours,
+minutes and seconds (to a precision of 1/10,000).  The first (second) 
+time is the time the first (last) packet in the connection was detected.
+This is followed by two integers between 1 and 2.  The first (second) integer
+is the source machine of the first packet (second) packet.  A 1 (2) means
+the first (second) ip address on the line was the source.
+
+.TP
+.B "-v" 
+Print version and exit.
+
+.TP
+.B "-w \fIdumpfile\fR"
+Writes first nlen bytes of every packet to \fIdumpfile\fR 
+(see -s option about nlen).
+Can later be read by
+.B "ipaudit",
+.B "tcpdump",
+.B "ethereal", etc.
+The -w option does not affect traffic analysis - it will still take place.
+By default this writes ALL of the packets to the file.  Use the -p
+option to write traffic for specific protocols and ports only.
+However the -p option does not affect normal output, all packets are
+still logged and stored.  Contrast this with the -f option.
+The option -w- will write packets to standard output where they
+can then be piped to another program which reads pcap packets.
+See EXAMPLES section below for an example of sending output from
+\fBipaudit\fR to \fBtcpdump\fR and also a second instance of \fBipaudit\fR.
+Use the -W option to limit the number of packets written to \fIdumpfile\fR,
+to avoid creating large files.
+
+The file name \fIdumpfile\fR can contain
+time format strings (see 'man strftime' for format options) that
+represent time at the start of ipaudit.  So for example the command
+
+   ipaudit -w %Y-%m-%d-%H:%M.raw eth0
+
+will save raw packets in the file 2003-02-10-22:44.raw if ipaudit
+starts at Feb 10, 2003 at 10:44 pm.
+
+
+.TP
+.B "-x \fIprogram\fR"
+After 
+.B ipaudit
+ends, either from receiving a signal or reaching its packet limit
+or time limit
+(-c or -E options), call \fIprogram\fR.  This option is intend for calling
+reports scripts which read 
+.B ipaudit
+output after completion.  You can send at most one argument to
+this program, for example
+
+.B ipaudit -c 10000 -x 'report traffic.out' -o traffic.out eth0
+
+runs
+.B ipaudit
+for 10,000 steps, places the output in the file traffic.out,
+and then calls the program 'report' with the argument 'traffic.out' 
+- telling 'report' where to find its input file.
+
+Note that to send an argument 'traffic.out' to 'report' we needed to 
+enclose both options together in a single pair of quotes.  Without
+the quotes -x would think that we were running 'report' without an
+option (and, the option traffic.out would be interpreted as the 
+network interface - not what you wanted at all).
+
+The program strings \fIprogram\fR can contain
+time format strings (see 'man strftime' for format options) that
+represent time at the start of ipaudit.
+
+.TP
+.B "-z \fI'config file option'\fR"
+You can use configuration file options (see CONFIGURATION FILE below)
+from the command line with the -z option.  For example, instead of 
+the '-t' option you can use the equivalanet configuration file option
+from the command line as follows
+
+.B ipaudit -z'writetime yes' eth0
+
+.TP
+.B "-A" file[,lim]
+Dump all packets to pcap format file "file".  Limit
+number of packets to "lim" (optional).
+
+.TP
+.B "-C"
+Print ICMP type and code information in port field of the sending
+IP address. 
+By default
+the port fields are set to zero for all ICMP (and all non-TCP and
+non-UDP traffic).  Note that ICMP type/code data is not like
+TCP/UDP port data, because each IP address in an IP connection
+has its own port address.  In the ICMP case, the type/code info
+applies to the entire 'connection', not to just the sender or
+receiver.  However, in 
+.B ipaudit
+output the type/code information is placed in the port field of
+the packet sender when the -C option is used.
+
+The type/code fields are each a byte, the port value is assigned
+is the corresponding two byte value.  The following table shows
+the standard values 
+(taken from \fITCP/IP Illustrated Vol 1\fR, W.R. Stevens)
+
+    0  Echo reply
+  768  Network unreachable
+  769  Host unreachable
+  770  Protocol unreachable
+  771  Port unreachable
+  772  Fragmentation needed but don't-fragment bit set
+  773  Source route failed
+  774  Destination network Unknown
+  775  Destination host Unknown
+  776  Source host isolated (obsolete)
+  777  Destination network administratively prohibited
+  778  Destination host administratively prohibited
+  779  Network Unreachable for TOS
+  780  Host unreachable for TOS
+  781  Communication administratively prohibited by filtering
+  782  Host precedence Violation
+  783  Precedence cutoff in effect
+ 1024  Source quench
+ 1280  Redirect for network
+ 1281  Redirect for host
+ 1282  Redirect for type-of-service and network
+ 1283  Redirect for type-of-service and host
+ 2048  Echo request
+ 2304  Router advertisement
+ 2560  Router solicitation
+ 2816  Time-to-live equals 0 during transit
+ 2817  Time-to-live equals 0 during reassembly
+ 3072  IP header bad
+ 3073  Required option missing
+ 3328  Time stamp request
+ 3584  Time stamp reply
+ 3840  Information request (obsolete)
+ 4096  Information reply (obsolete)
+ 4352  Address mask request
+ 4608  Address mask reply
+ 
+
+.TP
+.B "-D \fIdumpperiod\fR"
+Run in daemon mode.  Instructs ipaudit to perform network summary every
+\fIdumpperiod\fR seconds.  Ipaudit will spawn a new child process every
+\fIdumpperiod\fR seconds which will run for \fIdumpperiod\fR seconds before
+writing out data (as determined by the -w, -o and -x options).  If the time
+formats are used as part of the file names, ipaudit will round the times to the
+nearest \fIdumpperiod\fR to the starting time.  This way if you wish to dump
+data every 10 minutes, but start at 1:06, if you run the command
+
+   ipaudit -o %H:%M.txt eth0
+
+the first collection period will run from 1:06 to 1:20, and the 
+firs file name will be "01:10.txt", and afterwards the collection
+periods will run every 10 minutes on the 10 minute interval.
+This simplifies the task of synchronizing the output file with
+a regular interval.
+   Ipaudit currently has no option to append output with the -o or -w options.
+If two different collection periods write to the same file, the first data will
+be overwritten.
+
+.TP
+.B -E n
+Quit after reading interface(s) for n seconds.
+
+.TP
+.B -G
+Ignore config file.  See CONFIGURATION FILE section below.
+
+.TP
+.B "-H"
+Store host IPs only.  On output
+the protocol and port fields will be set to zero.
+
+.TP
+.B "-I" ipaddr
+Dump all packets to or from "ipaddr" if using -w option.
+
+.TP
+.B "-L \fIhostportlimit, hostlimit\fR"
+Normally information is stored for every 
+.B connection
+, which is a combination of host ip addresses, protocol and ports.
+Sometimes the traffic that is monitored will have a large number
+of connections, for example when scans are taking place where the
+ports numbers change repeatedly.
+.B hostportlimit
+sets a limit on the number of connections stored with unique
+port addresses.  Otherwise \fBipaudit\fR's hash table can overflow
+memory.  When this limit is exceeded, ipaudit will set all
+ports to zero and store only host ips and protocols.  
+Under some conditions even this precaution is not enough, 
+for example when a Denial of Service attack where every
+packet has a unique forged source ip address.  
+.B hostlimit
+sets a limit on the number of unique host pairs which
+are stored.  When this limit is exceeded then every host
+ip is stored as 0.0.0.0.  Only the protocol number will
+remain unchanged.
+
+By default there is no hostportlimit or hostlimit.  You might
+want to set these limits.  If so set them larger than your
+typical connection count.  In our case the connection count
+never exceeds 200000 unless there is a DoS attack.
+The option -L500000,100000 works for us.
+
+.TP
+.B -M
+See discussion below READING MULTIPLE NETWORK INTERFACES.  The
+-M option turns off \fBipaudit\fR removal of duplicate packets.
+
+.TP
+.B "-N \fIn_hash_slots\fR"
+.B ipaudit
+stores connections in a hash table.
+The number of slots in this table is set when the program
+starts.  Each slot can hold multiple connections, and
+storage and retrieval become inefficient when there are
+too few slots.  You can control the number of slots with
+this option.  The default number of slots (typically 
+1,000,000) is printed when the -v option is given.
+
+
+.TP
+.B "-O \fIlocip,remip\fI"
+When using the -L option, 
+.B ipaudit
+sets overflow packet's ip addresses to 0.0.0.0.  If you
+configured
+.B ipaudit
+(with -l) to classify ip addresses as local or remote, you can
+assign local and remote ip addresses to different fixed values.
+For example, with the option
+
+   -O 137.99.0.0,255.255.0.0
+
+your overflow packets can have local ip addresses (as defined by
+the -l option) set to 137.99.0.0, while remote addresses are
+labled as 255.255.0.0.  This way you can still determine how
+much traffic travels in and out of your network even when
+traffic volume is too large to record individual ip addresses.
+Note there can be no spaces within the argument.
+
+.TP
+.B -P
+This option adds the hostname as the first column in the output. This is useful
+to keep track of which host generated output if you have multiple collectors
+feeding into a common SQL database.
+
+.TP
+.B "-R \fIpacket_interval\fR"
+If saving selected packets (which involves the options -w and -p), then also
+save every packet_interval'th packet.  This helps in later analysis of heavy
+traffic that was not pre-selected.
+
+.TP
+.B -S
+By default \fBipaudit\fR pads the ip addresses with leading zeroes,
+for example
+
+   128.010.223.005
+
+This option tells \fBipaudit\fR to print ip addresses without leading
+zeroes,
+
+   128.10.223.5
+
+.TP
+.B "-T"
+Write out connection start and stop dates and times (in constrast to the
+-t option which only write out time but not dates).
+
+.TP
+.B "-V \fIvlan\fR"
+Read only packets belonging to a specific \fIvlan\fR (802.1q tagging).  
+If packets are not vlan tagged then this option is not used.
+
+.TP
+.B "-W \fIdumplimit\fR"
+Limits the number of packets written to the dumpfile (see -w option).  This is
+useful to prevent the dumpfile from becoming too large when traffic is high.
+A value of 0 (the default) means no limit.
+
+
+
+
+
+.SH CONFIGURATION FILE
+
+In addition to command line options you can use a configuration
+file.  When IPAUDIT starts it first looks for a file named
+"ipaudit.conf" in the current directory, then in the home 
+directory.  You can also give the '-g' (see COMMAND LINE OPTIONS above)
+to specify a configuration file.
+
+The configuration can contain comments beginning with #.
+
+The options in the config file are specified by keyword/value
+pairs.  For example, to configure ipaudit to write the
+time information for each connection the option is
+
+   writetime on
+
+In keyword is 'writetime' and the option is 'on'.  Many
+options are either ON/OFF.  The words TRUE, YES and OK
+are synonymous with ON.  Any other word means OFF.
+
+Other options require one or more values, for example
+
+   interface  eth0 eth1
+
+tells ipaudit to read interfaces eth0 and eth1.
+
+You can also use config file options from the command line
+with the '-z' command line option.  While most commands
+support both option formats, command line options and 
+config file options, some newer commands only have config
+file options.  To execute these newer command from the command 
+line you must invoke the -z option.
+
+Below is a list of config file options:
+
+.TP
+.B allowduplicate
+Like -M option, turns off duplicate packet detection used
+when reading multiple interfaces.
+
+.TP
+.B chroot \fIdirectory\fR
+This option runs a 'chroot' command, which is used for security
+purposes.  This restricts ipaudit to reading and writing files
+located in the specified directory and below.  Also, all file
+references (except the reference to the configuration file)
+will be relative to this directory.
+
+For example, if you want to insure that the ipaudit program
+does not read or write files outside the directory '/home/ipaudit'
+you can place this command line in the config file,
+
+    chroot /home/ipaudit
+
+Then the following reference to the data file
+
+    outfile /home/ipaudit/data/30min/%Y-%m-%d-%H:%M.txt
+
+will become
+
+    outfile /data/30min/%Y-%m-%d-%H:%M.txt
+
+You must have root permission to use this option.
+To use this option from the command line,
+use the command line switch '-z' like this
+
+    -z 'chroot /home/ipaudit'
+
+.TP
+.B count \fIpacket_limit\fR
+Like -c option, maximum number of packets to read.
+
+.TP
+.B daemon {period}
+Like -D option, ipaudit goes into daemon mode, writes statistics
+every 'period' seconds.
+
+.TP
+.B ethernet {on/off}
+Like -e option, prints ethernet addresses
+on each connection written.  Default is off.
+
+.TP
+.B filter \fIbpf_filter\fR
+Like -f option, specifies bpf filter.
+
+.TP
+.B hashslots \fInslots\fR
+Like the -N option, sets the number of slots in the 
+hash table used by ipaudit.
+
+.TP
+.B hostip \fIip\fR
+Like -I option, tells ipaudit to write *all* packets (the first
+\fIlength\fR bytes as set by -s or packetlen options) for the host \fIip\fR,
+regardless of the setting for -p or saveport options.
+
+.TP
+.B hostonly {on/off}
+Like -H option, Save and write information only for host pairs, not for
+"connections", host pairs, protocols and ports.
+
+.TP
+.B hostportlimit \fIhostportlimit\fR \fIhostlimit\fR
+.B Like -L option, sets limit for number of unique
+host-pair/protocol/port connections, and a separate limit
+for the number of unique host-pair connections.
+
+.TP
+.B icmptype {on/off}
+Like -C option, writes ICMP type and code information in 
+port field of the sending IP address. 
+
+.TP
+.B interface \fIi1\fR [i2] [i3]
+List interface(s) to read packets from.
+
+.TP
+.B localrange \fIip_range\fR
+Like -l option, determines which range(s) of ip addresses
+are considered local when writing ipaudit output.
+
+.TP
+.B mysql \fIhost\fR \fIuser\fR \fIpassword\fR \fIdatabase\fR [\fItable\fR]
+Ipaudit can write directly to a MySQL database if such support
+has been compiled.  See the section MYSQL SUPPORT below for
+detailed information on the table format used.  If support has
+not been compiled in then the program will print an error when
+started and stop.  A simple test is to run the following
+
+    ipaudit -z mysql
+
+If you get the following ERROR then MySQL support was not
+compiled in.
+
+    ERROR:  Cannot output to MySQL database as requested because
+    MySQL support was not compiled into this instance of ipaudit.
+
+The \fIhost\fR option determines which machine the database
+resides on.  Use 'localhost' if it is on the same machine.  The
+\fIuser\fR and \fIpassword\fR specified must have write
+permission in \fIdatabase\fR.  The optional \fItable\fR is the
+name of the table written to in the database.  The table will
+be created if it does not already exist.  The default table
+name is 'connections'.
+
+The \fImysql\fR option does not have a command line equivalent.
+Use the '-z' option if you want to invoke it from the command line,
+like this
+
+    ipaudit -z 'mysql localhost ipaudit password testdb' eth0
+
+
+.TP
+.B outfile \fIfile_name\fR
+Like -o option, name of output file for ipaudit output
+
+.TP
+.B overflowip
+Like -O option, assigns label ip addresses to use for local and 
+remote overflow traffic. 
+
+.TP
+.B packetlen \fIlength\fR
+Like -s option, maximum number of bytes saved for each packet.
+
+.TP
+.B packetsample \fIsample_interval\fR
+Like -R option, write out every sample_interval'th packet.
+
+.TP
+.B pidfile \fIfile_name\fR
+Like -i option, write out file with process id.
+
+.TP
+.B probename
+Like -p option, this option adds the hostname as the first column in the output. 
+
+.TP
+.B probelabel \fIlabel\fR
+This option is like probename above, but rather than print the hostname
+in the first column, it prints the specified label.
+
+.TP
+.B progfile \fIprogram_name\fR
+Like -x option, gives program name to run after ipaudit completes.
+
+.TP
+.B promisc {on/off}
+Like -m option, puts interface(s) in promiscuous mode if on.  Default is
+on.
+
+.TP
+.B readfile \fIfile_name\fR
+Like -r option, gives name of pcap packet capture file to be read.
+
+.TP
+.B savefile \fIfile_name\fR
+Like -w option, synonymous with the writefile config file option above.
+
+.TP
+.B saveport \fIprotocol>[,port[,port]..][:<protocol\fR[,port[,port]..]]..
+Like -p option, limits which protocols/ports packets must have to
+be saved with writefile(savefile) option.
+
+.TP
+.B shortip
+Like -S option, prints ip addresses without leading 0s.
+
+.TP
+.B sql
+Like -q option, outputs traffic data in SQL format.
+
+.TP
+.B user \fIusername\fR
+Switch to user and user's default group after the network
+interface(s) are opened.  If using daemon mode, then only
+the child process(s) switch to user and user's default group,
+the parent process remains as root.  You must have root
+permission to use this option.   To use this option from the command line, use
+the command line switch '-z' like this
+
+    -z 'user ipaudit'
+
+.TP
+.B vlan \fIvlan#\fR
+Like -V option, read only vlan packets with id \fIvlan#\fR.
+
+.TP
+.B writefile \fIfile_name\fR
+Like -w option, gives name of pcap packet capture file to write.
+
+.TP
+.B writepacketlimit 
+Like -W option, limits number of packets written to the dumpfile.
+
+
+.TP
+.B writetime {on/off}
+Like -t option, writes times with connection data.
+
+
+.SH READING MULTIPLE NETWORK INTERFACES
+
+.B ipaudit
+has the ability to read network data from more than one
+network interface at a time.  You can specify multiple
+interfaces on the command line such as
+
+   \fBipaudit  -t  eth0:eth1\fR
+
+with the interface names separated by colons (:).
+Also, in the config file you use the \fBinterface\fR option
+such as
+
+   interface eth0 eth1
+
+There are some details to consider when monitoring multiple interfaces.
+In particular there is the issue of double counting packets that
+travel between interfaces.  Consider the following example.  Suppose
+you have a router with four interfaces A, B, C and D.  Interface
+A connects to the Internet.  Interfaces B, C and D connect to
+three separate internal networks called Net-B, Net-C and Net-D.
+Interfaces B, C, D are also mirrored (tapped) by three network
+interface on your computer running \fBipaudit\fR.
+If Net-B sends a packet to Net-C \fBipaudit\fR will see it twice.  Once
+as it travels into the router through interface B, and a second time
+when it travels out of the router through interface C.  
+If  \fBipaudit\fR simply recorded every packet on every interface, it
+would have two copies of every packet that travels between B and C.
+Similarly they would also be two copies of every packet sent between B
+and D and between C and D.  This is a problem which \fBipaudit\fR 
+attempts to solve.
+
+The solution is to record the interface for the first packet 
+of each connection.  Then, subsequent packets for this connection
+are recorded \fBonly\fR if they are read from the same interface.  In
+this way duplicate packets are ignored.  
+
+This technique should work fine under normal circumstances, but
+it fails when the \fBhostportlimit\fR is reached (see discussion
+about the -L option).  When the \fBhostportlimit\fR is reached
+\fBipaudit\fR stops recording ip addresses.  In order to save
+memory it sets all ip address to 0.0.0.0.  The correct ip address
+is needed to successfully remove duplicate packet information.
+When this information is lost many different connections are stored
+together, making it impossible to remove duplicate packets 
+by noting which interface they were read from.  If you wish,
+you can run \fBipaudit\fR without removing duplicate packets with
+the -M option.
+
+
+.SH MYSQL SUPPORT
+
+Ipaudit can write its output directly into a MySQL table if
+such support has been compiled in (see the 'mysql' option under
+CONFIGURATION FILE above).  When MySQL output is selected,
+the options -t and -p are automatically selected.  This includes
+the packet first and last times and first and last talkers in the
+database table, as well as the hostname (or probelabel if that has
+been specified).
+
+By default, the name of the MySQL table is 'connections', but
+this can be changed in the 'mysql' statement described above.
+The format of the MySQL table is as follows, where the values
+in the first column below are the names of the MySQL table columns, 
+and the values second column is the MySQL data type used.
+
+  NAME         DATA TYPE
+
+  probe        varchar(12)
+  local        int unsigned
+  remote       int unsigned
+  prot         tinyint unsigned
+  lport        smallint unsigned
+  rport        smallint unsigned
+  incb         bigint unsigned
+  outb         bigint unsigned
+  incp         int unsigned
+  outp         int unsigned
+  sec1         int unsigned
+  msec1        int unsigned
+  sec2         int unsigned
+  msec2        int unsigned
+  talk1        tinyint unsigned
+  talk2        tinyint unsigned
+
+These columns hold values identical to ipaudit's standard
+output except fro the columns local, remote, sec1, msec1,
+sec2 and msec2.
+
+The columns local and remote hold ipaddress as 4 byte
+integers.  You can use the MySQL function INET_NTOA(LOCAL)
+to convert it to dotted quad notation, for example
+   INET_NTOA(3221888773) -> "192.10.31.5".
+
+The column sec1 holds the first packet time in
+units of seconds since Jan 1, 1970 GMT, column msec1
+holds the number of microseconds since the start of the
+last second interval.  Columns sec2 and msec2 hold the
+corresponding data for the last packet time.
+
+A convenient way to convert the columns sec1 and sec2 to
+a more standard date/time notation is to use the GNU
+version of the Unix 'date' utility as so,
+   date -d "Jan 1, 1970 GMT  <sec> sec"
+where <sec> is replaced by the integer value of sec1 or 
+sec2.  For example,
+   date -d "Jan 1, 1970 GMT 1054315274 sec"
+yields
+   Fri May 30 13:21:14 EDT 2003
+
+
+.SH EXAMPLES
+
+.TP
+.B ipaudit -w dump.fil -p1:2:6,21,23 eth0
+
+This runs tells 
+.B ipaudit to write all packet header for
+icmp, telnet, and ftp to dump.fil and to read traffic from
+the network interface eth0. 
+.B ipaudit
+will continue to run until it is interrupted with control-C or
+the kill command, at which time it will list on the terminal
+a summary of traffic that it saw.
+
+.TP
+.B ipaudit -i ipaudit.pid -o traffic.out le0
+
+Read traffic from interface le0 and place in the file 
+traffic.out when program completes.  The process id number 
+is written to 
+ipaudit.pid at the program start.  Thus you can terminate
+.B ipaudit 
+with the command
+.B kill -2 `cat ipaudit.pid`
+
+.TP
+.B ipaudit -c 50000 eth0 > traffic.out
+
+Read 50,000 packets of traffic from eth0, pipe default
+stdout output into file traffic.out.
+
+.TP
+.B ipaudit -w- -oipaudit.out eth0:eth1 | tcpdump -r- -wtest.cap port 23 or port 111 or net 10.1.4
+
+Reads data from interfaces eth0 and eth0 while writing output to ipaudit.out.  In addition
+raw packets are sent to standard out (-w- option) and are piped to \fBtcpdump\fR.  The trick here
+is that \fBtcpdump\fR is used to write raw packets instead of \fBipaudit\fR.  The advantage is
+that \fBtcpdump\fR offers finer control than \fBipaudit\fR's -p option
+over what packets are written to the capture file.
+In this example it is necessary to write the ipaudit output directly to file instead of 
+to standard out (the default) so as not to interfere with the packets written to standard out.
+You could also use the BPF filters called by \fBipaudit\fR to accomplish the
+same thing,
+
+.B    ipaudit -w- -oipaudit.out eth0:eth1 | ipaudit -r- -wtest.cap -f 'port 23 or port 111 or net 10.1.4'
+
+
+.SH EXAMPLE OUTPUT
+
+.B without -t option
+  192.051.201.068 192.051.201.076 6 2076 139  0 58 0 1
+  192.051.201.001 224.000.000.009 17 520 520  0 1092 0 2
+  192.051.091.021 192.051.091.127 17 138 138  0 243 0 1
+  192.051.221.242 192.051.221.255 17 138 138  0 248 0 1
+  192.051.201.021 192.051.201.070 17 123 123  180 180 2 2
+
+Columns are ip address for first (second) machine, 
+protocol number (1 is icmp, 6 is tcp, 17 is udp), 
+udp/tcp ports on first (second) machine (set to 0 if protocol not udp/tcp), 
+bytes received by first (second) machine, 
+number of packets received by first (second) machine.
+
+
+.B with -t option
+  192.051.201.068 192.051.201.076 6 2076 139 0 58 0 1 13:38:59.8229 13:38:59.8229 1 1
+  192.051.201.001 224.000.000.009 17 520 520 0 1092 0 2 13:38:59.1435 13:38:59.9248 1 1
+  192.051.091.021 192.051.091.127 17 138 138 0 243 0 1 13:38:56.5373 13:38:56.5373 1 1
+  192.051.221.242 192.051.221.255 17 138 138 0 248 0 1 13:38:54.7191 13:38:54.7191 1 1
+  192.051.201.021 192.051.201.070 17 123 123 180 180 2 2 13:38:54.6649 13:38:57.5350 2 1
+
+As above but with the addition of time the first (last) packet was detected, and the
+machine which 
+.B sent
+the first (last) packet.
+
+
+.SH BUGS
+Sometimes under Linux when reading lo and eth0 interfaces simultaneously
+packets on the lo interface are dropped.
+
+Hash table size is fixed at run-time.  Would be nice to have dynamically
+adjusted hash table size.  
+
+Report any bugs to jon.rifkin@uconn.edu.  If possible, run with -d
+option and email output.  Thanks.
+
+.SH AUTHOR
+j rifkin \fIjon.rifkin@uconn.edu\fR
+.br
+http://www.sp.uconn.edu/~jrifkin
+
+.SH VERSION
+0.99 Nov 2, 2003
+
+.SH SEE ALSO
+.BR ipstrings (1)
+.BR total (1)
+.BR tcpdump (1)
+.BR pcap (3)
+
+***
+host user password database

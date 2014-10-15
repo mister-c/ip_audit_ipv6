@@ -1,0 +1,7 @@
+This reports extract info from 30min html files and plot.
+Traffic - traffic going in to and out of network.
+External - traffic within network and traffic outside(?).
+LocalHost - local host contacted.
+RemoteHost - remote hosts contacted.
+LocalBusy - the five busiest (most total traffic) local hosts.
+RemoteBusy - the five busiest (most total traffic) remote hosts.

@@ -1,0 +1,174 @@
+.TH total 1 "17 Mar 2000" "total 0.9"
+
+.SH NAME
+total \- total and subtotal numeric columns in a text file according to field keys
+
+.SH SYNOPSIS
+.BI "total [-Ndv] <key-cols> <data-columns> <file>
+.sp
+
+.SH DESCRIPTION
+.B total
+reads a text file of columnar data in text and numeric format.
+By default, columns are separated by one or more whitespace
+characters.  The -F option allows on to choose a separation
+character.  In this case exactly one separation character 
+lies between columns.
+
+.B total
+forms data keys from combinations of text and numeric columns.
+and for each key value it can summarize numeric
+columns, either by average, sum, minimum or maximum.  
+After reading the file it prints a summary of each key
+combination found in the file along with the summarized data.
+Optionally, you can summarize entire columns without
+regard to key values.
+
+.SH OUTPUT 
+.B total
+prints one line of output for each key combination.  Each 
+line contains 0 or more key fields, and 1 or more summarization fields
+(if there are 0 keys, then all records are summarized together - they
+are not broken down by key).
+
+.SH EXAMPLE
+Consider the following data file where the five columns
+represent city, state, month, precipitation and average temp.
+
+   columbus ohio  jan   3  25
+   columbus ohio  feb   2  20
+   columbus ohio  mar   5  32
+   akron ohio  jan   5  22
+   akron ohio  feb   8  18
+   akron ohio  mar   3  28
+   bridgeport ct jan 5 29
+   bridgeport ct feb 1 32
+   bridgeport ct mar 3 41
+
+suppose we want the average temperature for these three cities over Jan, Feb, Mar.
+The command would be this,
+
+   total 1,2 5a state.fil
+
+.B total
+uses columns 1 and 2 as data keys.  Then for each unique combination
+of city (column 1) and state (column 2) it takes the average temperature.
+The output looks like this (note that output is sorted by key)
+
+   akron ohio 2.266667e+01
+   bridgeport connecticut 34
+   columbus ohio 2.566667e+01
+
+
+If we want total precipitation for each city, 
+
+   total 1,2 4 state.fil
+
+and the output is
+
+   akron ohio 16
+   bridgeport connecticut 9
+   columbus ohio 10
+
+If we want average temperature across each state we could try
+
+   total 2 5a state.fil
+
+and get
+
+   ohio 2.416667e+01
+   connecticut 34
+
+Finally, if we want the maximum temperature for the entire file
+we could do
+
+   total - 5x state.fil
+
+and get
+
+   41
+
+
+.SH KEY COLUMNS
+
+The first parameter specifies the key columns.  This is a comma delimited list
+of columns numbers with no whitespace.  The columns are numbered starting at
+column 1.  In the first example above we used columns 1 and 2 (city and state)
+for our keys.  
+
+There is also a special value '-' which tells
+.B total
+not to separate values into keys, but to summarize the entire file.
+
+.SH DATA COLUMNS
+
+The second parameter specifies data columns and the action on the
+data column.  This is a comma delimited list
+with no white space.  Each data column
+specification consists of a column number and an optional
+command in the form of a single letter.  The default command
+is to sun the column.  The letter commands perform the 
+following operations on the column.
+
+   a  Average.
+   d  Standard deviation.
+   e  Error in average.
+   m  Minimum.
+   x  Maximum.
+   n  Number of rows.
+   s  Sum.
+   f  Column value from first row.
+   l  Column value from last row.
+
+
+.SH STATISTICAL FUNCTIONS
+
+Total can calculate averages, standard deviations and error in the average.
+Standard deviations are calculated using N
+degrees of freedom where N is the number of data points.  
+The "error in the average" is the expected error in the average 
+calculated on N data points
+compared to the "true" average, 
+that is the average that would result from
+averaging over a infinite number of data points.
+
+.SH OUTPUT COLUMNS
+
+For every key column and data column total produce an output column.
+The order in which the columns are written is the same as the
+order in which the key columns, and then data columns are specified
+on the command line.  For example, if you use the command
+
+    total 3,1  5,6,8,7  data.fil
+
+the output file will have 6 columns, the first output column is
+carried from column 3 of the input file, the second output column
+is carried from column 1 of the input file, the third output column
+from column 5 of the input file, and so on.
+
+.SH OPTIONS
+
+.TP
+.B "-v"
+Prints version and number of default hash table slots (actual
+number of slots adjustable via -n option).
+
+.TP
+.B "-d"
+Enter debugging mode, writes out various info.
+
+.TP
+.B "-N <nslots>"
+Set number of hash table slots.
+
+
+.SH BUGS
+Report any to jon.rifkin@uconn.edu.
+
+.SH AUTHOR
+j rifkin <jon.rifkin@uconn.edu>
+.br
+http://www.sp.uconn.edu/~jrifkin
+
+.SH VERSION
+0.5 May 10, 2000

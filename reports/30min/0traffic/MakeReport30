@@ -1,0 +1,1195 @@
+#!/usr/bin/perl -w
+
+#  MakeReport30 - ipaudit-web 30 minute report script
+#  By Jon Rifkin <jon.rifkin@uconn.edu>
+#  Copyright 1999-2003 Jonathan Rifkin
+# 
+#  This program is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU General Public License
+#  as published by the Free Software Foundation; either version 2
+#  of the License, or (at your option) any later version.
+# 
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+# 
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+
+
+#
+#  Print 30min report using IPAUDIT data
+#
+
+#------------------------------------------------------------------------
+#  Initialization
+#------------------------------------------------------------------------
+#  Record starting time
+$START_SEC = time;
+
+use Socket;  #  Use to get DNS names
+use Getopt::Std;
+
+
+#------------------------------------------------------------------------
+#  Constants
+#------------------------------------------------------------------------
+#  LIMTS TO PREVENT MEMORY OVERFLOW
+$REMOTE_HOST_CNT     = 0;
+$LOCAL_HOST_CNT      = 0;
+$HOST_PAIR_CNT       = 0;
+
+#  Print debug messages
+$DEBUG=0;
+$DO_MACHINE_PROBE_REPORT=0;
+
+#
+#  Control constants
+#
+#  Number of busiest connections
+$NTOP_CONN = 40;
+
+#  Number of lines in TOP repotes
+$NTOP = 20;
+
+# Indices for total, incoming, outgoing sums
+$TOT=0;
+$INC=1;
+$OUT=2;
+$SCAN=3;
+
+#  Alternating table row colors
+my (@alternating_color) = ("#ffffff", "#F5F5DC");
+
+#  Local/Remote hosts exceeding this host limit are flagged
+#  in report
+$LOCAL_HOST_SCAN_LIMIT = 999;
+$REMOTE_HOST_SCAN_LIMIT = 999;
+
+#
+#  Font size for table entries
+#
+$fnt="<font size=-1>";
+
+#  Initialize sums
+my($NumPacket)      = 0;
+my($NumConn)        = 0;
+my($NumLocalHosts)  = 0;
+my($LocalProbed)    = 0;
+my($LocalRespond)   = 0;
+my($NumRemoteHosts) = 0;
+my($RemoteProbed)   = 0;
+my($RemoteRespond)  = 0;
+my($Incoming)       = 0;
+my($Outgoing)       = 0;
+my($AllComm)        = 0;
+my($InternalComm)   = 0;
+my($ExternalComm)   = 0;
+my($OtherComm)      = 0;
+
+
+#-----------------------------------------------------------------------
+#  Main
+#-----------------------------------------------------------------------
+$opt_c = "";
+getopts ("c:");
+
+$opt_c = "ipaudit-web.conf"  unless $opt_c;
+
+#
+#  Get arguments
+#
+&Usage if (scalar(@ARGV)==0);
+
+if (@ARGV==1) {
+   $date     = "";
+   $HTMLName = $ARGV[0];
+} else {
+   $date     = $ARGV[0];
+   $HTMLName = $ARGV[1];
+}
+
+
+
+
+#  Find Dir for config file
+$Path = &FindConfig($opt_c);
+
+if (open (INFILE, "< $Path")) {
+   while (<INFILE>) {
+       next if (/^\s*#/);
+      chop;
+      ($Name,$Value) = split(/[= ]+/);
+      $Conf{uc $Name} = $Value;
+   }
+   close (INFILE);
+} else {
+   print "Cannot open file $opt_c.\n";
+}
+
+#  Set unread config parameters to sane values
+$Conf{MAX_REMOTE_HOST_CNT} =  500000 unless defined $Conf{MAX_REMOTE_HOST_CNT};
+$Conf{MAX_LOCAL_HOST_CNT}  = 100000  unless defined $Conf{MAX_LOCAL_HOST_CNT};
+$Conf{MAX_HOST_PAIR_CNT}   = 1000000 unless defined $Conf{MAX_HOST_PAIR_CNT};
+$Conf{OTHERRANGE}          = ""      unless defined $Conf{OTHERRANGE};
+
+
+#
+#  Read service descriptions from /etc/services
+#
+if (open (INFILE,"/etc/services")) {
+   while (<INFILE>)
+      {
+       next if (/^\s*#/ || /^[\s*]$/);
+      chomp;
+      ($Service, $Port, $Protocol) = split (/[\t\/ ]+/);
+      #  Following shields us from bogus /etc/service files
+      next unless defined $Protocol;
+       if ($Protocol eq "udp") {
+          $UDPService{$Port} = $Service;
+       } elsif ($Protocol eq "tcp") {
+          $TCPService{$Port} = $Service;
+       }
+   }
+   close (INFILE);
+}
+
+
+
+#
+#  Reformat list of local nets
+#
+$Conf{LOCALRANGE} =~ s/(["'])(.*)\1/$2/;            #  Strip quote marks
+$Conf{OTHERRANGE} =~ s/(["'])(.*)\1/$2/;            #  Strip quote marks
+($LocalNetReverse, @LocalNet) = ParseNetRange($Conf{LOCALRANGE});
+($OtherNetReverse, @OtherNet) = ParseNetRange($Conf{OTHERRANGE});
+die "No local nets found, did you set up the Envinronment Variables?\n" unless @LocalNet>0;
+
+#
+#  Read output from "tcpdump -ten ip"  - one line per packet header
+#
+
+
+#  Read connections info from STDIN and sum
+#  Each input line may contain *partial* info on connection.
+#  Need to read all lines to get all info
+print "Reading data\n" if $DEBUG;
+while (<STDIN>) {
+
+   #  truncate \n
+   chomp;
+
+   #  Get fields
+   ($ip[0], $ip[1], undef, $prt[0], $prt[1], $byt[0], $byt[1], $pkt[0], $pkt[1]) = split;
+
+   #  Increment total number of packets (in and out)
+   $NumPacket += $pkt[0] + $pkt[1];
+   $NumConn++;
+
+   #  Total traffic for this connection
+   $Totb     = $byt[0] + $byt[1];
+   $AllComm += $Totb;
+
+   # Test for Src/Dst  local/remote or remote/local
+   $Location0  = &GetLocation ($ip[0]);
+   $Location1  = &GetLocation ($ip[1]);
+
+   #  Dispatch Other traffic
+   if ($Location0 eq "O" || $Location1 eq "O") {
+      $OtherComm  += $Totb;
+      next;
+   }
+
+   $IsLocal0   = ($Location0 eq "L" || $Location1 eq "R");
+   if ($Location0 eq $Location1 ) {
+      if ($Location0 eq "L") {
+         $InternalComm += $Totb;
+      } elsif ($Location0 eq "R") {
+         $ExternalComm += $Totb;
+      } else {
+         $OtherComm  += $Totb;
+      }
+      next;
+   }
+
+   if ($IsLocal0) {
+      $Inc=0;
+      $Out=1;
+   } else {
+      $Inc=1;
+      $Out=0;
+   }
+   $Loc =$ip[$Inc];
+   $Rem =$ip[$Out];
+   $Incb=$byt[$Inc];
+   $Outb=$byt[$Out];
+
+   $Outgoing += $Outb;
+   $Incoming += $Incb;
+
+   $HostPairKey = &MakeHostPairKey($Loc,$Rem);
+   $LocKey      = &MakeHostKey    ($Loc);
+   $RemKey      = &MakeHostKey    ($Rem);
+
+   #
+   #  "Connections"
+   #
+   #  Store traffic (total, outgoing, incoming)
+   #   keyed by combination of 
+   #     local ip, remote ip
+   $HOST_PAIR_CNT++ unless defined $LocRem{$HostPairKey};
+   if ($Conf{MAX_HOST_PAIR_CNT} && $HOST_PAIR_CNT <= $Conf{MAX_HOST_PAIR_CNT}) {
+      $LocRem{$HostPairKey}[$TOT] += $Totb;
+      $LocRem{$HostPairKey}[$INC] += $Incb;
+      $LocRem{$HostPairKey}[$OUT] += $Outb;
+   }
+
+   #
+   #  Store traffic by local or remote host
+   #
+   
+   $LOCAL_HOST_CNT++ unless defined $LocalTraffic{$LocKey};
+   if ($Conf{MAX_LOCAL_HOST_CNT} && $LOCAL_HOST_CNT <= $Conf{MAX_LOCAL_HOST_CNT}) {
+      $LocalTraffic    {$LocKey}[$TOT] += $Totb;
+      $LocalTraffic    {$LocKey}[$INC] += $Incb;
+      $LocalTraffic    {$LocKey}[$OUT] += $Outb;
+   }
+
+   $REMOTE_HOST_CNT++ unless defined $RemoteTraffic{$RemKey};
+   if ($Conf{MAX_REMOTE_HOST_CNT} && $REMOTE_HOST_CNT <= $Conf{MAX_REMOTE_HOST_CNT}) {
+      $RemoteTraffic   {$RemKey}[$TOT] += $Totb;
+      $RemoteTraffic   {$RemKey}[$INC] += $Incb;
+      $RemoteTraffic   {$RemKey}[$OUT] += $Outb;
+   }
+
+}
+   #  End of input loop
+
+
+#  Determine if limit exceeded
+my ($LOCAL_HOST_WARN )  = ($Conf{MAX_LOCAL_HOST_CNT}  && $LOCAL_HOST_CNT  >= $Conf{MAX_LOCAL_HOST_CNT} );
+my ($REMOTE_HOST_WARN)  = ($Conf{MAX_REMOTE_HOST_CNT} && $REMOTE_HOST_CNT >= $Conf{MAX_REMOTE_HOST_CNT});
+my ($HOST_PAIR_WARN  )  = ($Conf{MAX_HOST_PAIR_CNT}   && $HOST_PAIR_CNT   >= $Conf{MAX_HOST_PAIR_CNT}  );
+
+# Number of local / remote hosts
+$NumLocalHosts  = scalar keys %LocalTraffic;
+$NumRemoteHosts = scalar keys %RemoteTraffic;
+
+#  Number of local/remote hosts probed/responding
+$LocalProbed  = 0;
+$LocalRespond = 0;
+while ( ($key,undef) = each %LocalTraffic) {
+   $LocalProbed++  if $LocalTraffic{$key}[$INC];
+   $LocalRespond++ if $LocalTraffic{$key}[$OUT];
+}
+$RemoteProbed  = 0;
+$RemoteRespond = 0;
+while ( ($key,undef) = each %RemoteTraffic) {
+   $RemoteProbed++  if $RemoteTraffic{$key}[$OUT];
+   $RemoteRespond++ if $RemoteTraffic{$key}[$INC];
+}
+
+
+#  Print HTML report
+open (HTML, ">".$HTMLName) || die "Cannot open HTML output file.\n";
+&PrintHTMLReport;
+
+#  Print elapsed time
+printf HTML 
+   "<p><i>Elapsed time is %d seconds.</i></p>\n",
+   time - $START_SEC;
+
+#  Close HTML file
+close(HTML);
+
+
+
+#
+#  END OF MAIN ROUTINE
+#
+exit;
+
+
+
+#-----------------------------------------------------------------------
+#  HTML Report
+#-----------------------------------------------------------------------
+sub PrintHTMLReport {
+
+&PrintSummary;
+
+
+#  REPORT:  Possible Incoming/Outgoing Scans
+#    NTOP Top Local/Remote hosts by number of local hosts contacted
+print "Starting Incoming Scan\n" if $DEBUG;
+
+
+#  Find number of local hosts each remote host has a one-way connection with
+for $key (keys %LocRem) {
+   if (0==$LocRem{$key}[$OUT]) {
+      ($Loc,$Rem) = &SplitHostPairKey($key);
+      $RemoteTraffic{$Rem}[$SCAN]++;
+   }
+}
+
+
+print "Starting Remote Scan\n" if $DEBUG;
+
+#  Find number of local hosts each remote host has a one-way connection with
+for $key (keys %LocRem) {
+   if (0==$LocRem{$key}[$INC]) {
+      ($Loc,$Rem) = &SplitHostPairKey($key);
+      $LocalTraffic{$Loc}[$SCAN]++;
+   }
+}
+
+#  Find maximum incoming scans
+&MakeTopList ($NTOP, \%RemoteTraffic, $SCAN, \%ScanRemote);
+   
+#  Find maximum outgoing scans
+&MakeTopList ($NTOP, \%LocalTraffic, $SCAN, \%ScanLocal);
+
+
+$Title = "Possible Incoming Scan Hosts";
+$Title .= " <font color=\"red\">(data collection incomplete)</font>"
+   if $REMOTE_HOST_WARN;
+&PrintScan (
+   $Title,
+   "Local Hosts<br>Contacted",
+   \%ScanRemote, 
+   $REMOTE_HOST_SCAN_LIMIT
+   );
+
+
+$Title = "Possible Outgoing Scan Hosts";
+$Title .= " <font color=\"red\">(data collection incomplete)</font>"
+   if $LOCAL_HOST_WARN;
+&PrintScan (
+   $Title,
+   "Remote Hosts<br>Contacted",
+   \%ScanLocal, 
+   $LOCAL_HOST_SCAN_LIMIT
+   );
+
+
+
+#
+# REPORT : Busiest host
+#   NTOP Top Local/Remote hosts by amount of traffic
+#
+print "Starting Busiest Host\n" if $DEBUG;
+
+
+&MakeTopList ($NTOP, \%LocalTraffic, 0, \%LocalSort);
+
+$Title = "Busiest Local Hosts";
+$Title .= " <font color=\"red\">(data collection incomplete)</font>"
+   if $LOCAL_HOST_WARN;
+&PrintTraffic 
+   (
+   $Title,
+   \%LocalSort,
+   \%LocalTraffic
+   );
+
+
+&MakeTopList ($NTOP, \%RemoteTraffic, 0, \%RemoteSort);
+
+$Title = "Busiest Remote Hosts";
+$Title .= " <font color=\"red\">(data collection incomplete)</font>"
+   if $REMOTE_HOST_WARN;
+&PrintTraffic 
+   (
+   $Title,
+   \%RemoteSort,
+   \%RemoteTraffic
+   );
+
+
+#
+#  REPORT:  Busiest Connections
+#     connection (Host Pair, Protocol and Port combination) with heaviest traffic
+#
+&MakeTopList($NTOP_CONN, \%LocRem, 0, \%MaxList);
+
+$Title = "Busiest Host Pairs";
+$Title .= " <font color=\"red\">(data collection incomplete)</font>"
+   if $HOST_PAIR_WARN;
+&PrintSubList 
+   (
+   $Title,
+   \%MaxList,
+   \%LocRem
+   );
+
+
+return unless $DO_MACHINE_PROBE_REPORT;
+
+
+#
+#  REPORT:  Possible Incoming/Outgoing Machine Probes (many connections on one machine)
+#    NTOP Top Local/Remote pair by number of one-way connections
+#
+print "Starting Local Machine Probed\n" if $DEBUG;
+
+#
+#  Find all loc/rem host pairs with one-way (incoming) connections
+#
+
+#  Tablulte late of remote->local port scans
+for $key (keys %LocRem) {
+   if (0==$LocRem{$key}[$OUT]) {
+      ($Loc, $Rem) = SplitBigKey($key);
+      $pairkey = MakeHostPairKey($Loc,$Rem);
+      $TempPairProbe{$pairkey}++;
+   }
+}
+
+#  Print table of remote->local port scans
+&MakeTopList2 ($NTOP, \%TempPairProbe, \%TempPairList);
+&PrintProbe ("INCOMING MACHINE PROBES", \%TempPairList);
+print "After PrintProbe()\n" if $DEBUG;
+undef %TempPairProbe;
+undef %TempPairList;
+
+
+print "Starting Remote Machine Probed\n" if $DEBUG;
+
+#  Tabulate list of local->remote port scans
+for $key (keys %LocRem) {
+   if (0==$LocRem{$key}[$INC]) {
+      ($Loc, $Rem) = &SplitBigKey($key);
+      $pairkey = &MakeHostPairKey($Loc,$Rem);
+      $TempPairProbe{$pairkey}++;
+   }
+}
+
+#  Print table of local->remote port scans
+&MakeTopList2 ($NTOP, \%TempPairProbe, \%TempPairList);
+print HTML "<br><br>\n";
+&PrintProbe ("OUTGOING MACHINE PROBES", \%TempPairList);
+undef %TempPairProbe;
+undef %TempPairList;
+}
+
+
+#-----------------------------------------------------------------------
+#  Print start of HTML page
+#-----------------------------------------------------------------------
+sub PrintHeader
+{
+print HTML "<HTML>\n";
+print HTML "<HEAD><TITLE>$ARGV[0]</TITLE></HEAD>\n";
+print HTML "<body bgcolor=white>\n";
+print HTML "<center><font size=+1>$ARGV[0]</font></center><hr noshade>";
+}
+
+
+#-----------------------------------------------------------------------
+#  Print report summary (at top of page)
+#-----------------------------------------------------------------------
+sub PrintSummary {
+
+#  Print warning(s) if count limits exceeded
+my (@warn) = ();
+push @warn, "Local Host"  if $LOCAL_HOST_WARN;
+push @warn, "Remote Host" if $REMOTE_HOST_WARN;
+push @warn, "Host Pair"  if $HOST_PAIR_WARN;
+if (@warn) {
+   print HTML '<p align="center"><b><font color="red">Warning, following count limits exceeded: &nbsp; ';
+   print HTML join (", ", @warn);
+   print HTML "</font></b></p>\n";
+}
+
+#  Print values
+my($HostPair) = scalar keys %LocRem;
+my($Total)    = $Incoming + $Outgoing;
+
+my($NumPacket_ic)      = &ic($NumPacket);
+my($NumConn_ic)        = &ic($NumConn);
+my($HostPair_ic)       = &ic($HostPair);
+my($NumLocalHosts_ic)  = &ic($NumLocalHosts);
+my($LocalProbed_ic)    = &ic($LocalProbed);
+my($LocalRespond_ic)   = &ic($LocalRespond);
+my($NumRemoteHosts_ic) = &ic($NumRemoteHosts);
+my($RemoteProbed_ic)   = &ic($RemoteProbed);
+my($RemoteRespond_ic)  = &ic($RemoteRespond);
+my($Incoming_ic)       = &ic($Incoming);
+my($Outgoing_ic)       = &ic($Outgoing);
+my($Total_ic)          = &ic($Total);
+my($AllComm_ic)        = &ic($AllComm);
+my($InternalComm_ic)   = &ic($InternalComm);
+my($ExternalComm_ic)   = &ic($ExternalComm);
+my($OtherComm_ic)      = &ic($OtherComm);
+
+#  PRINT OLD HEADER FOR USE BY graphic reports, 
+#  BUT COMMENT IT OUT SO USER DOESN'T SEE IT
+print  HTML "<!--  START OLD HEADER (used by graph report) -->\n";
+print  HTML "<!--  \n";
+print  HTML "<pre><b>\n";
+printf HTML 
+  "Packets:                 [%14s]\n", $NumPacket_ic;
+printf HTML 
+  "Connections:             [%14s]\n", $NumConn_ic;
+ printf HTML 
+  "HostPairs:               [%14s]\n", $HostPair_ic;
+printf HTML 
+  "LocalHosts:      Total   [%14s]   Probed  [%14s]   Respond [%14s]\n", 
+   $NumLocalHosts_ic, $LocalProbed_ic, $LocalRespond_ic;
+printf HTML 
+  "RemoteHosts:     Total   [%14s]   Probed  [%14s]   Respond [%14s]\n", 
+   $NumRemoteHosts_ic, $RemoteProbed_ic, $RemoteRespond_ic; 
+printf HTML 
+  "Traffic:         Total   [%14s]   Incoming[%14s]   Outgoing[%14s]\n",
+  $Total_ic, $Incoming_ic, $Outgoing_ic;
+printf HTML
+  "                 Internal[%14s]   External[%14s]   Other [%14s]",
+  $InternalComm_ic, $ExternalComm_ic, $OtherComm_ic;
+print HTML "</b></pre>\n";
+print  HTML "-->   \n";
+print  HTML "<!--  END OLD HEADER -->\n";
+# END OLD HEADER
+
+# PRINT NEW HEADER
+print HTML <<"EOM";
+<br><br>
+<table width="100%" border="0" cellspacing="0" cellpadding="5">
+<tr>
+  <td width="100%" valign="top" bgcolor="#ffffff">
+    <table width="640" border="0" cellspacing="1"
+    cellpadding="2" bgcolor="#818181" align="center">
+      <tr>
+        <td colspan="2" bgcolor="#6C8FBB" align="center"><span
+        class="white">General Stats</span></td>
+
+        <td colspan="2" bgcolor="#6C8FBB" align="center"><span
+        class="white">Incoming/Outgoing Traffic<br>
+        (bytes)</span></td>
+
+        <td colspan="2" bgcolor="#6C8FBB" align="center"><span
+        class="white">Internal/External Traffic<br>
+        (bytes)</span></td>
+
+        <td colspan="2" bgcolor="#6C8FBB" align="center"><span
+        class="white">Local Hosts</span></td>
+
+        <td colspan="2" bgcolor="#6C8FBB" align="center"><span
+        class="white">Remote Hosts</span></td>
+      </tr>
+
+      <tr bgcolor="#ffffff">
+        <td><b>Connections</b></td>
+
+        <td align="right">$NumConn_ic</td>
+
+        <td><b>Incoming</b></td>
+
+        <td align="right">$Incoming_ic</td>
+
+        <td><b>Internal</b></td>
+        <td align="right">$InternalComm_ic</td>
+
+        <td><b>Probed</b></td>
+        <td align="right">$LocalProbed_ic</td>
+
+        <td><b>Probed</b></td>
+        <td align="right">$RemoteProbed_ic</td>
+      </tr>
+
+      <tr bgcolor="#ffffff">
+        <td><b>Packets</b></td>
+        <td align="right">$NumPacket_ic</td>
+
+        <td><b>Outgoing</b></td>
+        <td align="right">$Outgoing_ic</td>
+
+        <td><b>External</b></td>
+        <td align="right">$ExternalComm_ic</td>
+
+        <td><b>Responding</b></td>
+        <td align="right">$LocalRespond_ic</td>
+
+        <td><b>Responding</b></td>
+        <td align="right">$RemoteRespond_ic</td>
+      </tr>
+
+      <tr bgcolor="#ffffff">
+        <td><b>Bytes</b></td>
+        <td align="right">$AllComm_ic</td>
+
+        <td><b>Total</b></td>
+        <td align="right">$Total_ic</td>
+
+        <td><b>Other</b></td>
+        <td align="right">$OtherComm_ic</td>
+
+        <td><b>Total</b></td>
+        <td align="right">$NumLocalHosts_ic</td>
+
+        <td><b>Total</b></td>
+        <td align="right">$NumRemoteHosts_ic</td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+EOM
+
+}
+
+
+
+#-----------------------------------------------------------------------
+#  Print report of Incoming/Outgoing traffic with key of the form
+#     LocalHost:RemoteHost
+#-----------------------------------------------------------------------
+sub PrintSubList {
+
+my ($Message, $Top, $Hash) = @_;
+my ($icolor) = 0;
+my ($name);
+
+#  Print table and caption
+print HTML<<EOM;
+<br><br>
+<table width="100%" border="0" cellspacing="0" cellpadding="5">
+<tr>
+<td width="100%" valign="top" bgcolor="#ffffff">
+
+<table width="640" border="0" cellspacing="1"
+cellpadding="2" align="center" bgcolor="#818181">
+
+<tr bgcolor="#EDEDED">
+<td colspan="7" align="center"><b>$Message</b></td>
+</tr>
+EOM
+
+#  Print no data message, close tables and leave
+if (scalar keys %$Top < 1) {
+print HTML<<EOM;
+<tr bgcolor="#EDEDED">
+<td colspan="7" align="center"><b>No $Message Detected</b></td>
+</tr>
+</table>
+</td></tr></table>
+EOM
+   return;
+}
+
+
+&PrintTableHeading;
+
+
+for $key (sort { $$Top{$b} <=> $$Top{$a} } keys %$Top )
+   {
+   ($Addr1, $Addr2) = &SplitBigKey($key);
+
+
+   #  Start row
+   print HTML "<tr bgcolor=\"$alternating_color[$icolor]\">\n";
+   
+   #  Print LOCAL ip address
+   print HTML "<td>", &iplink($date,$Addr1), "</td>\n";
+
+   #  Print REMOTE ip address
+   print HTML "<td>", &iplink($date,$Addr2), "</td>\n";
+
+   #  Print LOCAL Name
+   $name = &GetDNS($Addr1);
+   print HTML "<td>$name</td>\n";
+
+   #  Print REMOTE Name
+   $name = &GetDNS($Addr2);
+   print HTML "<td>$name</td>\n";
+
+   #  Print incoming traffic
+   $traffic = &ic($$Hash{$key}[1]);
+   print HTML "<td align=right>$traffic</td>\n";
+
+   #  Print outgoing traffic
+   #    Color background if zero bytes
+   #
+   $traffic = &ic($$Hash{$key}[2]);
+   print HTML "<td align=right>$traffic</td>\n";
+   #
+   #  Print total traffic
+   $traffic = &ic($$Hash{$key}[1]+$$Hash{$key}[2]);
+   print HTML "<td align=right>$traffic</td>\n";
+
+   #  End row
+   print HTML "</tr>\n";
+
+   $icolor = 1 - $icolor;
+   }
+
+
+&PrintTableHeading;
+
+#  End table
+print HTML "</table></td></tr></table>\n";
+}
+
+
+
+sub GetService {
+   my ($Pro, $Prt) = @_;
+   if ( ($Pro eq "udp" || $Pro==17)  && $UDPService{$Prt}) {
+      $UDPService{$Prt};
+   } elsif ( ($Pro eq "tcp" || $Pro==6)  && $TCPService{$Prt}) {
+      $TCPService{$Prt};
+   } else {
+      $Prt;
+   }
+}
+      
+
+
+sub PrintTableHeading {
+print HTML << "EOM";
+<tr bgcolor="#C9D5E5">
+<td>Local IP</td>
+<td>Remote IP</td>
+<td>Local Host Name</td>
+<td>Remote Host Name</td>
+<td align="right">Incoming</td>
+<td align="right">Outgoing</td>
+<td align="right">Total</td>
+</tr>
+EOM
+}
+
+
+
+#-----------------------------------------------------------------------
+#  Print scan report section
+#-----------------------------------------------------------------------
+sub PrintScan {
+my ($Message, $ColHeading, $Count, $LIMIT) = @_;
+my ($name,$color);
+
+print HTML << "EOM";
+<br><br>
+<table width="100%" border="0" cellspacing="0" cellpadding="5">
+<tr><td colspan="5">
+
+<table width="640" border="0" cellspacing="1"
+cellpadding="2" align="center" bgcolor="#818181">
+<tr bgcolor="#EDEDED">
+<td colspan="3" align="center"><b>$Message</b></td>
+</tr>
+
+<tr bgcolor="#C9D5E5">
+<td width="110">IP</td>
+
+<td>Host Name</td>
+
+<td width="90" align="right">
+$ColHeading
+</td>
+</tr>
+EOM
+
+   my ($icolor) = 0;
+   
+   for (sort {$$Count{$b} <=> $$Count{$a}} keys %$Count) {
+      $name = &GetDNS($_);
+   #   $color = $$Count{$_}>$LIMIT ? $red : $white;
+   #   print HTML "<tr><td bgcolor=$color>$fnt", &iplink($date,$_), "</td>\n";
+   #   print HTML "<td bgcolor=$color>$fnt$name</td>\n";
+   #   print HTML "<td bgcolor=$color>$fnt$$Count{$_}</td></tr>\n";
+      print HTML "<tr bgcolor=\"$alternating_color[$icolor]\">\n";
+      print HTML "<td>", &iplink($date,$_), "</td>\n";
+      print HTML "<td>$name</td>\n";
+      print HTML "<td align=right>$$Count{$_}</td>\n";
+      print HTML "</tr>\n";
+      #  Alternate color
+      $icolor=1-$icolor;
+   }
+   print HTML "</table>";
+   print HTML "</td></tr></table>\n";
+}
+
+
+sub PrintTraffic {
+   my ($Message, $KeyHash, $Hash) = @_;
+   my ($icolor) = 0;
+   my ($name,$Total,$Incoming,$Outgoing);
+
+
+print HTML << "EOM";
+<br><br>
+<table width="100%" border="0" cellspacing="0" cellpadding="5">
+<tr><td colspan="5">
+
+<table width="640" border="0" cellspacing="1"
+cellpadding="2" align="center" bgcolor="#818181">
+<tr bgcolor="#EDEDED">
+<td colspan="5" align="center"><b>$Message</b></td>
+</tr>
+
+<tr bgcolor="#C9D5E5">
+<td>IP</td>
+<td>Host Name</td>
+<td align="right">Incoming</td>
+<td align="right">Outgoing</td>
+<td align="right">Total</td>
+</tr>
+EOM
+
+
+   for ( sort {$$KeyHash{$b} <=> $$KeyHash{$a}} keys %$KeyHash ) {
+
+      $Total = $$Hash{$_}[0];
+
+      if (!defined($$Hash{$_}[1])) {
+         $Incoming = 0;
+      } else {
+         $Incoming = $$Hash{$_}[1];
+      }
+
+      if (!defined($$Hash{$_}[2])) {
+         $Outgoing = 0;
+      } else {
+         $Outgoing = $$Hash{$_}[2];
+      }
+         
+      $host = &SplitHostKey($_);
+      $name = &GetDNS($host);
+      print HTML "<tr bgcolor=\"$alternating_color[$icolor]\">\n";
+      print HTML "<td>", &iplink($date,$host), "</td>\n";
+      print HTML "<td>$name</td>\n";
+      print HTML "<td align=right>", &ic($Incoming), "</td>\n";
+      print HTML "<td align=right>", &ic($Outgoing), "</td>\n";
+      print HTML "<td align=right>", &ic($Total), "</td>\n";
+      print HTML "</tr>\n";
+
+      $icolor = 1-$icolor;
+      }
+   print HTML "</table>";
+   print HTML "</td></tr></table>\n";
+   }
+
+
+#-----------------------------------------------------------------------
+#  Convert positive whole number from nnnnnn to n,nnn,nnn etc.
+#-----------------------------------------------------------------------
+sub ic {
+   my ($string) = @_;
+   1 while $string=~s/(\d)(\d\d\d)(?!\d)/$1,$2/g;
+   return $string;
+}
+
+
+
+#-----------------------------------------------------------------------
+#  Is ip local, remote or other.
+#-----------------------------------------------------------------------
+sub GetLocation {
+   my ($IP) = @_;
+   my ($i,$InRange);
+
+	#  Is ip in range?
+	for ($i=0;$i<@LocalNet;$i+=2) {
+		$InRange = $LocalNet[$i] le $IP && $IP le $LocalNet[$i+1];
+		last if $InRange;
+	}
+
+	#  Return local if InRange or out of range but range reversed.
+	return 'L' if $InRange ^ $LocalNetReverse;
+	
+
+	#  Check to see if other
+
+	#  Is0 ip in range?
+	for ($i=0;$i<@OtherNet;$i+=2) {
+		$InRange = $OtherNet[$i] le $IP && $IP le $OtherNet[$i+1];
+		last if $InRange;
+	}
+	
+	#  Return other if InRange or out of range but range reversed
+	return 'O' if $InRange ^ $OtherNetReverse;
+
+	#  IP is remote
+	return 'R';
+}
+
+
+#-----------------------------------------------------------------------
+#  Usage
+#-----------------------------------------------------------------------
+sub Usage {
+print <<"EOM";
+
+   Usage: $0 HTML_REPORT
+   
+   Reads traffic info (from ipaudit) on STDIN and writes an HTML report to <HTML_REPORT>.
+
+   Input format is a text file of IP connections data with 9 columns of data.
+   Lines with more or less columns, and lines beginning with # are ignored.  The
+   data in the 9 columns are
+       ip1 ip2 prot port1 port2 byt1 byt2 pkt1 pkt2
+   where
+     ip1, ip2     -   ip address of machines 1,2
+     prot         -   protocol number (6->tcp, 17->ucp, etc).
+     port1,port2  -   ports of machines 1,2  (only valid for for tcp and udp connections)
+     byt1,byt2    -   number of bytes    recieved by machines 1,2
+     pkt1,pkt2    -   number of packetes recieved by machines 1,2
+
+EOM
+exit;
+}
+
+
+sub MakeHostKey {
+   my ($host) = @_;
+   return pack "CCCC", split(/\./,$host);
+}
+
+
+sub MakeHostPairKey {
+   my ($loc,$rem) = @_;
+   return pack "CCCCCCCC",
+      split(/\./,$loc), split(/\./,$rem);
+}
+
+
+sub MakeBigKey {
+   my ($loc,$rem,$prot,$lpt,$rpt) = @_;
+   return pack "CCCCCCCCCnn",
+      split(/\./,$loc), split(/\./,$rem), $prot, $lpt, $rpt;  
+}
+
+sub SplitHostKey {
+   my ($pack) = @_;
+   my ($key);
+   $key = sprintf "%03d.%03d.%03d.%03d", unpack ("CCCC", $pack); 
+   return $key;
+}
+
+sub SplitHostPairKey {
+   my ($pack) = @_;
+   my ($loc,$rem,@k);
+   @k   = unpack ("CCCCCCCC", $pack); 
+   $loc = sprintf "%03d.%03d.%03d.%03d", $k[0], $k[1], $k[2], $k[3];
+   $rem = sprintf "%03d.%03d.%03d.%03d", $k[4], $k[5], $k[6], $k[7];
+   return ($loc,$rem)
+}
+
+
+sub SplitBigKey {
+   my ($pack) = @_;
+   my ($key);
+   #$key = sprintf "%03d.%03d.%03d.%03d:%03d.%03d.%03d.%03d:%d:%d:%d",
+   $key = sprintf "%03d.%03d.%03d.%03d:%03d.%03d.%03d.%03d",
+         unpack ("CCCCCCCCCnn", $pack); 
+   return split(/:/,$key);
+}
+
+
+sub GetDNS {
+   my ($name) = @_;
+   if ($name=~/(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/) {
+      $name = sprintf "%d.%d.%d.%d", $1,$2,$3,$4;
+      $name = inet_aton($name);
+      $name = gethostbyaddr($name, AF_INET) if defined($name);
+   }
+   return defined $name ? $name : "&nbsp;";
+}
+
+
+
+#
+#  Read a hash of form $hash{$key}[$x] for given $x
+#    where $hash{$key}[$x] is a number.
+#    Return a new hash consisting only of $ntop elements.
+#
+sub MakeTopList {
+   my ($ntop, $hash, $x, $sort) = @_;
+   my ($i, $MaxValue, $MaxKey, $nhash);
+
+
+#  Find maximum incoming scans
+   $nhash = (scalar keys %$hash);
+   $ntop  = ($nhash<$ntop) ? $nhash : $ntop;
+   for ($i=0;$i<$ntop;$i++) {
+      $MaxValue = 0;
+      $MaxKey   = "";
+      while ( ($key,undef) = each %$hash) {
+         next unless defined($$hash{$key}[$x]);
+         next if defined($$sort{$key});
+         next if $MaxValue > $$hash{$key}[$x];
+         $MaxKey = $key;
+         $MaxValue = $$hash{$key}[$x];
+      }
+      last if $MaxValue==0;
+      $$sort{$MaxKey} = $MaxValue;
+   }
+}
+
+
+#
+#  Read a hash of form $hash{$key}
+#    where $hash{$key} is a number.
+#    Return a new hash consisting only of $ntop elements.
+#   Like MakeTopList() but doesn't use array index $x
+#
+sub MakeTopList2 {
+   my ($ntop, $hash, $sort) = @_;
+   my ($i, $MaxValue, $MaxKey, $nhash);
+
+
+#  Find maximum incoming scans
+   $nhash = (scalar keys %$hash);
+   $ntop  = ($nhash<$ntop) ? $nhash : $ntop;
+   for ($i=0;$i<$ntop;$i++) {
+      $MaxValue = 0;
+      $MaxKey   = "";
+      while ( ($key,undef) = each %$hash) {
+         next unless defined($$hash{$key});
+         next if defined($$sort{$key});
+         next if $MaxValue > $$hash{$key};
+         $MaxKey = $key;
+         $MaxValue = $$hash{$key};
+      }
+      last if $MaxValue==0;
+      $$sort{$MaxKey} = $MaxValue;
+   }
+}
+
+
+
+#
+#  Print host-pair probe results
+#
+sub PrintProbe {
+my ($title,$data) = @_;
+my ($loc,$rem,$lname,$rname,$key);
+
+print HTML <<"EOM";
+<br><br>
+<table cellpadding=2 cellspacing=0 border=2>
+<tr><th align=center colspan=5><tt>$title</tt></th></tr>
+<tr>
+<th><tt>Local IP</tt></th>
+<th><tt>Local Name</tt></th>
+<th><tt>Remote IP</tt></th>
+<th><tt>Remote Name</tt></th>
+<th><tt>Connections</tt></th>
+</tr>
+EOM
+
+for $key (sort {$$data{$b}<=>$$data{$a}} keys %$data) {
+   ($loc, $rem) = &SplitHostPairKey($key);
+   $lname = &GetDNS($loc);
+   $rname = &GetDNS($rem);
+   print HTML "<tr>\n";
+   print HTML "<td><tt>$fnt", &iplink($date,$loc), "</tt></td>\n";
+   print HTML "<td><tt>$fnt$lname</tt></td>\n";
+   print HTML "<td><tt>$fnt", &iplink($date,$rem), "</tt></td>\n";
+   print HTML "<td><tt>$fnt$rname</tt></td>\n";
+   print HTML "<td><tt>$fnt$$data{$key}</tt></td>\n";
+   print HTML "</tr>\n";
+}
+print HTML "</table>\n";
+}
+
+
+sub iplink {
+   my ($date,$ip) = @_;
+   return $ip if $date eq "";
+   return "<a href=$Conf{'CGI_BIN'}/SearchIpauditData?date=$date&ip=$ip&sort=0>$ip</a>";
+}
+
+#  Search upward from $Dir looking for $File
+sub FindConfig {
+        my ($DirFile) = @_;
+        my ($Dir, $File);
+
+   if ($DirFile=~/^(.*[^\/]*)\/([^\/]*)$/) {
+      ($Dir,$File) = ($1,$2);
+   } else {
+      ($Dir,$File) = ("", $DirFile);
+   }
+
+        $Dir  = `pwd`         unless $Dir;
+        $File = "ipaudit-web.conf" unless $File;
+
+        chomp $Dir;
+
+        while (! -f "$Dir/$File" && $Dir ne "") {
+                $Dir=~s/\/[^\/]+$//;
+        }
+
+        die "Cannot find config file\n" unless -f "$Dir/$File";
+
+        return "$Dir/$File";
+}
+
+
+#  Parse local net string into list of lo,hi ip addresses
+sub ParseNetRange {
+   my ($local) = @_;
+   my ($NetReverse, @Net);
+
+   ($prefix,$net) = $local=~/^([!]*)(.*)/;
+   $NetReverse =  $prefix eq '!'; 
+
+   for (split(/:/,$net)) {
+
+      #  aaa.aaa.aaa.aaa-bbb.bbb.bbb.bbb
+      if (/^([0-9\.]+)-([0-9\.]+)$/) {
+         @n1 = (split(/\./,$1) , 0, 0, 0, 0);
+         @n2 = (split(/\./,$2), 255, 255, 255, 255);
+         $n1 = unpack("N", pack("C4",@n1));
+         $n2 = unpack("N", pack("C4",@n2));
+
+      #  aaa.aaa.aaa.aaa/nn
+      } elsif (/^([0-9\.]+)\/([0-9]{1,2})$/) {
+         #Find right network address
+		 ##$mask = 0; ($mask = ~0  >> $2) unless($2 > 31);
+         $mask = 0; ($mask = 0xffffffff  >> $2) unless($2 > 31);
+         #Find IP range
+		 ##$n1 = unpack("N",inet_aton($1)) & ~$mask;  
+         $n1 = unpack("N",inet_aton($1)) & (0xffffffff ^ $mask);
+         $n2 = $n1 | $mask;
+
+      #  aaa.aaa.aaa.aaa/255.255.255.0
+      } elsif
+(/^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\/(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/) {
+        $mask = unpack("N",inet_aton($2));
+        $n1 = unpack("N",inet_aton($1)) & $mask;  
+		##$n2 = $n1 | ~$mask; 
+        $n2 = $n1 | (0xffffffff ^ $mask);
+
+      #  aaa.aaa
+      } elsif (/^([0-9\.]+)$/) {
+         @n1 = ( split(/\./,$1), 0, 0, 0, 0);
+         $n1 = unpack("N", pack("C4",@n1));
+         @n2 = ( split(/\./,$1), 255, 255, 255, 255);
+         $n2 = unpack("N", pack("C4",@n2));
+
+      #  Other
+      } else {
+         printf STDERR  "ERROR: Local Net strings format not recognized\n";
+         printf STDERR  <<EOM;
+         Accpted formats are:
+         network/netmask,   ie: 10.1.2.0/24
+                            ie: 10.20.99.64/26
+                            ie: 10.100.0.0/255.255.0.0
+         starthost-endhost, ie: 10.1.0.0-10.20.255.255 (or 10.1-10.20)
+         single host,       ie: 10.20.30.40
+         starting host,     ie: 192 (expands to 192.255.255.255)
+EOM
+
+         exit;   
+      }
+
+      #  Save localnet
+      push @Net, sprintf ("%03d.%03d.%03d.%03d",
+      unpack("C4",pack("N", $n1))), sprintf ("%03d.%03d.%03d.%03d",
+      unpack("C4",pack("N", $n2))); 
+   }
+   return ($NetReverse, @Net);
+}

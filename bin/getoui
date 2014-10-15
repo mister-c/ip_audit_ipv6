@@ -1,0 +1,39 @@
+#!/usr/bin/perl
+
+&Usage unless @ARGV;
+
+sub Usage {
+print<<"EOM";
+
+   getoui <eth>
+   
+   eth - first 6 hexidecimal digits of ethernet address.
+   Looks up manufacturer at 
+      http://standards.ieee.org/cgi-bin/ouisearch?$ARGV[0]
+   and prints result
+
+   requires program 'lynx'
+
+EOM
+exit;
+}
+
+
+open F, "lynx -source http://standards.ieee.org/cgi-bin/ouisearch?$ARGV[0] | "
+   or die "Cannot open lynx browser\n";
+
+$found=0;
+while (<F>) {
+	chomp;
+	if (/\s\(hex\)\s/) {
+		@L = split;
+		shift @L;
+		shift @L;
+		print join(" ",@L), "\n";
+		$found=1;
+		last;
+	}
+}
+close F;
+
+print "UNKNOWN\n" unless $found;

@@ -1,0 +1,39 @@
+#!/bin/sh
+
+#  Delete files after they age
+
+# default ages in days
+DEF_RAW_DAY=7
+DEF_DATA_DAY=30
+DEF_HTML_DAY=60
+
+IP_DIR=$HOME
+REPTRASH=$IP_DIR/bin/reptrash
+
+#  Read configuration ages if any
+. $IP_DIR/ipaudit-web.conf
+
+#  30min raw packet data
+if [ -z "$RAW_DAY" ]
+then
+	RAW_DAY=$DEF_RAW_DAY
+fi
+$REPTRASH $IP_DIR/raw/30min  $RAW_DAY
+
+#  30min ipaudit output data
+if [ -z "$DATA_DAY" ]
+then
+	DATA_DAY=$DEF_DATA_DAY
+fi
+$REPTRASH $IP_DIR/data/30min $DATA_DAY
+
+if [ -z "$HTML_DAY" ]
+then
+	HTML_DAY=$DEF_HTML_DAY
+fi
+
+#  30min report html files
+for dir in $IP_DIR/reports/*/*/html
+do
+   $REPTRASH $dir $HTML_DAY
+done

@@ -1,0 +1,132 @@
+#!/usr/bin/perl
+
+$DEFAULT="other";
+
+$TCP=6;
+$UDP=17;
+
+%udp_traffic_type = (
+161 => "snmp",
+6970 => "Real A/V",
+7070 => "Real A/V",
+7778 => "UT",
+27005 => "Half-Life"
+);
+
+%tcp_traffic_type = (
+25 => "mail",
+143 => "imap",
+220 => "imap3",
+123 => "ntp",
+161 => "snmp",
+80 => "http", 
+443 => "https",
+21 => "ftp",
+20 => "ftp-data",
+22 => "ssh",
+21 => "telnet",
+119 => "news",
+109 => "pop2",
+110 => "pop3",
+137 => "NetBios-ns",
+139 => "NetBios",
+1080 => "socks",
+3128 => "squid",
+1214 => "FastTrack",
+5000 => "imesh",
+5190 => "AOL_IM",
+5500 => "Hotline",
+5501 => "Hotline",
+6667 => "irc",
+7070 => "Real_A/V",
+8000 => "Shoutcast",
+8311 => "scour",
+6346 => "gnutella"
+);
+
+%protocol = (
+1 => "ICMP",
+6 => "TCP",
+17 => "UDP"
+);
+
+while (<>) {
+	@F = split;
+	$port = $DEFAULT;
+	# TCP
+	if ($F[2]==$TCP) {
+		($lo_port,$hi_port) = $F[3]<$F[4] ? ($F[3],$F[4]) : ($F[4],$F[3]);
+		if (defined $tcp_traffic_type{$lo_port}) {
+			$port = $tcp_traffic_type{$lo_port};
+		} elsif (defined $tcp_traffic_type{$hi_port}) {
+			$port = $tcp_traffic_type{$hi_port};
+		} elsif ($lo_port=~/^(\d)\1(\d)\2$/ || $hi_port=~/^(\d)\1(\d)\2$/) {
+			$port = "napster";
+		} else {
+			$port = "TCP";
+		}
+	} elsif ($F[2]==$UDP) {
+		($lo_port,$hi_port) = $F[3]<$F[4] ? ($F[3],$F[4]) : ($F[4],$F[3]);
+		if (defined $udp_traffic_type{$lo_port}) {
+			$port = $udp_traffic_type{$lo_port};
+		} elsif (defined $udp_traffic_type{$hi_port}) {
+			$port = $udp_traffic_type{$hi_port};
+		} else {
+			$port = "UDP";
+		}
+	#  Other protocols
+	} elsif (defined $protocol{$F[2]}) {
+		$port = $protocol{$F[2]};
+	}
+	
+	$sum_in {$port} += $F[5];
+	$sum_out{$port} += $F[6];
+}
+
+# Calculate total traffic
+for (keys %sum_in) {
+	$sum_both{$_} = $sum_in{$_} + $sum_out{$_};
+}
+
+# printf "#%9s %20s %20s %20s\n", "protocol", "both", "incoming", "outgoing";
+# printf "#%9s %20s %20s %20s\n", "--------", "----", "--------", "--------";
+for (sort {$sum_both{$b}<=>$sum_both{$a}} keys %sum_both) {
+	next if $_ eq $DEFAULT;
+	printf "%s %s %s %s\n", 
+		$_, 
+		&ic($sum_in{$_}), 
+		&ic($sum_out{$_}),
+		&ic($sum_both{$_});
+	$in  += $sum_in{$_};
+	$out += $sum_out{$_};
+}
+
+#  Print other
+$_ = $DEFAULT;
+printf "%s %s %s %s\n", 
+	$_, 
+	&ic($sum_in{$_}), 
+	&ic($sum_out{$_}),
+	&ic($sum_both{$_});
+$in  += $sum_in{$_};
+$out += $sum_out{$_};
+
+
+#  Print total
+
+printf "%s %s %s %s\n", "TOTAL", 
+&ic($in), 
+&ic($out),
+&ic($in+$out);
+
+
+exit;
+
+
+
+#  Insert comma's into number
+sub ic {
+        my ($x) = @_;
+        1 while ($x=~s/(\d)(\d\d\d)(?!\d)/$1,$2/g);
+        return $x;
+}

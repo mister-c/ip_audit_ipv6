@@ -1,0 +1,86 @@
+#!/bin/sh
+
+#
+#  This script 
+#    (1) checks the log files *.log to find the last entry date
+#    (2) reads data from that date forward from 30min/traffic html reports
+#    (3) for each log file produces a graph of the last two weeks of data
+#
+#  It is called every 30min by the ipaudit job
+#
+#  You can run this script manually without arguments like: ./runcron
+
+
+#  Read arguments sent by ipaudit 30min job (if present)
+IP_DIR=$1
+DATE=$2
+
+#  If no IP_DIR specified use home
+if [ .$IP_DIR = . ]
+then
+	export IP_DIR=$HOME
+fi
+
+if [ .$DATE = . ]
+then
+	export DATE=`$IP_DIR/bin/pdate`
+fi
+
+#  Get GNUPLOT for use by Graph* programs
+. $IP_DIR/ipaudit-web.conf
+export GNUPLOT
+
+#  Directory of html report files
+HDIR=../0traffic/html
+
+# LOG FILES
+TLOG=ReportTraffic.log
+ELOG=ReportExternal.log
+LLOG=ReportLocalHost.log
+RLOG=ReportRemoteHost.log
+LBLOG=ReportLocalBusy.log
+RBLOG=ReportRemoteBusy.log
+
+#  GRAPH IMAGE FILES
+TIMG=$IP_DIR/public_html/images/ReportTraffic.png
+EIMG=$IP_DIR/public_html/images/ReportExternal.png
+LIMG=$IP_DIR/public_html/images/ReportLocalHost.png
+RIMG=$IP_DIR/public_html/images/ReportRemoteHost.png
+LBIMG=$IP_DIR/public_html/images/ReportLocalBusy.png
+RBIMG=$IP_DIR/public_html/images/ReportRemoteBusy.png
+
+# Extract date from html files, place in log file
+#
+#  Arguments to:  ReportLog HDIR LOG STR1/STR2 N,SKIP0,SKIP1 PATTERN
+#
+#  HDIR          - directory of html format report files to scan
+#  LOG           - path/name to log file to write output
+#  STR1/STR2     - string(s) in report file that signals start/stop of text scan
+#  N/SKIP0/SKIP1 - maximum number of values to scan, first/remaining skip counts
+#  PATTERN       - perl regex match pattern for finding values in report file
+#
+./ReportLog $HDIR $TLOG  Traffic          3     '/\[\s*([0-9,]+)\s*\]/g'
+./ReportLog $HDIR $ELOG  Internal         3     '/\[\s*([0-9,]+)\s*\]/g'
+./ReportLog $HDIR $LLOG  LocalHost        3     '/\[\s*([0-9,]+)\s*\]/g'
+./ReportLog $HDIR $RLOG  RemoteHost       3     '/\[\s*([0-9,]+)\s*\]/g'
+./ReportLog $HDIR $LBLOG "Busiest Local/Busiest Remote" 5,2,2 '/>([0-9,]+)</g'
+./ReportLog $HDIR $RBLOG "Busiest Remote/Busiest Host"  5,2,2 '/>([0-9,]+)</g'
+
+#  Read logs and produce graphs
+#
+#   Arguments to GraphXXXXX LOG IMG DATE YMAX TITLE
+#
+#   LOG   - path/name to log file to read plot values
+#   IMG   - path/name to log file to write graph
+#   DATE  - date string to place in graph
+#   YMAX  - optional maximum Y value in graph (set in ipaudit-web.conf)
+#   TITLE - graph title
+#  
+#
+./GraphTraffic    $TLOG  $TIMG  "$DATE" "$YMAX_TRAFFIC"
+./GraphExternal   $ELOG  $EIMG  "$DATE" "$YMAX_EXTERNAL"
+./GraphHost       $LLOG  $LIMG  "$DATE" "$YMAX_LOCAL"       "Local Host Count" 
+./GraphHost       $RLOG  $RIMG  "$DATE" "$YMAX_REMOTE"      "Remote Host Count"
+./GraphBusy       $LBLOG $LBIMG "$DATE" "$YMAX_LOCAL_BUSY"  "Local Busiest Hosts"
+./GraphBusy       $RBLOG $RBIMG "$DATE" "$YMAX_REMOTE_BUSY" "Remote Busiest Hosts"
+

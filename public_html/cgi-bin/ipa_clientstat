@@ -1,0 +1,364 @@
+#!/usr/bin/perl -T
+
+
+#
+#  Search ipaudit LocalHost daily files for total traffic 
+#  for particular ip and date
+#
+
+BEGIN {
+  #make adjust-cgi will search and replace the below from
+  #what the configure script has detected as the ipaudit homedir.
+  unshift (@INC,"/home/ipaudit/");
+}
+
+use POSIX;
+use ipaudit_config;
+%conf = ipa_getconf();
+
+$IP_DIR="$conf{'IP_DIR'}";
+$IP_DIR="/home/ipaudit" if !$IP_DIR;
+$ZGREP="$conf{'ZGREP'}";
+$ZGREP="/usr/bin/zgrep" if !$ZGREP;
+
+#  Untaint variables
+($ZGREP)  =  $ZGREP  =~ m|^([\w/]+)$|;
+($IP_DIR) =  $IP_DIR =~ m|^([\w/]+)$|;
+($ENV{'PATH'}) = $ZGREP =~ m|^([\w/]+)/\w+$|;
+$ENV{PATH} .= ":/bin:/usr/bin";
+delete @ENV{'IFS', 'CDPATH', 'ENV', 'BASH_ENV'};
+
+
+$DAILY_DIR="$IP_DIR/data/daily/localhost";
+$WEEKLY_DIR="$IP_DIR/data/weekly/localhost";
+$TITLE="IPAUDIT - Host Traffic";
+
+#  If OFFER_QUERY is 0, then script only shows usage of web client ip
+#  If OFFER_QUERY is not 0, then script displays form for entering an ip 
+#  address, and if no ip address has been entered yet it uses the web client ip.
+$OFFER_QUERY=0;
+
+#  Use Socket module to convert DNS name to ip address (gethostbyname)
+use Socket;
+
+#  Look for form input from refering web page
+if ($OFFER_QUERY != 0) {
+
+	for (split /\&/, $ENV{QUERY_STRING}) {
+		($key,$val) = split /=/;
+		$val =~ s/%([0-9a-fA-F]{2})/chr(hex($1))/ge;
+		$input{$key} = $val;
+	}
+
+	#  No ip argument, use web client ip
+	if ( ! defined $input{ARG_IP} || $input{ARG_IP} eq "" ) {
+		$ip = $ENV{REMOTE_ADDR};
+	#  Argument is IP address
+	} elsif ($input{ARG_IP}=~/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/)  {
+		$ip = $input{ARG_IP};
+	#  Argument is DNS
+	} else {
+		$ip = &getip($input{ARG_IP}) || $ENV{REMOTE_ADDR};
+		#  Send user message if name not found
+		if ($ip eq "0.0.0.0") {
+			&printerror ("Unknown host name", 
+			sprintf ("Cannot find ip address for host name \"$input{ARG_IP}\"."));
+			exit;
+		}
+	}
+
+#  No web form from referring web page, so just use web client ip
+} else {
+	$ip = $ENV{REMOTE_ADDR};
+}
+
+
+#  Format (and untaint) ip address with zero padding
+$ipf = sprintf "%03d.%03d.%03d.%03d", $ip=~/(\d{1,3})/g;
+
+
+#  If no date entered then use yesterday
+if (defined($input{date}) && $input{date} ne "") {
+	$date = &date ($input{date}, "%Y-%m-%d");
+} else {
+	$date = &date (0,"%Y-%m-%d", -1);
+	
+}
+
+
+
+#  Get data for data and 7 previous days
+$weekcum = 0;   #m.l.
+$atSunday = 0;
+for ($day=0;$day<7;$day++) { #m.l.
+	$cur = &date ($date, "%Y-%m-%d", -$day);
+	$res = `$ZGREP $ipf $DAILY_DIR/$cur.txt.gz`;
+	chomp $res;
+	(undef, $in, $out) = split (/\s+/, $res);
+	if (defined($in) && defined($out)) {
+		$tot = $in+$out;
+		$inf  = &ic($in);
+		$outf = &ic($out);
+		$totf = &ic($tot);
+	} else {
+		$inf  = "(missing data)";
+		$outf = "(missing data)";
+		$totf = "(missing data)";
+	}
+	@{$daily{$cur}} = ($inf, $outf, $totf, $tot);
+
+	# Calculate traffic so far for this calendar week
+	#next if $atSunday;
+	$weekcum += $tot;
+	$dow = &date ($date, "%w", -$day);
+	$atSunday = ($dow==0);
+}
+
+#  Get data for past 4 weeks
+$sunday = &get_sunday($date);
+
+for ($day=0;$day<=21;$day+=7) {
+	$cur = &date ($sunday, "%Y-%m-%d", -$day);
+	$res = `$ZGREP $ipf $WEEKLY_DIR/$cur*`;
+	chomp $res;
+	(undef, $in, $out) = split (/\s+/, $res);
+	if (defined($in) && defined($out)) {
+		$tot = $in+$out;
+		$inf  = &ic($in);
+		$outf = &ic($out);
+		$totf = &ic($tot);
+	} else {
+		$inf = "(missing data)";
+		$outf = "(missing data)";
+		$totf = "(missing data)";
+	}
+	@{$weekly{$cur}} = ($inf, $outf, $totf, $tot);
+}
+
+#
+#  Web page output starts here
+#
+
+#  Print page heading
+$DateStr = &date ("", "%a, %b %d %Y, %I:%M %p");
+print <<"EOM";
+Content-type: text/html
+
+<html>
+<head>
+	<title>IPAUDIT - Host Traffic</title>
+</head>
+
+<body leftmargin=0 rightmargin=0 topmargin=0 bgcolor="White" text="#080808" link="#2B4E9D" vlink="#942B9D" alink="#6C8FBB">
+
+<table width="100%" border="0" cellspacing="0" cellpadding="2"
+align="center" bgcolor="#EDEDED">
+<tr>
+<td height=40 colspan=5 align="center" bgcolor="#6C8FBB">
+<h4 class="ed"><b>Host Report</b></h4></td>
+</tr>
+<tr>
+<td height=40 width="15%" align="center"><a href="/~ipaudit">Home</a></td>
+<td width="15%" align="center">&nbsp;</td>
+<td width="30%" align="center"> <b>$DateStr</b> </td>
+<td width="15%" align="center">&nbsp;</td>
+<td width="15%" align="center">&nbsp;</td>
+</tr></table>
+
+<br><br> 
+
+<table width="600" border="0" cellspacing="0" cellpadding="10" align="center">
+<tr>
+<td>
+<p>
+
+<table width="100%" bgcolor="818181" border="0" cellspacing="1" cellpadding="5">
+EOM
+
+
+if ($OFFER_QUERY) {
+
+#  Default form value
+$ARG=$input{ARG_IP} || $ip;
+print<<"EOM";
+	<tr>
+		<td width="50%" bgcolor="FFFFFF"><font face="verdana" size="2" color="#080808">
+			Request IP Address or DNS name</font></td>
+		<td width="50%" bgcolor="FFFFFF" align="right"><font face="verdana" size="2" color="#080808">
+		<form action="$ENV{SCRIPT_NAME}">
+		<input type=text name=ARG_IP value="$ARG" size=32>
+		</form>
+		</font></td>
+	</tr>
+		<tr>
+			<td width="50%" bgcolor="FFFFFF"><font face="verdana" size="2" color="#080808">IP Address</font></td>
+			<td width="50%" bgcolor="FFFFFF" align="right"><font face="verdana" size="2" color="#080808">$ip</font></td>
+		</tr>
+EOM
+} else {
+print<<"EOM";
+		<tr>
+			<td width="50%" bgcolor="FFFFFF"><font face="verdana" size="2" color="#080808">Your IP Address</font></td>
+			<td width="50%" bgcolor="FFFFFF" align="right"><font face="verdana" size="2" color="#080808">$ip</font></td>
+		</tr>
+EOM
+}
+
+#  Print traffic summary in form
+$weekcum2 = &ic($weekcum);
+print <<"EOM";
+		<tr>
+			<td bgcolor="FFFFFF"><font face="verdana" size="2" color="#080808">Traffic Total for past 7 days<br><font size="1">
+			(Excluding today)</font></font></td>
+			<td bgcolor="FFFFFF" align="right"><font face="verdana" size="2" color="#080808">$weekcum2</font></td>
+		</tr>
+		</table>
+EOM
+#  end of beginning table with ip info or form
+
+
+# Print daily table
+print <<"EOM";
+<p>	
+<table width="100%" bgcolor="818181" border="0" cellspacing="1" cellpadding="5">
+	<tr>
+	<td align="center" colspan="4" bgcolor="ededed"><font face="verdana" size="2" color="#080808">
+	<b>DAILY TRAFFIC</b> (bytes)</font>
+	</td>
+	</tr>
+	<tr>
+	<td width="25%" bgcolor="FFFFFF" align="center"><font face="verdana" size="2" color="#080808"><b>Date</b></font></td>
+	<td width="25%" bgcolor="FFFFFF" align="center"><font face="verdana" size="2" color="#080808"><b>Incoming</b></font></td>
+	<td width="25%" bgcolor="FFFFFF" align="center"><font face="verdana" size="2" color="#080808"><b>Outgoing</b></font></td>
+	<td width="25%" bgcolor="FFFFFF" align="center"><font face="verdana" size="2" color="#080808"><b>Total</b></font></td>
+	</tr>
+EOM
+
+for (sort keys %daily) {
+	($inf, $outf, $totf, $tot) = @{$daily{$_}};
+	$format_date = &date ($_, "%a, %b %e, %Y");
+print <<"EOM";
+	<tr>
+		<td bgcolor="FFFFFF"              ><font face="verdana" size="2" color="#080808">$format_date</font></td>
+		<td bgcolor="FFFFFF" align="right"><font face="verdana" size="2" color="#080808">$inf        </font></td>
+		<td bgcolor="FFFFFF" align="right"><font face="verdana" size="2" color="#080808">$outf       </font></td>
+		<td bgcolor="FFFFFF" align="right"><font face="verdana" size="2" color="#080808">$totf       </font></td>
+	</tr>
+EOM
+}
+
+print "</table>\n";
+
+
+# Print weekly table
+print <<"EOM";
+<p>		
+<table width="100%" bgcolor="818181" border="0" cellspacing="1" cellpadding="5">
+
+<tr>
+<td align="center" colspan="4" bgcolor="ededed">
+<font face="verdana" size="2" color="#080808">
+<b>WEEKLY TRAFFIC</b> (bytes)<br>
+-- Sunday through Saturday --</font></td>
+</tr>
+
+<tr>
+	<td width="25%" bgcolor="FFFFFF" align="center"><font face="verdana" size="2" color="#080808"><b>Date</b></font></td>
+	<td width="25%" bgcolor="FFFFFF" align="center"><font face="verdana" size="2" color="#080808"><b>Incoming</b></font></td>
+	<td width="25%" bgcolor="FFFFFF" align="center"><font face="verdana" size="2" color="#080808"><b>Outgoing</b></font></td>
+	<td width="25%" bgcolor="FFFFFF" align="center"><font face="verdana" size="2" color="#080808"><b>Total</b></font></td>
+</tr>
+EOM
+
+for (sort keys %weekly) {
+	($inf, $outf, $totf, $tot) = @{$weekly{$_}};
+	$format_date = &date ($_, "%a, %b %e, %Y");
+print <<"EOM";
+<tr>
+	<td bgcolor="FFFFFF"><font face="verdana" size="2" color="#080808">$format_date</font></td>
+	<td bgcolor="FFFFFF" align="right"><font face="verdana" size="2" color="#080808">$inf</font></td>
+	<td bgcolor="FFFFFF" align="right"><font face="verdana" size="2" color="#080808">$outf</font></td>
+	<td bgcolor="FFFFFF" align="right"><font face="verdana" size="2" color="#080808">$totf</font></td>
+</tr>
+EOM
+}
+
+
+print <<"EOM";
+</table>
+</td>
+</tr>
+</table>
+</body>
+</html>
+EOM
+
+
+exit;
+
+#-----------------------------------------------------------------------
+#  Subroutines
+#-----------------------------------------------------------------------
+
+#  Add commas to number
+sub ic {
+	my ($x) = @_;
+	1 while ($x=~s/(\d)(\d\d\d)(?!\d)/$1,$2/g);
+	return $x;
+}
+
+
+#  Get date of TWO sundays ago
+sub get_sunday {
+	my ($cur) = @_;
+	my ($day);
+	$day = &date ($cur, "%w");
+	$day += 7;
+	$date = &date ($cur, "%Y-%m-%d", -$day);
+	return $date;
+}
+
+
+#  Get ip address from DNS name
+#  returns "0.0.0.0" if not found
+sub getip {
+	my ($name) = @_;
+	return sprintf "%d.%d.%d.%d", unpack('C4', gethostbyname($name));
+}
+
+
+#  Print error html message
+sub printerror {
+my ($title, $msg) = @_;
+$TITLE="$ENV{SCRIPT_NAME} - ERROR: $title";
+print<<"EOM";
+Content-type: text/html
+
+<html><head><title>$TITLE</title></head>
+<body bgcolor=white>
+<h2 align=center>$TITLE</h2>
+<hr noshade width=600 align=left>
+<p>
+$msg
+</p>
+EOM
+}
+
+# Local date command  &date(format,date,incr)
+#
+#  format is standard strftime() format
+#  date   in format  yyyy-mm-dd
+#  incr   days to add/sub from date
+#
+sub date {
+	my ($date,$format,$incr) = @_;
+	my ($time);
+
+	if ($date=~/^(\d{4})-(\d{1,2})-(\d{1,2})$/) {
+		$time = mktime (0,0,0,$3,$2-1,$1-1900);
+	} else {
+		$time = time;
+	}
+	$time += $incr * 86_400;
+	return strftime $format, localtime($time);
+}

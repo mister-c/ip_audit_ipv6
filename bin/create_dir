@@ -1,0 +1,29 @@
+cat<<EOM | 
+./raw
+./raw/30min
+./run
+./data
+./data/30min
+./data/daily
+./data/daily/localhost
+./data/monthly
+./data/monthly/localhost
+./data/weekly
+./data/weekly/localhost
+./reports/30min/0traffic/html
+./reports/daily/type/html
+./reports/daily/server2/html
+./reports/daily/traffic/html
+./reports/daily/server/html
+./reports/monthly/traffic/html
+./reports/weekly/traffic/html
+./public_html/images
+EOM
+while read dir
+do
+	if [ ! -d $dir ]
+	then
+		mkdir $dir
+	fi
+done
+

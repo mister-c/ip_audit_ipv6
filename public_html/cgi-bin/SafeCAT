@@ -1,0 +1,209 @@
+#!/usr/bin/perl
+
+BEGIN {
+  #make adjust-cgi will search and replace the below from
+  #what the configure script has detected as the ipaudit homedir.
+  unshift (@INC,"/home/ipaudit/");
+}
+
+use ipaudit_config;
+%conf = ipa_getconf();
+
+$IP_DIR = $conf{'IP_DIR'};
+$IP_DIR = "/home/ipaudit/" if !$IP_DIR;
+
+# List of allowed files and full path
+%IsAllowed = (
+"traffic",  "$IP_DIR/reports/30min/graphic/ReportTraffic.log",
+"localhost",     "$IP_DIR/reports/30min/graphic/ReportLocalHost.log",
+"remotehost",   "$IP_DIR/reports/30min/graphic/ReportRemoteHost.log",
+"external", "$IP_DIR/reports/30min/graphic/ReportExternal.log",
+"localbusy", "$IP_DIR/reports/30min/graphic/ReportLocalBusy.log",
+"remotebusy", "$IP_DIR/reports/30min/graphic/ReportRemoteBusy.log",
+);
+
+%Title= (
+'traffic',    'internet traffic',
+'localhost',  'local host count',
+'remotehost', 'remote host count',
+'external',   'internal/external traffic',
+'localbusy',  'local busy host',
+'remotebusy', 'remote busy host',
+);
+
+%Header= (
+'traffic',    'Date/Time                  Total        Incoming        Outgoing',
+'localhost',  'Date/Time          ReceivingOnly       Receive&Send      SendingOnly',
+'remotehost', 'Date/Time          ReceivingOnly       Receive&Send      SendingOnly',
+'external',   'Date/Time                Internal       External         Unknown',
+'localbusy',  'Date/Time         1st_BusiestHost   2nd_BusiestHost   3rd_BusiestHost   4th_BusiestHost   5th_BusiestHost',
+'remotebusy', 'Date/Time         1st_BusiestHost   2nd_BusiestHost   3rd_BusiestHost   4th_BusiestHost   5th_BusiestHost'
+);
+
+#  These perl expressions are evaluated to obtain columns value
+%Code= (
+'traffic',     '($f[0], $f[1], $f[2], $f[3])',
+'localhost',   '($f[0], $f[1]-$f[3], $f[2]+$f[3]-$f[1], $f[1]-$f[2])',
+'remotehost',  '($f[0], $f[1]-$f[3], $f[2]+$f[3]-$f[1], $f[1]-$f[2])',
+'external',    '($f[0], $f[1], $f[2], $f[3])',
+'localbusy',   '($f[0], $f[1], $f[2], $f[3], $f[4], $f[5])',
+'remotebusy',  '($f[0], $f[1], $f[2], $f[3], $f[4], $f[5])'
+);
+
+
+#  For mod_perl compatability, obtain @ARGV from $ENV{QUERY_STRING}
+@ARGV = split /\+/, $ENV{QUERY_STRING};
+
+&Usage unless @ARGV;
+
+sub Usage {
+print<<EOM;
+Content-type: text/html
+
+<html><head><title>No File Specified</title></head>
+<body bgcolor=white>
+<tt>No File Specified</tt>
+</body></html>
+EOM
+exit;
+}
+
+&Usage unless $IsAllowed{$ARGV[0]};
+
+print<<"EOM";
+Content-type: text/html
+
+<html><head><title>$Title{$ARGV[0]} - Raw Data ($ARGV[1])</title></head>
+<body bgcolor=white>
+<tt><font size+2>$Title{$ARGV[0]} - Raw Data ($ARGV[1])</font></tt>
+<hr nospace>
+<p>
+<pre>
+<b>$Header{$ARGV[0]}</b>
+EOM
+
+sub tail($$$) {
+  my(@file_stat, @revlines, @lines, $revlines, $lines);
+  my($file, $tailback, $lines_requested) = @_;
+  open(FILE, "<$file") || bad_file("$!");
+  seek(FILE,-$tailback,2); # Start at end of file, and read back $tailback:
+  @lines = reverse(<FILE>); # Reverse lines so we get latest entries first.
+                            # This returns empty, on atleast fbsd 4.2 with perl 5.005_03,
+                            # if we've seek()ed back past the start of file.
+                            # Linux and Solaris seem ok.
+  @file_stat = stat($file);
+  until($#lines+1 > $lines_requested) # do ">" so we're sure our last line is a full one.
+  {
+    $tailback += 120;
+    if($tailback > $file_stat[7])
+    {
+      seek(FILE,0,0); # Read in the whole file, as we've tried to grab bytes 
+                      # that don't exist.
+      @lines = reverse(<FILE>);
+      last;
+    } else {
+      seek(FILE,-$tailback,2); 
+      @lines = reverse(<FILE>);
+    }
+  }
+  my $count = 0;
+  foreach $lines(@lines)
+  {
+    last if($count == -$lines_requested);
+    push(@revlines, $lines) if $lines =~ /^200\d/;
+    $count--;
+  }
+  close(FILE);
+  return(@revlines);
+}
+
+#  Determine if reading entire file or just beginning or end
+#
+#  01/20/02 - jh@dok.org
+#  Removed dependency on the shell (moreso for dependency on tac, really)
+#  Thanks for the magic function, cgreen. ;)
+#  02/06/02 - jh@dok.org
+#  Checking $IsAllowed{$ARGV[0]} file size to avoid going back past the
+#  beginning of the file - was relying an another method, but that didn't
+#  work on all systems I ran this on.
+
+if ($ARGV[1]>0) {
+	# Open 'head' output to get beginning lines
+	# open (FILE, "head -$ARGV[1] $IsAllowed{$ARGV[0]} | tac | ")
+	#	or  die "ERROR:  Cannot open file<br></body></html>\n";
+        open(FILE, "<$IsAllowed{$ARGV[0]}") || bad_file("$!");
+	my $i;
+	for($i = 0; $i < $ARGV[1]; $i++)
+	{
+		my $lines = <FILE>;
+		if(!$lines) { last; } #We've read the whole file, reverse it and move on.
+		push(@revlines, $lines);
+	}
+	@revlines = reverse(@revlines);
+	close(FILE);
+} elsif ($ARGV[1]<0) {
+	# Open 'tail' output to get last lines
+	# open (FILE, "tail $ARGV[1] $IsAllowed{$ARGV[0]} | tac | ")
+	#	or  die "ERROR:  Cannot open file<br></body></html>\n";
+	my $tailback = 60 * abs($ARGV[1]); # A single line for me averages about 44 bytes.
+	                                   # 60 should be enough to cover larger lines.
+	@revlines = tail($IsAllowed{$ARGV[0]}, $tailback, abs($ARGV[1]));
+} else {
+	#  Open entire file
+	open (FILE, $IsAllowed{$ARGV[0]})
+		or  bad_file("$!");
+	@revlines = <FILE>;
+	close FILE;
+}
+
+if(!@revlines) { 
+	bad_file("File contains no data"); 
+} else {
+	foreach $revlines(@revlines) {
+		chomp($revlines);
+		@f = split(/ /, $revlines);
+		@F = eval($Code{$ARGV[0]});
+		print "<a href=", &getURL($F[0]), ">$F[0]</a>";
+			for ($i=1;$i<@F;$i++) {
+			#  Use commas if field is a number
+			if ($F[$i]=~/^\d+$/) {
+				printf " %15s", &ic($F[$i]);
+			} else {
+				printf " %15s", $F[$i];
+			}
+		}
+		print "\n";
+	}
+}
+
+print "</pre></body></html>\n";
+
+exit;
+
+sub bad_file {
+	print <<EOM;
+	<body bgcolor=white>
+	<p><b>
+	ERROR:  Unable to read <i>$ARGV[0]</i>: @_
+	</b></pre></body></html>
+EOM
+	        exit;
+}
+
+sub getURL {
+	my ($date) = @_;
+	my ($URL0) = 
+		"ipahttp?30min/0traffic+";
+	my ($URL1) = ".html";
+	return $URL0 . $date . $URL1;
+}
+
+#
+#  Convert positive whole number from nnnnnn to n,nnn,nnn etc.
+#
+sub ic {
+	my ($string) = @_;
+	1 while $string=~s/(\d)(\d\d\d)(?!\d)/$1,$2/g;
+	return $string;
+}
+

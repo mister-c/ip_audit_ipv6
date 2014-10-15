@@ -1,0 +1,143 @@
+#!/usr/bin/perl -Tw
+## jh@dok.org - v0.3.2, 07/24/01
+## IPAdate.pl - An effort, based loosely on GNU date, to make IPAudit more
+ # portable to other OSes.
+ # This will work with IPaudit as a drop-in replacement for systems
+ # w/o a gnu date (BSD/Solaris that I know of). It requires ParseDate.pm.
+## *sigh* This seems to require spaces between args. ::Std seems to not 
+ # require this, but I had problems getting ::Std to read mixed args/commands.
+## jh@dok.org 12/10/01
+ # This is outdated now, as IPaudit can figure out the date for itself.
+ 
+use strict;
+use Time::ParseDate 101.062101;
+use POSIX qw(strftime);
+use Getopt::Long;
+Getopt::Long::Configure("pass_through");
+
+my(%options, $remains, $date_opts);
+my $format = "%a %b %e %H:%M:%S %Z %Y";
+my $verbose = 0;
+
+if(!defined(@ARGV)) {
+  ## If there are no ARGs, assume we just want the date.
+  print(strftime "$format\n", localtime);
+  exit;
+}
+
+GetOptions("date=s"   => \$options{date},
+           "verbose!" => \$verbose);
+
+if(defined($options{help})) {
+  help();
+}
+
+if(!defined($options{date})) {
+  $date_opts = parsedate("now");
+  verbose("Set date (no supplied opts): $date_opts\n"); 
+} else {
+  $date_opts = $options{date};
+  verbose("Read options: $date_opts\n");
+  ($date_opts, $remains) = parsedate("$date_opts");
+  verbose("Setting date_opts: $date_opts, setting remains: $remains\n");
+  if(defined($remains) && $remains =~ /([\d]+)[\s]+([\w]+)[\s]+ago$/) {
+    ## If there are remains, then we were probably told to perform some
+     # more action on the input - add or subtract.
+    verbose("found remains (Sub)\n");
+    ## Change the remains to something ParseDate can understand.
+    $remains = "-$1 $2\n";
+    verbose("remains: $remains\n");
+    ## Now use the date we were supplied with and apply the remains.
+    verbose("Using $date_opts for parsing - subtracting $remains\n");
+    $date_opts = parsedate("$remains",NOW => $date_opts);
+  } elsif(defined($remains) && $remains =~ /([\d]+)[\s]+([\w]+)$/) {
+    verbose("found remains (Add)\n");
+    $remains = "+$1 $2";
+    verbose("remains: $remains\n");
+    verbose("Using $date_opts for parsing - adding $remains\n");
+    $date_opts = parsedate("$remains", NOW => $date_opts);
+  } else {
+    verbose("remains: I duno about ($remains), re: ($options{date})\n");
+  }
+  die("Can't grok date input: $options{date}\n") if(!defined($date_opts));
+}
+
+## An attempt to grab +FORMAT type from the input (which was
+ # passed through to ARGV - assuming there isn't anything else here.
+
+if("$#ARGV" == "0")
+{
+  if(defined($ARGV[0]) && "$ARGV[0]" =~ /^\+(\%.*)/) {
+    $format = "$1";
+    verbose("format: $format\n");
+  } 
+}
+
+## ... and all of that for this
+print(strftime "$format\n", localtime($date_opts));
+
+## Sub routines beyond this point.
+
+sub help {
+  print <<EOL
+  
+  -d    : Display time described by STRING, not `now' 
+  EX:
+  	last Tuesday
+	+3 secs
+	-4 days
+	04.04.95 00:22
+	Mon Jan  2 04:24:27 1995
+	
+  -v    : Verbose
+  -h    : This help
+
+EOL
+  ;
+  exit;
+}
+
+sub verbose {
+  if("$verbose" > "0")
+  {
+    print("Debug: @_");
+  }
+}
+
+## So far this seems compatable with the following grepped vars:
+ # (except for those options which don't have a space after it.
+ # There seems to be only one of those (-d below).
+#cron30min:CURDATE_DEF=`$GNUDATE`
+#cron30min:CURDATE=`$GNUDATE "+%Y-%m-%d-%H:%M" -d "$CURDATE_DEF"`
+#cron30min:minute=`$GNUDATE +%M`
+#cron30min:OLDDATE=`$GNUDATE "+%Y-%m-%d" -d "$CURDATE_DEF 14 days ago"`
+#crondaily:if [ -z "$GNUDATE" ]
+#crondaily:   GNUDATE=date
+#crondaily:      DATE=`$GNUDATE -d "$1" +%Y-%m-%d`
+#crondaily:      DATE=`$GNUDATE -d "1 day ago" +%Y-%m-%d`
+#cronweekly:GNUDATE="/bin/date"
+#cronweekly:     DATE=`$GNUDATE -d "$1" +%Y-%m-%d`
+#cronweekly:     DATE=`$GNUDATE -d "7 day ago" +%Y-%m-%d`
+#datelist:GNUDATE="/bin/date"
+#datelist:   startdate=`$GNUDATE -d"$4" +"%Y-%m-%d"`
+#datelist:   startdate=`$GNUDATE "+%Y-%m-%d"`
+#datelist:   narg=`$GNUDATE "+%Y-%m-%d" -d " $startdate $i day "`
+#ipaudit.cfg:GNUDATE=/bin/date
+#$GNUDATE= defined $ENV{GNUDATE} ? $ENV{GNUDATE} : "date";
+#        $MaxDateTime = `$GNUDATE -d "$LastDate + 1 day" "+%Y-%m-%d-%H:%M"`;
+#        $MinDateTime = `$GNUDATE -d "$LastDate 13 day ago" "+%Y-%m-%d-%H:%M"`;
+#        $UpdateDateTime = `$GNUDATE "+%Y-%m-%d %H:%M %Z"`;
+#DATE=`$GNUDATE +%Y-%m-%d`
+#        $MaxDateTime = `$GNUDATE -d "$LastDate + 1 day" "+%Y-%m-%d-%H:%M"`;
+#        $MinDateTime = `$GNUDATE -d "$LastDate 13 day ago" "+%Y-%m-%d-%H:%M"`;
+#        $UpdateDateTime = `$GNUDATE "+%Y-%m-%d %H:%M %Z"`;
+#        $MaxDateTime = `$GNUDATE -d "$LastDate + 1 day" "+%Y-%m-%d-%H:%M"`;
+#        $MinDateTime = `$GNUDATE -d "$LastDate 13 day ago" "+%Y-%m-%d-%H:%M"`;
+#        $UpdateDateTime = `$GNUDATE "+%Y-%m-%d %H:%M %Z"`;
+#        $MaxDateTime = `$GNUDATE -d "$LastDate + 1 day" "+%Y-%m-%d-%H:%M"`;
+#        $MinDateTime = `$GNUDATE -d "$LastDate 13 day ago" "+%Y-%m-%d-%H:%M"`;
+#        $UpdateDateTime = `$GNUDATE "+%Y-%m-%d %H:%M %Z"`;
+#($Date,$Hour,$Min) = split(/[ \n]/,`$GNUDATE -d "30 min ago" "+%Y-%m-%d %H %M"`);
+#        $StartDateTime = `$GNUDATE -d "$Hour:$Min 60 min ago" "+%Y-%m-%d-%H:%M"`;
+#        ($CurDate, $CurTime) = split (/[ \n]/,`$GNUDATE +"%Y-%m-%d %H:%M" -d "$CurDate $CurTime + 30 min"`);
+

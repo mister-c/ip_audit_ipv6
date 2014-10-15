@@ -1,0 +1,195 @@
+IPAUDIT-WEB FAQ
+
+1. Why don't get any graphics on the ipaudit home page? (Aug 23, 2000)
+
+The problem could might lie anywhere in a long sequence of events. Here are
+some things to look at.
+
+* Are you getting any reports under the 30min traffic link? If not,
+then ipaudit is probably not reading any traffic.
+
+* Does the following file exist?
+/home/ipaudit/reports/30min/graphic/ReportTraffic.log
+If not, then probably the program ReportLog in the same directory may be broken.
+
+* Does the file ReportTraffic.gif exist (or perhaps .png in place of .gif)? If
+not, the problem is with the GraphTraffic file.
+If it does exist, then perhaps the home page
+/home/ipaudit/public_html/index.html has an incorrect link to the .gif (or
+.png) file. 
+
+
+
+2. Is it possible to run IPAUDIT with multiple eth devices in the same config
+file?
+
+Version 0.95 of ipaudit now allows multiple interfaces at once - so far I'm
+only aware of it working under Linux. If you know of success on other platforms
+I'd appreciate a quick note to jon.rifkin@uconn.edu. Thanks.
+
+An alternative way to accomplish the goal is to use this ugly workaround. Run
+two instances of ipaudit, one for each interface, and write the output to two
+separate files. THEN, use 'total' to combine them. For example, something like
+
+     ipaudit -ofile1.data
+     ipaudit -ofile2.data
+     
+     cat file1.data file2.data | total 1,2,3,4,5 6,7,8,9 -  > both.data
+
+Then use the file both.data to do your statistics. Note that if you use
+ipaudit's -t option to save the times in file1.data and file2.data, you will
+not be able to use 'total' to combine the time fields. Maybe in the next
+version of 'total'.
+
+Told you it was ugly.
+
+
+3. When running IPAUDIT scripts (or when I try cron/cron30min) I get the following error
+
+     /bin/date: invalid date `mer sep 27 16:59:56 CEST 2000'
+     $IP_DIR/ipaudit died prematurely
+
+      (Oct 3, 2000)
+
+I think its a bug in 'date', it cannot read the dates that is writes out when
+the date includes certain time zones, like 'CEST' or 'JAVT'.
+
+Here's how to work around it, in the file cron/cron30min change the line
+
+     CURDATE_DEF=`$GNUDATE`
+to
+     CURDATE_DEF=`$GNUDATE "+%Y-%m-%d %H:%M"`
+
+
+
+
+4. Why can't the ipaudit cron scripts create gif files? The output of cron says
+
+gnuplot> set term gif small size 600,150 xffffff x000000 xdddddd x880000 x008800 x000088 x666666 
+                  ^ 
+line 0: unknown or ambiguous terminal type; type just 'set terminal' for a list 
+
+
+The problem is that your version of gnuplot does not produce gif files.  You
+can convert ipaudit to use png files instead as follows.
+
+      In the four files ~/reports/30min/graphic/Graph* change the line
+
+     set term gif small size 600,150 xffffff x000000 xdddddd x880000 x008800 x000088 x666666
+to
+     set size 1.0, 0.3125
+     set term png small color
+
+      AND, in the file ~/public_html/index.html change the four lines such as
+
+    <img src=images/ReportTraffic.gif>
+to
+    <img src=images/ReportTraffic.png>
+
+
+      AND, in the file ~/reports/30min/graphic/runcron change the four lines such as
+
+   TIMG=$IP_DIR/public_html/images/ReportTraffic.gif
+to
+   TIMG=$IP_DIR/public_html/images/ReportTraffic.png
+
+          Thanks to Andy Z for the solution.
+
+
+5. a script to regenerate all the image data from all the data would be useful.. (Nov 21, 2000)
+
+You can regenerate the graphs by doing the following
+
+   cd ~ipaudit/reports/30min/graphic
+   ./runcron /home/ipaudit `date +%Y-%m-%d-%H:%M`
+
+or if you prefer you can replace the `date...` portion of the second command with a hard coded date/time string such as
+
+   ./runcron /home/ipaudit 2000-11-21-14:22
+
+
+
+
+6. What had to be done to install ipaudit on a Solaris 7 workstation? (Feb 6, 2001)
+
+  src/Makefile:
+  -------------
+  - Added -lnsl -lsocket for building ipaudit, ipstrings to resolve
+    linking problems with pcap
+    (gethostbyname,getprotobyname,getservbyname, getnetbyname).
+
+  hash.c:
+  -------
+  Made a change to hash.c and added <sys/types.h> because it wouldn't
+  compile did not recognize u_char.
+
+  ipaudit.cfg:
+  ------------
+  Changed the interface to le0 from eth0
+
+  cron30min:
+  ----------
+  Needed to remove ps hp ... because this is linux based and not
+  recognized by Solaris.                                                      
+
+
+      Courtesy of Garen Tamrazian
+
+
+7. When running ipaudit-web why am I receiving this email message?
+
+   Message 1/1  From Cron Daemon        Mar 09, 01 03:30:00 PM -0500
+   
+   Return-Path: 
+   Date: Fri, 9 Mar 2001 15:30:00 -0500
+   To: ipaudit@mydomain.com
+   Subject: Cron  cron/cron30min
+   X-Cron-Env: 
+   X-Cron-Env: 
+   X-Cron-Env: 
+   X-Cron-Env: 
+   
+   $IP_DIR/ipaudit died prematurely
+            line 0: all points undefined!
+   
+            line 0: all points undefined!
+   
+            line 0: all points undefined!
+   
+   gzip: /home/ipaudit/raw/30min/2001-03-09-15:30.raw: No such file or directory
+   gzip: /home/ipaudit/data/30min/2001-03-09-15:30.txt: No such file or directory
+           line 0: all points undefined!
+
+      (Mar 12, 2001)
+
+      The above line
+
+   $IP_DIR/ipaudit died prematurely
+
+This indicates that ipaudit aborted. Perhaps its execute permissions are not
+correct. You can test the permissions by running the ipaudit command as the
+ipaudit user,
+
+   > ipaudit eth0
+
+      If the you get the error
+
+   ipaudit: socket: Operation not permitted (Do you need root?)
+
+then the permisissions have not been set correctly. You can fix this by logging
+on as root and typing
+
+   > cd ~ipaudit/bin
+   > chown root ipaudit
+   > chgrp ipaudit ipaudit
+   > chmod 4750 ipaudit
+
+
+
+
+8. Problems running ipaudit-0.95 under Red Hat 7.1?
+
+If you have this problem try using ipaudit version 0.92 instead until the
+current version is fixed.
+
+Thanks to Håkan Franzen for finding the problem and workaround.

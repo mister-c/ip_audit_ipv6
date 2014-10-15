@@ -1,0 +1,86 @@
+#!/bin/sh
+#
+# ipaudit-web:  Monthly traffic report
+#
+#   Uses ipaudit utilities: total makelocal table2html
+#   Other utilities       : awk
+#
+
+NTOP=100
+TFORMAT="border=2 cellpadding=2 cellspacing=0"
+
+IP_DIR=$1
+DATE=$2
+
+#  Set default IP_DIR to $HOME
+[ -z $IP_DIR ] && IP_DIR=$HOME
+
+BIN=$IP_DIR/bin
+
+#  Set default date to Previous Month
+if [ -z $DATE   ] 
+then
+   #  Get day of month (DOM)
+   DOM=`$BIN/pdate -f%d`
+   #  Step back DOM days to reach previous month
+   DATE=`$BIN/pdate -f%Y-%m -a-${DOM}d`
+fi
+
+. $IP_DIR/ipaudit-web.conf
+
+OUTPUT=html/$DATE-traffic.html
+
+#  Find awk binary
+if [ .$AWK = . ]
+then
+   AWK=`which awk`
+fi
+
+#  Clean existing output file
+rm -f $OUTPUT
+
+
+#-----------------------------------------------------------------------
+#  Top local hosts
+#-----------------------------------------------------------------------
+
+#  Write table header
+cat<<EOM >> $OUTPUT
+
+<br><br>
+<table width="640" border="0" cellspacing="0" cellpadding="10" align="center">
+<tr><td>
+   <table width="100%" border="0" cellspacing="1"
+   cellpadding="2" bgcolor="#818181">
+     <tr bgcolor="#EDEDED">
+       <td colspan="5" align="center"><b>Busiest Local Hosts</b></td>
+     </tr>
+     <tr bgcolor="#C9D5E5">
+       <td>IP</td>
+       <td>Host Name</td>
+       <td align="right">Incoming<br>
+       (bytes)</td>
+       <td align="right">Outgoing<br>
+       (bytes)</td>
+       <td align="right">Total<br>
+       (bytes)</td>
+     </tr>
+EOM
+
+#
+#  Read monthly local host file and tally traffic
+#
+FILE=$IP_DIR/data/monthly/localhost/$DATE
+($ZCAT $FILE* 2> /dev/null || cat $FILE*) |
+$BIN/makelocal -f l $LOCALRANGE $OTHERRANGE |
+$AWK '{printf "%s %.f %.f %.f\n", $1, $2, $3, $2+$3}' |
+$BIN/total     -s3r -f$NTOP 1 2,3,4 -  |
+$BIN/table2html -T -s% \
+   -c /ffffff/f5f5dc \
+   - 1 'd($1)' 'c($2)%r' 'c($3)%r' 'c($4)%r' \
+   >> $OUTPUT
+
+cat<<EOM >> $OUTPUT
+</table>
+</td></tr></table>
+EOM

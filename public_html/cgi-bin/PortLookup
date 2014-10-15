@@ -1,0 +1,78 @@
+#!/usr/bin/perl -T
+
+#  For mod_perl compatability, obtain @ARGV from $ENV{QUERY_STRING}
+@ARGV = split /\+/, $ENV{QUERY_STRING};
+
+&Usage unless @ARGV;
+
+sub Usage {
+print<<"EOM";
+Content-type: text/html
+
+<html><head><title>No port specified</title></head>
+<body bgcolor=white>No port specified</body></html>
+EOM
+exit;
+}
+
+$port = $ARGV[0];
+
+#  Append 't' to port number if neither t/u are appended
+$port .= "t"  if $port=~/[0-9]$/;
+
+#  Open file of port numbers
+($scriptdir) = ($ENV{SCRIPT_FILENAME}=~/^(.*)\/[^\/]+$/);
+open F, "$scriptdir/port.lst" or
+print<<"EOM" and exit;
+Content-type: text/html
+
+<html><head><title>Cannot open port list</title></head>
+<body bgcolor=white>Cannot open file "port.lst".</body></html>
+EOM
+
+$found=0;
+while (<F>) {
+	next if /^\s*#/;
+	@F = split(/\s*\|\s*/);
+	$F[0] =~ s/^\s+//;
+	if ($F[0] eq $port) {
+		$found=1;
+		last;
+	}
+}
+close F;
+
+#  Port not found, print error message 
+if (! $found) {
+print<<"EOM";
+Content-type: text/html
+
+<html><head><title>Cannot find port description</title></head>
+<body bgcolor=white>Cannot find port description.</body></html>
+EOM
+exit;
+}
+
+
+# Display port description
+$port =~ s/t$/\/tcp/;
+$port =~ s/u$/\/udp/;
+
+
+print<<"EOM";
+Content-type: text/html
+
+<html><head><title>Port $port: $F[1]</title></head>
+<body bgcolor=white><tt>$port: <b>$F[1]</b></tt>
+EOM
+
+#  If ftp or http url print link
+if ($F[2]=~/tp:/i) {
+   print "&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"$F[2]\">$F[2]</a>\n";
+}
+
+
+print<<"EOM";
+</body></html>
+EOM
+exit;

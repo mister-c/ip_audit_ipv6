@@ -1,0 +1,446 @@
+#!/bin/sh
+#
+# ipaudit-web:  Daily traffic report
+#
+#   Uses ipaudit utilities: total makelocal table2html
+#   Other utilities       : awk
+#
+
+NTOP=20
+TFORMAT="border=2 cellpadding=2 cellspacing=0"
+
+IP_DIR=$1
+DATE=$2
+
+#  Set default IP_DIR to $HOME
+[ -z $IP_DIR ] && IP_DIR=$HOME
+
+BIN=$IP_DIR/bin
+
+#  Set default date to Sunday before last Sunday
+if [ -z $DATE   ] 
+then
+	DATE=`$BIN/pdate -f%Y-%m-%d -a-1d`
+fi
+
+#  Read default settings
+ . $IP_DIR/ipaudit-web.conf
+
+#  If no DAILY_TRAFFIC_REMOTEHOST_MIN set, set to 1KB
+#  to prevent runaway 'total' execution
+if [ -z $DAILY_TRAFFIC_REMOTEHOST_MIN ]
+then
+	DAILY_TRAFFIC_REMOTEHOST_MIN=1024
+fi
+
+#  If no DAILY_TRAFFIC_HOSTPAIR_MIN set, set to 1KB
+#  to prevent runaway 'awk' error
+if [ -z $DAILY_TRAFFIC_HOSTPAIR_MIN ]
+then
+	DAILY_TRAFFIC_HOSTPAIR_MIN=1024
+fi
+
+OUTPUT=html/$DATE-traffic.html
+
+#  Find awk binary
+if [ .$AWK = . ]
+then
+	AWK=`which awk`
+fi
+
+#  Clean existing output file
+rm -f $OUTPUT
+
+
+#-----------------------------------------------------------------------
+#  Daily Summary
+#-----------------------------------------------------------------------
+
+#  Starting time
+START_SEC=`$BIN/pdate -f%s`;
+
+(for dfile in $IP_DIR/data/30min/$DATE*; do $ZCAT $dfile 2> /dev/null; done) |
+   $BIN/makelocal -s $LOCALRANGE $OTHERRANGE |
+   $BIN/icf |
+   while read conn pkt byte incoming outgoing total internal external other
+   do
+cat <<EOM
+<br><br>
+<table width="100%" border="0" cellspacing="0" cellpadding="5">
+<tr>
+<td width="100%" valign="top" bgcolor="#ffffff">
+<table width="640" border="0" cellspacing="1"
+cellpadding="2" bgcolor="#818181" align="center">
+<tr>
+<td colspan="2" bgcolor="#6C8FBB" align="center"><span class="white">General Stats</span></td>
+<td colspan="2" bgcolor="#6C8FBB" align="center"><span class="white">Incoming/Outgoing Traffic<br>
+(bytes)</span></td>
+<td colspan="2" bgcolor="#6C8FBB" align="center"><span class="white">Internal/External Traffic<br>
+(bytes)</span></td>
+</tr>
+<tr bgcolor="#ffffff">
+<td><b>Connections</b></td> <td align="right">$conn</td>
+<td><b>Incoming</b></td> <td align="right">$incoming</td>
+<td><b>Internal</b></td> <td align="right">$internal</td>
+</tr>
+<tr bgcolor="#ffffff">
+<td><b>Packets</b></td> <td align="right">$pkt</td>
+<td><b>Outgoing</b></td> <td align="right">$outgoing</td>
+<td><b>External</b></td> <td align="right">$external</td>
+</tr>
+<tr bgcolor="#ffffff">
+<td><b>Bytes</b></td> <td align="right">$byte</td>
+<td><b>Total</b></td> <td align="right">$total</td>
+<td><b>Other</b></td> <td align="right">$other</td>
+</tr>
+EOM
+   done >> $OUTPUT
+
+#  Calculate elapsed time
+END_SEC=`$BIN/pdate -f%s`
+ELAPSED=`expr $END_SEC - $START_SEC`
+
+#  Write table footer
+cat<<EOM >> $OUTPUT
+<tr bgcolor="#C9D5E5"><td align="left" colspan="6">
+<i>Elapsed time is $ELAPSED seconds.</i>
+</td></tr>
+</table>
+</td></tr></table>
+EOM
+
+
+
+#-----------------------------------------------------------------------
+#  Top local hosts
+#-----------------------------------------------------------------------
+
+#  Starting time
+START_SEC=`$BIN/pdate -f%s`;
+
+#  Write table header
+cat<<EOM >> $OUTPUT
+
+<br><br>
+<table width="640" border="0" cellspacing="0" cellpadding="10" align="center">
+<tr><td>
+   <table width="100%" border="0" cellspacing="1"
+   cellpadding="2" bgcolor="#818181">
+     <tr bgcolor="#EDEDED">
+       <td colspan="5" align="center"><b>Busiest Local Hosts</b></td>
+     </tr>
+     <tr bgcolor="#C9D5E5">
+       <td>IP</td>
+       <td>Host Name</td>
+       <td align="right">Incoming<br>
+       (bytes)</td>
+       <td align="right">Outgoing<br>
+       (bytes)</td>
+       <td align="right">Total<br>
+       (bytes)</td>
+     </tr>
+EOM
+
+#  Read through data files
+#
+#  Doing ZCAT from within following loop avoids problems, the "obvious"
+#    alternative 'ZCAT $IP_DIR/data/30min/$DATE*' will fail completely
+#    if one of the data files fails.  Under the same conditions the
+#    loop below will not fail, only write a messasge to stderr for each
+#    broken data file.  These messages are sent to the null device
+#    with the '2> /dev/null' re-direct.
+#
+(for dfile in $IP_DIR/data/30min/$DATE*; do $ZCAT $dfile 2> /dev/null; done) |
+   $BIN/makelocal $LOCALRANGE $OTHERRANGE |
+   $BIN/calcbytes |
+   $BIN/total     -s3r -f$NTOP 1 3,4,5 -  |
+   $BIN/table2html -T -s% \
+        -c /ffffff/f5f5dc \
+	-O "border=2 cellpadding=2 cellspacing=0" \
+	- 'l("'$CGI_BIN'/SearchIpauditData?date='$DATE'&ip=$1","$1")' \
+        'd($1)' 'c($2)%r' 'c($3)%r' 'c($4)%r' \
+	>> $OUTPUT
+
+
+#  Calculate elapsed time
+END_SEC=`$BIN/pdate -f%s`
+ELAPSED=`expr $END_SEC - $START_SEC`
+
+#  Write table footer
+cat<<EOM >> $OUTPUT
+<tr bgcolor="#C9D5E5"><td align="left" colspan="5">
+<i>Elapsed time is $ELAPSED seconds.</i>
+</td></tr>
+</table>
+</td></tr></table>
+EOM
+
+
+
+#-----------------------------------------------------------------------
+#  Top remote hosts
+#-----------------------------------------------------------------------
+
+#  Starting time
+START_SEC=`$BIN/pdate -f%s`;
+
+#  Write table header
+cat<<EOM >> $OUTPUT
+
+<br><br>
+<table width="640" border="0" cellspacing="0" cellpadding="10" align="center">
+<tr><td>
+   <table width="100%" border="0" cellspacing="1"
+   cellpadding="2" bgcolor="#818181">
+     <tr bgcolor="#EDEDED">
+       <td colspan="5" align="center"><b>Busiest Remote Hosts</b></td>
+     </tr>
+     <tr bgcolor="#C9D5E5">
+       <td>IP</td>
+       <td>Host Name</td>
+       <td align="right">Incoming<br>
+       (bytes)</td>
+       <td align="right">Outgoing<br>
+       (bytes)</td>
+       <td align="right">Total<br>
+       (bytes)</td>
+     </tr>
+EOM
+
+#  Read through data files
+#
+#  Doing ZCAT from within following loop avoids problems, the "obvious"
+#    alternative 'ZCAT $IP_DIR/data/30min/$DATE*' will fail completely
+#    if one of the data files fails.  Under the same conditions the
+#    loop below will not fail, only write a messasge to stderr for each
+#    broken data file.  These messages are sent to the null device
+#    with the '2> /dev/null' re-direct.
+#
+(for dfile in $IP_DIR/data/30min/$DATE*; do $ZCAT $dfile 2> /dev/null; done) |
+   $BIN/makelocal $LOCALRANGE $OTHERRANGE |
+   $BIN/calcbytes |
+   $BIN/total     -q100000 2 3,4,5 - |
+   $AWK '{if ($4>'$DAILY_TRAFFIC_REMOTEHOST_MIN') print}' |
+   $BIN/total     -s3r -f$NTOP 1 2,3,4 -  |
+   $BIN/table2html -T -s% \
+        -c /ffffff/f5f5dc \
+	-O "border=2 cellpadding=2 cellspacing=0" \
+	- 'l("'$CGI_BIN'/SearchIpauditData?date='$DATE'&ip=$1","$1")' \
+        'd($1)' 'c($2)%r' 'c($3)%r' 'c($4)%r' \
+	>> $OUTPUT
+
+
+#  Calculate elapsed time
+END_SEC=`$BIN/pdate -f%s`
+ELAPSED=`expr $END_SEC - $START_SEC`
+
+#  Write table footer
+cat<<EOM >> $OUTPUT
+<tr bgcolor="#C9D5E5"><td align="left" colspan="5">
+<i>Elapsed time is $ELAPSED seconds.</i>
+</td></tr>
+</table>
+</td></tr></table>
+EOM
+
+
+
+#-----------------------------------------------------------------------
+#  Incoming scans
+#-----------------------------------------------------------------------
+
+#  Starting time
+START_SEC=`$BIN/pdate -f%s`;
+
+#  Write table header
+cat<<EOM >> $OUTPUT
+
+<br><br>
+<table width="640" border="0" cellspacing="0" cellpadding="10" align="center">
+<tr><td>
+   <table width="100%" border="0" cellspacing="1"
+   cellpadding="2" bgcolor="#818181">
+     <tr bgcolor="#EDEDED">
+       <td colspan="3" align="center">
+         <b>Possible Incoming Scan Hosts</b>
+       </td>
+     </tr>
+     <tr bgcolor="#C9D5E5">
+       <td width="110">IP</td>
+       <td>Host Name</td>
+       <td width="90" align="right">Local Hosts<br> Contacted</td>
+     </tr>
+EOM
+
+
+#  Read through data files
+#
+#  Doing ZCAT from within following loop avoids problems, the "obvious"
+#    alternative 'ZCAT $IP_DIR/data/30min/$DATE*' will fail completely
+#    if one of the data files fails.  Under the same conditions the
+#    loop below will not fail, only write a messasge to stderr for each
+#    broken data file.  These messages are sent to the null device
+#    with the '2> /dev/null' re-direct.
+#
+(for dfile in $IP_DIR/data/30min/$DATE*; do $ZCAT $dfile 2> /dev/null; done) | 
+   $BIN/makelocal $LOCALRANGE $OTHERRANGE |
+   $BIN/total     -q500000 1,2 7 - |
+   $BIN/lookforzero |
+   $BIN/total     -s1r -f$NTOP 2 n - |
+   $BIN/table2html -T -s% \
+         -c /ffffff/f5f5dc \
+         -O "border=2 cellpadding=2 cellspacing=0" \
+ 	- 'l("'$CGI_BIN'/SearchIpauditData?date='$DATE'&ip=$1","$1")' \
+         'd($1)' 'c($2)%r' \
+ 	>> $OUTPUT
+
+
+#  Calculate elapsed time
+END_SEC=`$BIN/pdate -f%s`
+ELAPSED=`expr $END_SEC - $START_SEC`
+
+#  Write table footer
+cat<<EOM >> $OUTPUT
+<tr bgcolor="#C9D5E5"><td align="left" colspan="3">
+<i>Elapsed time is $ELAPSED seconds.</i>
+</td></tr>
+</table>
+</td></tr></table>
+EOM
+
+
+
+#-----------------------------------------------------------------------
+#  Incoming scans
+#-----------------------------------------------------------------------
+
+#  Starting time
+START_SEC=`$BIN/pdate -f%s`;
+
+#  Write table header
+cat<<EOM >> $OUTPUT
+
+<br><br>
+<table width="640" border="0" cellspacing="0" cellpadding="10" align="center">
+<tr><td>
+   <table width="100%" border="0" cellspacing="1"
+   cellpadding="2" bgcolor="#818181">
+     <tr bgcolor="#EDEDED">
+       <td colspan="3" align="center">
+         <b>Possible Outgoing Scan Hosts</b>
+       </td>
+     </tr>
+     <tr bgcolor="#C9D5E5">
+       <td width="110">IP</td>
+       <td>Host Name</td>
+       <td width="90" align="right">Remote Hosts<br> Contacted</td>
+     </tr>
+EOM
+
+
+#  Read through data files
+#
+#  Doing ZCAT from within following loop avoids problems, the "obvious"
+#    alternative 'ZCAT $IP_DIR/data/30min/$DATE*' will fail completely
+#    if one of the data files fails.  Under the same conditions the
+#    loop below will not fail, only write a messasge to stderr for each
+#    broken data file.  These messages are sent to the null device
+#    with the '2> /dev/null' re-direct.
+#
+(for dfile in $IP_DIR/data/30min/$DATE*; do $ZCAT $dfile 2> /dev/null; done) | 
+   $BIN/makelocal $LOCALRANGE $OTHERRANGE |
+   $BIN/total     -q500000 1,2 6 - |
+   $BIN/lookforzero |
+   $BIN/total     -s1r -f$NTOP 1 n - |
+   $BIN/table2html -T -s% \
+         -c /ffffff/f5f5dc \
+         -O "border=2 cellpadding=2 cellspacing=0" \
+ 	- 'l("'$CGI_BIN'/SearchIpauditData?date='$DATE'&ip=$1","$1")' \
+         'd($1)' 'c($2)%r' \
+ 	>> $OUTPUT
+
+
+#  Calculate elapsed time
+END_SEC=`$BIN/pdate -f%s`
+ELAPSED=`expr $END_SEC - $START_SEC`
+
+#  Write table footer
+cat<<EOM >> $OUTPUT
+<tr bgcolor="#C9D5E5"><td align="left" colspan="3">
+<i>Elapsed time is $ELAPSED seconds.</i>
+</td></tr>
+</table>
+</td></tr></table>
+EOM
+
+
+
+#-----------------------------------------------------------------------
+#  Top host pairs
+#-----------------------------------------------------------------------
+
+#  Starting time
+START_SEC=`$BIN/pdate -f%s`;
+
+#  Write table header
+cat<<EOM >> $OUTPUT
+
+<br><br>
+<table width="640" border="0" cellspacing="0" cellpadding="10" align="center">
+<tr><td>
+   <table width="100%" border="0" cellspacing="1"
+   cellpadding="2" bgcolor="#818181">
+     <tr bgcolor="#EDEDED">
+       <td colspan="7" align="center"><b>Busiest Host Pairs</b></td>
+     </tr>
+     <tr bgcolor="#C9D5E5">
+       <td>Local IP</td>
+       <td>Local<br>Host Name</td>
+       <td>Remote IP</td>
+       <td>Remote<br>Host Name</td>
+       <td align="right">Incoming<br>
+       (bytes)</td>
+       <td align="right">Outgoing<br>
+       (bytes)</td>
+       <td align="right">Total<br>
+       (bytes)</td>
+     </tr>
+EOM
+
+#  Read through data files
+#
+#  Doing ZCAT from within following loop avoids problems, the "obvious"
+#    alternative 'ZCAT $IP_DIR/data/30min/$DATE*' will fail completely
+#    if one of the data files fails.  Under the same conditions the
+#    loop below will not fail, only write a messasge to stderr for each
+#    broken data file.  These messages are sent to the null device
+#    with the '2> /dev/null' re-direct.
+#
+(for dfile in $IP_DIR/data/30min/$DATE*; do $ZCAT $dfile 2> /dev/null; done) |
+   $BIN/makelocal $LOCALRANGE $OTHERRANGE |
+   $BIN/calcbytes |
+   $BIN/total     -q100000 1,2 3,4,5 - |
+   $AWK '{if ($5>'$DAILY_TRAFFIC_HOSTPAIR_MIN') print}' |
+   $BIN/total     -s3r -f$NTOP 1,2 3,4,5 -  |
+   $BIN/table2html -T -s% \
+        -c /ffffff/f5f5dc \
+	-O "border=2 cellpadding=2 cellspacing=0" \
+	- \
+	'l("'$CGI_BIN'/SearchIpauditData?date='$DATE'&ip=$1","$1")' 'd($1)' \
+	'l("'$CGI_BIN'/SearchIpauditData?date='$DATE'&ip=$2","$2")' 'd($2)' \
+	'c($3)%r' 'c($4)%r' 'c($5)%r' \
+	>> $OUTPUT
+
+
+#  Calculate elapsed time
+END_SEC=`$BIN/pdate -f%s`
+ELAPSED=`expr $END_SEC - $START_SEC`
+
+#  Write table footer
+cat<<EOM >> $OUTPUT
+<tr bgcolor="#C9D5E5"><td align="left" colspan="7">
+<i>Elapsed time is $ELAPSED seconds.</i>
+</td></tr>
+</table>
+</td></tr></table>
+EOM

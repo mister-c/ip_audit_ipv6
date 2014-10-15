@@ -1,0 +1,150 @@
+#!/usr/bin/perl 
+#
+# 2001-03-20
+#  Add ip sort option, not fully tested.
+#
+
+&Usage unless @ARGV>0;
+
+
+sub Usage {
+($base)  = ($0=~/\/*([^\/]+)$/);
+print<<"EOM";
+
+   $base [-F] <sortfile> <column-specifiers>
+
+     Sort <sortfile> by <column-specifiers>. 
+
+   Column-specifier
+      default - text
+      n       - numeric
+      i       - ip address
+
+   Example:
+
+     $base test.fil 1 -2n  3i
+
+     sort test.fil by columns 1, 2, 3.  Column 2 fields 
+     are treated as numbers (default is text), and order
+     is reversed (normal order is ascending).  Column 3 
+     fields are treated as ip addresses.
+
+     -F <sep> - Seperate columns by <sep> which can be
+                a single character (example :) or matching
+                type argument to Perl's split function
+                (example /[- ]+/).  Default is white
+                space (equivalent to Perl's split function
+                parameter /\\s+/).
+
+EOM
+exit;
+}
+
+#  Get split option
+$split="\\s+";
+if ($ARGV[0]=~/-F(\S*)$/) {
+	shift @ARGV;
+	if ($1 ne "") {
+		$split = $1;
+	} else {
+
+		$split = shift @ARGV;
+	}
+}
+	
+
+#  Usage if no remaing options
+&Usage unless @ARGV>0;
+
+#  Get input file name
+$infile  = shift @ARGV;
+
+#  Get column specifications
+$colspec = join " ", @ARGV;
+
+#  Default specifications
+$colspec = "1" if $colspec eq "";
+
+@incols = ($colspec=~/\d+/g);
+
+@args = ($colspec=~/-*\d+i*n*/g);
+
+# Get options for internal column numbers
+for (@args) {
+	#  Add zero to force null (false) to be zero
+	push @reverse, 0+/^-/;
+	push @numeric, 0+/n$/;
+	push @ip,      0+/i$/;
+}
+
+
+open F, $infile || die "Cannot open input file\n";
+$nline=0;
+while (<F>) {
+	chomp;
+	push @file, $_;
+	#  Remove leading whitespace
+	s/^\s+(\S)/$1/;
+	@F = split(/$split/);
+	$i = 0;
+	for $c (@incols) { $fields[$nline][$i++] = $F[$c-1]; }
+	$nline++;
+}
+close F;
+
+@index = sort {&sortf($a,$b)} (0..$nline-1);
+
+### #  Re-read entire file, print out in order of @index
+### open F, $infile || die "Cannot open input file\n";
+### $nline=0;
+### while (<F>) {
+### 	chomp;
+### 	push @file, $_;
+### }
+### close F;
+
+#  Print file in sorted order
+for $i (@index) {
+	print "$file[$i]\n";
+}
+
+
+
+exit;
+
+
+#
+#  Compare records $a and $b on fields specified in @args.
+#
+sub sortf {
+	my ($a,$b) = @_;
+	my ($f,$cmp);
+	for $f (0..@args-1) {
+		if ($numeric[$f]) {
+			$cmp = $fields[$a][$f]<=>$fields[$b][$f];
+		} elsif ($ip[$f]) {
+			$cmp = &cmpip($fields[$a][$f],$fields[$b][$f]);
+		} else {
+			$cmp = $fields[$a][$f] cmp $fields[$b][$f];
+		}
+		$cmp = -$cmp if $reverse[$f];
+		return $cmp if $cmp!=0;
+	}
+	return $cmp;
+}
+
+
+sub cmpip {
+	my ($ip1,$ip2) = @_;
+	my ($res,$i1,$i2);
+	@ip1 = split (/\./,$ip1);
+	@ip2 = split (/\./,$ip2);
+	while (@ip1) {
+		$i1 = shift @ip1;
+		$i2 = shift @ip2;
+		$res = $i1<=>$i2;
+		last unless $res==0;
+	}
+	return $res;
+}
+		

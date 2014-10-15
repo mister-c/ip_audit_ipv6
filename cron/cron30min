@@ -1,0 +1,102 @@
+#!/bin/sh
+
+#
+#  File called every 30min on the half-hour by cron, does the following
+#
+#	1) Waits for exactly half-hour to start (in case cron started a
+#		 minute early - I've seen it happen)
+#	2) Kills previous instance of ipaudit.  Report programs that were
+#		 waiting for previous ipaudit to end will now run. 
+#	3) Starts new instance of ipaudit
+#	4) Zips data files
+#	5) Erases raw data files created 14 days ago
+#	6) Runs reports which read report output and creates summary
+#		 graphs for web page
+#
+#	JR 2001-09-06
+
+#
+#  Constants
+#
+
+IP_DIR=$HOME
+IP_DATA=$IP_DIR/data/30min				  # ipaudit summary dir
+IP_RAW=$IP_DIR/raw/30min					 # ioptional ipaudit packet output dir
+IP_REPORT=$IP_DIR/reports/30min/traffic # 30min report directory dir
+
+#
+#  Read setting from ipaudit-web.conf
+#
+. $IP_DIR/ipaudit-web.conf
+
+
+#  Get date/time to previous half hour
+CURDATE=`$IP_DIR/bin/pdate -r 30m`
+
+
+#
+#  Signal previous instance to stop collecting and write
+#  accumulated data to file
+#
+if [ -f $IP_DIR/run/ipaudit.pid ]
+then
+	oldpid=`cat $IP_DIR/run/ipaudit.pid`
+	ps aux | grep $oldpid | grep -v grep > /dev/null
+	if [ $? -ne 0 ]
+	then
+		echo "$IP_DIR/ipaudit died prematurely"
+	else
+		kill -2 $oldpid
+	fi
+	#  Remove stale pid file
+	rm -f $IP_DIR/run/ipaudit.pid
+fi
+
+
+
+#
+#  Start new sequence of programs started by ipaudit
+#	 this instance of ipaudit will be 'kill -2' at the start of next 
+#	 time period.
+#	 Upon receiving this signal ipaudit will stop gathering data and 
+#	 print a summary, and stop execution.  The subequent programs will 
+#	 then be executed in turn
+#	  
+
+#
+#  Determine if writting raw packets
+#
+if [ .$SAVEFILE != . ]
+then
+	WRITE_OPT="-w $IP_RAW/$CURDATE.raw"
+else
+	WRITE_OPT=""
+fi
+(
+
+#  Gather IP data and summarize (when kill -2 signal received)
+#  (Send startup message from pcap library on standard error to /dev/null)
+#
+$IP_DIR/bin/ipaudit -g $IP_DIR/ipaudit-web.conf \
+	$WRITE_OPT -o $IP_DATA/$CURDATE.txt
+
+
+
+#  Generate report from summary data
+for dir in $IP_DIR/reports/30min/* $IP_DIR/reports/30min/local/*
+do
+	if [ -d $dir -a -f $dir/runcron ]
+	then
+		cd $dir
+		./runcron $IP_DIR $CURDATE
+	fi
+done
+
+
+#  Zip newly created files
+if [ -w $IP_RAW/$CURDATE.raw ]
+then
+	$GZIP $IP_RAW/$CURDATE.raw
+fi
+$GZIP $IP_DATA/$CURDATE.txt
+) &

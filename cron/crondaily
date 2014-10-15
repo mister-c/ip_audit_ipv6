@@ -1,0 +1,66 @@
+#!/bin/sh
+#
+#
+#  Usage: crondaily [date]
+#
+#  Run DailyReport for previous day if no arguement
+#   or for specified date.
+#
+#  Examples:
+#
+#     crondaily               (report for previous day)
+#
+#     crondaily  1999-03-02   (report for March 2, 1999)
+#
+#     crondaily  3/2/1999     (report for March 2, 1999)
+#
+
+#  Ipaudit Base directory
+IP_DIR=$HOME
+
+#  Read constants from ipaudit-web.conf (GZIP)
+. $IP_DIR/ipaudit-web.conf
+
+
+#  Determine date string DATE
+if [ $# -gt 0 ]
+then
+   DATE=`$IP_DIR/bin/pdate -t "$1" -f "%Y-%m-%d"`
+else
+   DATE=`$IP_DIR/bin/pdate -a-1d -f "%Y-%m-%d"`
+fi
+
+#  All 30min data files for given day
+DATA=$IP_DIR/data/30min/$DATE*gz
+
+#  Program for performing totals asn subtotals on text files
+TOTAL=$IP_DIR/bin/total
+
+#  Read config file
+. $IP_DIR/ipaudit-web.conf
+
+#  Summarize 30min data and store info for each host pair
+### $ZCAT $DATA | $TOTAL -N2000000 1,2 6,7 - > $IP_DIR/tmp/$DATE.tmp
+
+#  Summarize above host pair info into local host only
+### $TOTAL 1 3,4 $IP_DIR/tmp/$DATE.tmp > $IP_DIR/data/daily/localhost/$DATE.txt
+$ZCAT $DATA | $TOTAL 1 6,7 - > $IP_DIR/data/daily/localhost/$DATE.txt
+$GZIP -f $IP_DIR/data/daily/localhost/$DATE.txt
+
+#  Search directories under $IP_DIR/reports/daily and $IP_DIR/reports/local/daily
+#  to run reports.  
+#  Add your local reports under $IP_DIR/reports/local
+for dir in $IP_DIR/reports/daily/* $IP_DIR/reports/local/daily/*
+do
+   if [ -d $dir ] 
+   then
+      cd $dir
+      if [ -x runcron ]
+      then
+         ./runcron $IP_DIR $DATE
+      fi
+   fi
+done
+
+#  Remove temporary hostpair data
+### rm $IP_DIR/tmp/$DATE.tmp

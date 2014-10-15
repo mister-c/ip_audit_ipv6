@@ -1,0 +1,120 @@
+#!/usr/bin/perl
+
+use POSIX;
+
+
+die "Need arguments\n" unless @ARGV>=3;
+
+#  Get path name of gnuplot executable from environment
+$GNUPLOT= defined $ENV{GNUPLOT} ? $ENV{GNUPLOT} : "gnuplot";
+
+($LOG_NAME, $PLOT_NAME, $DATE, $YMAX) = @ARGV;
+
+#
+#  Make Plot
+#
+
+$PLOT_NAME=~s/\.png$//;
+&MakePlot("$PLOT_NAME.png");
+&MakePlot("$PLOT_NAME-large.png","set size 1,0.6");
+
+#
+#  Plot previous week  values from log usin Gnuplot
+#
+sub MakePlot
+	{
+	my ($plot_name, $size_option) = @_;
+	my ($LastDate, $MaxDateTime, $MinDateTime);
+	my ($UpdateDateTime, $Sec, $f);
+	#  Determine min and max date/time (use 1 week interval)
+	($LastDate, undef) = 
+		($DATE=~ /(\d{4}-\d\d-\d\d)-*(\d\d:\d\d)*/);
+	$MaxDateTime = &date ($LastDate,   "1d");
+	$MinDateTime = &date ($LastDate, "-13d");
+	$UpdateDateTime = &date();
+
+	#  Default size option
+	$size_option = "set size 1.0, 0.3125" if  $size_option eq "";
+
+	#  Number of seconds in a day
+	$Sec = 60*60*24;
+
+	#  Factor to convert Bytes/30 min to  Mb/s
+	$f = 8.0/1000000.0/30.0/60.0;
+
+	open (GNUPLOT, "| $GNUPLOT") || die "Cannot run GNUPLOT\n";
+
+	#  Make GNUPLOT print immediately
+	select (GNUPLOT);
+	$| = 1;
+	
+	$yrange_statement = "set yrange [0:$YMAX]" if $YMAX;
+
+# old gif statement
+# set term gif small size 600,150 xffffff x000000 xdddddd x880000 x008800 x000088 x666666
+
+	
+
+print GNUPLOT <<"EOM";
+set xdata time
+set timefmt "%Y-%m-%d-%H:%M"
+set format x "%m-%d"
+set xrange [ \"$MinDateTime\" : \"$MaxDateTime\" ]
+$yrange_statement
+set title "Internet Traffic (updated $UpdateDateTime)";
+set xlabel "Date"
+set ylabel "Mb/s"
+set xtics $Sec
+set ytics
+set mxtics 1
+set key left
+set grid xtics
+$size_option
+set term png small color
+set output \"$plot_name\"
+plot \\
+ "$LOG_NAME" u 1:($f*\$2)       t "Total"    w i lt 7, \\
+ "$LOG_NAME" u 1:($f*\$3)       t "Incoming" w i  lt 8 lw 3, \\
+ "$LOG_NAME" u 1:($f*\$4)       t "Outgoing" w l  lt 3 lw 3
+quit
+EOM
+
+}
+
+
+# Local date command  &date(format,date,incr)
+#
+#  date   in format  yyyy-mm-dd ("" -> current date/time)
+#  incr   seconds, minutes, hours or days to add/sub from date/time
+#  rond   seconds, minutes, hours or days to round-off date/time
+#
+sub date {
+   my ($date,$incr,$round) = @_;
+   my ($time);
+   %factor = ('s'=>1, 'm'=>60, 'h'=>3600, 'd'=>24*3600);
+
+
+   if ($date=~/^(\d{4})-(\d{1,2})-(\d{1,2})-(\d{1,2}):(\d{1,2})/) {
+      #  mktime() needs -1 in isdst (is daylight saving time)
+      #  so it doesn't try to adjust time
+      $time = mktime (0,$5,$4,$3,$2-1,$1-1900,0,0,-1);
+   } elsif ($date=~/^(\d{4})-(\d{1,2})-(\d{1,2})$/) {
+      $time = mktime (0,0,0,$3,$2-1,$1-1900);
+   } else {
+      $time = time;
+   }
+   #  Increment time
+   ($value,$unit) = ($incr=~/^([+0-9-]+)(\D.*)$/);
+   $unit   = lc $unit;
+   $value *= $factor{$unit};
+   $time  += $value;
+   #  Round time
+   ($value,$unit) = ($round=~/^([+0-9-]+)(\D.*)$/);
+   if ($value>0) {
+      $unit   = lc $unit;
+      $value *= $factor{$unit};
+      $time  -= $time % $value;
+   }
+   # return
+   return strftime "%Y-%m-%d-%H:%M", localtime($time);
+}

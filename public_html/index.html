@@ -1,0 +1,189 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<head>
+<link rel="SHORTCUT ICON" href="ip.ico">
+<title>IPAudit Network Reports</title>
+</head>
+
+
+<body leftmargin=0 rightmargin=0 topmargin=0 bgcolor="dddddd" text="#080808" link="#2B4E9D" vlink="#942B9D" alink="#6C8FBB">
+
+<!--
+top blue bar
+-->
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr>
+	<td bgcolor="#6C8FBB" height="25" align="center"><p><font face="verdana,arial,sans-serif" size="5" color="ededed">IPAudit Network Reports</font></p></td>
+</tr>
+</table>
+<!--
+end top blue bar
+-->
+
+<!--
+begin table content
+-->
+
+<table width="100%" border="0" cellspacing="0" cellpadding="5">
+<tr>
+
+<!--
+left column
+-->
+<td width="175" valign="top" bgcolor="White"><font size=-1 face="Verdana,Helvetica,Arial">
+
+<br /><b>Network Reports</b>
+<br>
+
+<br>
+<a href="/~ipaudit/cgi-bin/ipahttp?30min/0traffic+current">-last-</a>
+&nbsp;
+<a href="/~ipaudit/cgi-bin/ipahttp?30min/0traffic">30min</a>
+<br>
+<a href="/~ipaudit/cgi-bin/ipahttp?daily/traffic+current">-last-</a>
+&nbsp;
+<a href="/~ipaudit/cgi-bin/ipahttp?daily/traffic">Daily</a>
+<br>
+<a href="/~ipaudit/cgi-bin/ipahttp?daily/server2+current" >-last-</a>
+&nbsp;
+<a href="/~ipaudit/cgi-bin/ipahttp?daily/server2" >Client/Server</a>
+<br>
+<a href="/~ipaudit/cgi-bin/ipahttp?daily/type+current" >-last-</a>
+&nbsp;
+<a href="/~ipaudit/cgi-bin/ipahttp?daily/type" >Traffic Type</a>
+<br>
+<a href="/~ipaudit/cgi-bin/ipahttp?weekly/traffic+current" >-last-</a>
+&nbsp;
+<a href="/~ipaudit/cgi-bin/ipahttp?weekly/traffic" >Weekly</a>
+<br>
+<a href="/~ipaudit/cgi-bin/ipahttp?monthly/traffic+current" >-last-</a>
+&nbsp;
+<a href="/~ipaudit/cgi-bin/ipahttp?monthly/traffic" >Monthly</a>
+<br>
+<!-- end new -->
+
+<br /><b>Host Reports</b>
+<br>
+
+<br>
+<a href="/~ipaudit/cgi-bin/ipa_hoststat">
+Searchable Host</a>
+
+<br>
+<a href="/~ipaudit/cgi-bin/ipa_clientstat">
+This Web-client only</a>
+
+<br>
+
+<br /><b>Log Search</b>
+<br>
+
+<br>
+<a href="/~ipaudit/cgi-bin/SearchIpauditData">
+Search ipaudit logs</a>
+
+<br>
+
+<br /><b>Links</b>
+<br>
+
+<br>
+<a href="http://ipaudit.sf.net/ipaudit-web/">IPAUDIT-WEB Home</a>
+<br><br><br>
+
+
+</td>
+
+<!--
+Column to provide spacing
+-->
+
+<td width="1">&nbsp;</td>
+
+
+<!--
+Column of Graphs
+-->
+<td valign="top"><font size=-1 face="Verdana,Helvetica,Arial">
+<br />
+
+<b>Incoming/Outgoing Network Traffic</b>
+<i><a href=ReportTraffic-doc.html>?</a></i>
+&nbsp;&nbsp;&nbsp;
+<i><a href=/~ipaudit/cgi-bin/SafeCAT?traffic+-672>raw data</a></i>
+&nbsp; &nbsp;
+<i><a href="/~ipaudit/images/ReportTraffic-large.png">click image to enlarge...</a></i>
+<br>
+<a href="/~ipaudit/images/ReportTraffic-large.png">
+<img border=0 src=images/ReportTraffic.png></a>
+<br>
+
+<hr noshade>
+<b>Internal/External Traffic</b>
+<i><a href=ReportExternal-doc.html>?</a></i>
+&nbsp;&nbsp;&nbsp;
+<i><a href=/~ipaudit/cgi-bin/SafeCAT?external+-672>raw data</a></i>
+&nbsp; &nbsp;
+<i><a href="/~ipaudit/images/ReportExternal-large.png">click image to enlarge...</a></i>
+<br>
+<a href="/~ipaudit/images/ReportExternal-large.png">
+<img border=0 src=images/ReportExternal.png></a>
+<br>
+
+<hr noshade>
+<b>Local Host Count (Possible Incoming Scans)</b>
+<i><a href=ReportLocalHost-doc.html>?</a></i>
+&nbsp;&nbsp;&nbsp;
+<i><a href=/~ipaudit/cgi-bin/SafeCAT?localhost+-672>raw data</a></i>
+&nbsp; &nbsp;
+<i><a href="/~ipaudit/images/ReportLocalHost-large.png">click image to enlarge...</a></i>
+<br>
+<a href="/~ipaudit/images/ReportLocalHost-large.png">
+<img border=0 src=images/ReportLocalHost.png></a>
+<br>
+
+<hr noshade>
+<b>Remote Host Count (Possible Outgoing Scans)</b>
+<i><a href=ReportRemoteHost-doc.html>?</a></i>
+&nbsp;&nbsp;&nbsp;
+<i><a href=/~ipaudit/cgi-bin/SafeCAT?remotehost+-672>raw data</a></i>
+&nbsp; &nbsp;
+<i><a href="/~ipaudit/images/ReportRemoteHost-large.png">click image to enlarge...</a></i>
+<br>
+<br>
+<a href="/~ipaudit/images/ReportRemoteHost-large.png">
+<img border=0 src=images/ReportRemoteHost.png></a>
+<br>
+
+<hr noshade>
+<b>Busiest Local Machines</b>
+<i><a href=ReportLocalBusy-doc.html>?</a></i>
+&nbsp;&nbsp;&nbsp;
+<i><a href=/~ipaudit/cgi-bin/SafeCAT?localbusy+-672>raw data</a></i>
+&nbsp; &nbsp;
+<i><a href="/~ipaudit/images/ReportLocalBusy-large.png">click image to enlarge...</a></i>
+<br>
+<br>
+<a href="/~ipaudit/images/ReportLocalBusy-large.png">
+<img border=0 src=images/ReportLocalBusy.png></a>
+<br>
+
+
+<hr noshade>
+<b>Busiest Remote Machines</b>
+<i><a href=ReportRemoteBusy-doc.html>?</a></i>
+&nbsp;&nbsp;&nbsp;
+<i><a href=/~ipaudit/cgi-bin/SafeCAT?remotebusy+-672>raw data</a></i>
+&nbsp; &nbsp;
+<i><a href="/~ipaudit/images/ReportRemoteBusy-large.png">click image to enlarge...</a></i>
+<br>
+<br>
+<a href="/~ipaudit/images/ReportRemoteBusy-large.png">
+<img border=0 src=images/ReportRemoteBusy.png></a>
+<br>
+
+</td>
+</tr></table>
+
+</body>
+</html>

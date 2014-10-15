@@ -1,0 +1,349 @@
+dnl Process this file with autoconf to produce a configure script.
+#
+#
+dnl Last updated via jh 09292003@2339
+dnl
+dnl
+AC_INIT(src/ipaudit.c)
+AC_CONFIG_HEADER(config.h)
+AC_PREREQ(2.53)
+echo
+echo "Configuring for ipaudit-web..."
+echo
+confwarn="0"
+notar=""
+nogzip=""
+SUBDIRS=""
+
+# Check to ensure we have an ipaudit user before Makefile
+# is called.
+# Perhaps this should also have --ipaudit-user= options.
+# This is checked with egrep - seems to be the most portable.
+AC_ARG_ENABLE(userchk,
+  [  --disable-userchk       Disable checking and using values from /etc/passwd. 
+  			  Use --prefix= to set the IPAudit homedir. (default=no).],
+  [case "${enableval}" in
+    yes) userchk=yes ;;
+    no)  userchk=no ;;
+    *)   AC_MSG_ERROR([userchk has bad value, ${enableval}, use either "yes" or "no"]) ;;
+   esac],[userchk=yes])
+
+
+dnl this tells configure what version of ipaudits to look for
+dnl if it needs to be unpacked.
+IPAUDITS_VER="0.1.1"
+
+dnl Checks for basic programs.
+AC_PROG_INSTALL
+AC_PROG_CC
+
+AC_CHECK_PROGS(MAKE, gmake gnumake make)
+if test "${MAKE}" = "make"; then
+  AC_MSG_CHECKING(whether ${MAKE} is gnu make)
+  ${MAKE} --version -f non_existant 2>/dev/null|grep "^GNU Make" >/dev/null
+  if test "$?" = "0"; then
+    AC_MSG_RESULT([yes])
+  else
+    AC_MSG_RESULT([no, this should be ok, though.])
+  fi
+fi
+
+AC_CANONICAL_HOST
+case "$host" in 
+ppc-*-* | powerpc-*-*)
+  CFLAGS="$CFLAGS -fsigned-char"
+  ;;
+*)
+  ;;
+esac
+
+# Find Ipaudit user infos, check that the homedir exists.
+if test "$userchk" = "yes"; then
+  AC_MSG_CHECKING(whether the ipaudit user exists)
+  if egrep \^ipaudit: /etc/passwd >/dev/null; then
+    AC_MSG_RESULT([[yes, you win!]])
+  else
+    AC_MSG_RESULT(no)
+    AC_MSG_ERROR(Please add the ipaudit user first)
+  fi
+  AC_MSG_CHECKING(whether the ipaudit group exists)
+  if egrep \^ipaudit: /etc/group >/dev/null; then
+    AC_MSG_RESULT([[you're still a winner!]])
+  else
+    AC_MSG_RESULT(no)
+    AC_MSG_ERROR(Please add the ipaudit group first)
+  fi
+  AC_MSG_CHECKING(for the ipaudit home directory)
+  IPA_HOMEDIR=""
+  if test -n "${prefix}" && test "${prefix}" != "NONE"; then
+    IPA_HOMEDIR="${prefix}"
+  else
+    IPA_HOMEDIR=`egrep \^ipaudit: /etc/passwd|cut -f 6 -d :`
+    #mangle the prefix so any additionally configured dirs will have this passed to them automatically
+    prefix="${IPA_HOMEDIR}"
+  fi 
+  if test [ ! ".$IPA_HOMEDIR" = "." ]; then
+    AC_MSG_RESULT([[$IPA_HOMEDIR]])
+    AC_MSG_CHECKING(if $IPA_HOMEDIR exists and is a directory)
+    if test [ -d "$IPA_HOMEDIR" ]; then
+      AC_MSG_RESULT(yes)
+     else
+      AC_MSG_RESULT(no)
+      AC_MSG_ERROR([$IPA_HOMEDIR not a directory?])
+    fi
+  else
+    AC_MSG_RESULT(not found)
+    AC_MSG_ERROR([[*** IPAUDIT HOMEDIR wasn't found (hmm?).]])
+  fi
+
+else
+  # Need to be sure that there is a homedirectory defined, even when not checking
+  # /etc/passwd for values. The Makefile makes use of this macro - and by forcing
+  # a homedir, we can also go ahead and do post-compilation configuring (CGI paths, etc)
+  # if we want to. I like this myself, as I can compile and setup IPaudit on a machine
+  # that is unaware of anything IPaudit related.
+  echo " * Disabled /etc/passwd checks for IPaudit..."
+  if test -z "${prefix}" || test "${prefix}" = "NONE"; then
+    AC_MSG_ERROR([Must specify --prefix=/ipaudit/home/dir with disabled userchks])
+  fi
+  AC_MSG_CHECKING([supplied value of prefix (homedir)])
+  AC_MSG_RESULT([${prefix}])
+  IPA_HOMEDIR="${prefix}"
+fi
+AC_SUBST(IPA_HOMEDIR)
+
+dnl Now some checks for binaries we'll use with Ipaudit
+
+# For now, let's just do it this way:
+# I'm (jh) using this for the time being to check whether root
+# is running 'make install.' (the ID in Solaris' default
+# path doesn't like -u, so we use the path above first).
+IDPATH="/usr/xpg4/bin:$PATH"
+AC_PATH_PROG(ID, id, no, $IDPATH)
+
+# Eventually, this should adjust the #!/usr/bin/perl lines
+# in the perl scripts - incase someone has an unusual perl install.
+# We specify /usr/bin first - since that's where we assume it lives.
+PERLPATH="/usr/bin:/bin:/usr/local/bin"
+PERL=""
+AC_PATH_PROG(PERL, perl, no, $PERLPATH)
+if test "$PERL" = "no"; then 
+  AC_MSG_WARN(*** PERL was not found on this system!)
+  AC_MSG_WARN(*** PERL will need to be installed before)
+  AC_MSG_WARN(*** IPaudit-web can be utilized.)
+  confwarn="1"
+else
+  if test "$PERL" != "/usr/bin/perl"; then
+    AC_MSG_WARN(*** PERL was found - but not in /usr/bin/.)
+    AC_MSG_WARN(*** It's probably best to symlink /usr/bin/perl)
+    AC_MSG_WARN(*** to $PERL.)
+    confwarn="1"
+  fi
+  AC_MSG_CHECKING([if $PERL is version 5.004 or greater])
+  if `$PERL -e 'require 5.004' >/dev/null 2>&1`; then
+    AC_MSG_RESULT([yes])
+  else
+    # This originally was needed, but isn't anymore - so
+    # no action is taken here.
+    AC_MSG_RESULT([no])
+  fi
+fi
+
+AC_PATH_PROG(GNUPLOT, gnuplot, no, $PATH:/usr/local/bin)
+if test "$GNUPLOT" = "no"; then
+  AC_MSG_WARN([*** GNUPLOT was not found, defaulting to /usr/bin/gnuplot])
+  GNUPLOT="/usr/bin/gnuplot"
+  AC_SUBST(GNUPLOT)
+  confwarn="1"
+else
+  AC_MSG_CHECKING([if $GNUPLOT supports png])
+  if `echo set term png|$GNUPLOT >/dev/null`; then
+    AC_MSG_RESULT([yes])
+  else
+    AC_MSG_RESULT([no])
+    AC_MSG_WARN([*** ipaudit-web graphs require gnuplot with png support])
+    confwarn="1"
+  fi
+fi
+
+AC_PATH_PROG(ZCAT, zcat, no, $PATH:/usr/local/bin)
+if test "$ZCAT" = "no"; then
+    AC_MSG_WARN([*** ZCAT was not found, defaulting to /bin/zcat])
+    ZCAT="/bin/zcat"
+    AC_SUBST(ZCAT)
+    confwarn="1"
+fi
+
+AC_PATH_PROG(ZGREP, zgrep, no, $PATH:/usr/local/bin)
+if test "$ZGREP" = "no"; then
+    AC_MSG_WARN([*** ZGREP was not found, defaulting to /bin/zgrep])
+    ZGREP="/bin/zgrep"
+    AC_SUBST(ZGREP)
+    confwarn="1"
+fi
+
+AC_PATH_PROG(GZIP, gzip, no, $PATH:/usr/local/bin)
+if test "$GZIP" = "no"; then
+    AC_MSG_WARN([*** GZIP was not found, defaulting to /bin/gzip])
+    GZIP="/bin/gzip"
+    AC_SUBST(GZIP)
+    nogzip="1"
+    confwarn="1"
+fi
+
+AC_PATH_PROG(TAR, tar, no, $PATH:/usr/local/bin)
+if test "$TAR" = "no"; then
+    AC_MSG_WARN([*** TAR was not found, defaulting to /bin/tar])
+    TAR="/bin/tar"
+    AC_SUBST(TAR)
+    notar="1"
+    confwarn="1"
+fi
+
+#Figure out which awk we have, then get its path.
+AC_PROG_AWK 
+AC_PATH_PROG(AWK, $AWK)
+
+dnl Now let's check for some perl modules, fun times!
+
+AC_MSG_CHECKING(for the Time::ParseDate perl module)
+if $PERL -e "use Time::ParseDate" >/dev/null 2>&1; then
+    AC_MSG_RESULT(yes)
+else
+    AC_MSG_RESULT(no)
+    AC_MSG_WARN([*** Time::ParseDate was not found (Recommended)])
+fi
+
+dnl Check if we have pcap args
+AC_ARG_WITH(pcapinc,
+  [  --with-pcapinc=DIR      Where your libpcap include directory lives (assumes /usr/include/pcap)],
+  [with_pcapinc="$withval"],[with_pcapinc=no])
+
+AC_ARG_WITH(pcaplib,
+  [  --with-pcaplib=DIR      Where your libcap libraries live],
+  [with_pcaplib="$withval"],[with_pcaplib=no])
+
+if test "$with_pcapinc" != "no"; then
+  CPPFLAGS="${CPPFLAGS} -I${with_pcapinc}"
+fi
+
+if test "$with_pcaplib" != "no"; then
+  LDFLAGS="${LDFLAGS}  -L${with_pcaplib}"
+fi
+
+dnl Checks for libraries.
+dnl Basic libs should go first, then extra stuff like pcap, etc.
+
+AC_CHECK_LIB(nsl, gethostent)
+AC_CHECK_LIB(socket, getprotobyname)
+AC_CHECK_LIB(inet, connect)
+LIBPCAP=""
+AC_CHECK_LIB(pcap, pcap_datalink,, LIBPCAP="no", )
+if test "$LIBPCAP" = "no"; then
+  echo
+  echo "*** Fatal: libpcap library was not found!"
+  echo "*** This library can be found at www.tcpdump.org."
+  echo "*** If libpcap is installed, but wasn't found, try"
+  echo "*** using the --with-pcap* options."
+  echo
+  exit 1
+fi
+
+dnl Checks for library functions.
+AC_FUNC_MEMCMP
+AC_TYPE_SIGNAL
+AC_FUNC_STRFTIME
+AC_CHECK_FUNCS(gethostent setsockopt connect gethostname \
+mktime select strdup strerror)
+
+dnl Checks for header files.
+AC_HEADER_STDC
+AC_HEADER_SYS_WAIT
+AC_CHECK_HEADERS(errno.h fcntl.h limits.h unistd.h)
+
+dnl Checks for typedefs, structures, and compiler characteristics.
+AC_C_CONST
+AC_TYPE_PID_T
+AC_STRUCT_TM
+
+# Check for other packages that need compiling now...
+echo " * Third party package checks "
+AC_MSG_CHECKING([[whether to compile CGreen's ipaudits]])
+AC_ARG_ENABLE(ipaudits,
+  [  --enable-ipaudits       CGreen's command line ipaudit search tool (from contrib/cgreen)],
+  [ case "$enableval" in
+   yes)
+     AC_MSG_RESULT([yes])
+     want_ipaudits="yes"
+     ;;
+   *)
+     AC_MSG_RESULT(no)
+     want_ipaudits="no"
+     ;;
+ esac ], AC_MSG_RESULT(no))
+
+if test "$want_ipaudits" = yes; then
+  AC_MSG_CHECKING([for existing ipaudits directory or source])
+  if test -f ./ipaudits/configure; then
+    # If we've already got this directory (and files), let's go ahead and skip
+    # unpacking over it - perhaps some third party changes or something were
+    # made to the source. This type of stuff has burned me before.
+    AC_MSG_RESULT([Found existing ipaudits directory - will attempt to use it.])
+    ipaudits_ac_config="yes"
+  elif test -f ../contrib/cgreen/ipaudits-${IPAUDITS_VER}.tar.gz; then
+    AC_MSG_RESULT([No directory, but found ../contrib/cgreen/ipaudits-${IPAUDITS_VER}.tar.gz])
+    # The following is probably pointless, but may as well check I guess.
+    if test -z "${nogzip}" && test -z "${notar}"; then
+      echo
+      echo "Unpacking ipaudits..."
+      (${GZIP} -dc ../contrib/cgreen/ipaudits-${IPAUDITS_VER}.tar.gz| ${TAR} xvf -) || exit 1
+      echo
+      ipaudits_ac_config="yes"
+    else
+      AC_MSG_WARN([Configure was unable to locate either gzip or tar - Can not continue with package extraction])
+      confwarn="1"
+    fi
+  else
+    AC_MSG_RESULT(no)
+    AC_MSG_WARN([Unable to locate ipaudits-${IPAUDITS_VER}.tar.gz or find its configure/directory sources.])
+    confwarn="1";
+    sleep 1
+  fi
+  dnl Using $ipaudits_ac_config method of determining if we should
+  dnl config ipaudits - autoconf seems to dislike multiple
+  dnl AC_CONFIG_SUBDIRS, even if they are in an if/else clause.
+  if test "$ipaudits_ac_config" = yes; then
+    AC_CONFIG_SUBDIRS(./ipaudits)
+    SUBDIRS="$SUBDIRS ./ipaudits"
+  fi
+fi
+echo " "
+# Push other packages to be configured.
+AC_SUBST(SUBDIRS)
+
+# AC_PREFIX_DEFAULT seems to want literals, so I'm not sure how to dynamically
+# check where the install prefix should be. This will have to do for now.
+# 11/24/02 (jh) Apparently this doesn't matter anymore - I'm not getting any 
+# complaints now.
+if test -n "$SUBDIRS"; then
+  AC_PREFIX_DEFAULT($IPA_HOMEDIR)
+  echo
+  echo "*** Passing "$IPA_HOMEDIR" as the install prefix to --enabled"
+  echo "*** packages. Use --prefix= to change this."
+  echo 
+fi
+
+AC_OUTPUT([src/Makefile Makefile ipaudit-web.conf])
+
+if test "$confwarn" = 1; then
+  echo
+  echo "Main configure script has completed, but with warnings."
+  echo "Ipaudit should still compile OK though."
+  echo 
+  echo
+ else
+  echo
+  echo "Main configure script has completed successfully."
+  echo "Type \"make\" now - good luck!"
+  echo
+fi

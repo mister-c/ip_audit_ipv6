@@ -1,0 +1,134 @@
+Frequently Asked Questions
+
+#1:  There is a discrepancy between the number of packets ipaudit reported and
+what is actually transferred.
+
+#2:  When running ipaudit-web why am I receiving this email message, 
+"...ipaudit died prematurely"?
+
+#3:  When starting IPaudit, I get this error:
+ipaudit: Trouble opening <rl0>, msg="/dev/bpf8: Device not configured" (Do you need root?) 
+
+#4:  Where else can I find additional information?
+
+Created 2003-02-17
+Updated 2003-02-19
+
+#=============================================================================
+#1:  There is a discrepancy between the number of packets ipaudit reported and
+what is actually transferred.
+
+
+
+A: Some systems fail to read all the packets on the wire.  For example we
+dropped around 50% of our 160Mb/sec traffic under RH 7.3 using a Netgear GA621
+Fiber NIC and corresponding driver, but read it all when we switched to an
+Intel Gigabit copper and its driver.  
+
+Here are a few ways to check of other apps can read all the traffic.
+
+
+Using tcpdump:  
+
+run as root   
+
+   > time tcpdump -c 20 -ne -i eth0 | total - 5 -
+
+and receve as output
+
+   tcpdump: listening on eth0
+   0.00user 0.00system 0:02.65elapsed 0%CPU (0avgtext+0avgdata 0maxresident)k
+      0inputs+0outputs (240major+102minor)pagefaults 0swaps
+   5845
+
+This shows that 5845 bytes were read in 2.65 seconds.  You should pick
+appropriate values in places of '20' and 'eth0' above.
+
+
+Using ifconfig:
+
+Under newer linuxes 'ifconfig' reports the cumulative number of bytes through
+an interface.  You might find the following useful, 
+
+   > while [ 1 ]; do ifconfig eth2 | grep "RX bytes"; sleep 8; done
+
+   RX bytes:3130112181 (2985.1 Mb)  TX bytes:0 (0.0 b)
+   RX bytes:3214793890 (3065.8 Mb)  TX bytes:0 (0.0 b)
+   RX bytes:3300467188 (3147.5 Mb)  TX bytes:0 (0.0 b)
+
+This command shows the cumulative number of bytes every 8 seconds, the
+difference between bytes works out to be bits per second - thus interface
+eth2 is receiving about 80Mbits/second.
+
+
+#=============================================================================
+#2: When running ipaudit-web why am I receiving this email message, 
+"...ipaudit died prematurely"?
+
+Here's the email, 
+
+Message 1/1  From Cron Daemon        Mar 09, 01 03:30:00 PM -0500
+
+Return-Path:
+Date: Fri, 9 Mar 2001 15:30:00 -0500
+To: ipaudit@mydomain.com
+Subject: Cron  cron/cron30min
+X-Cron-Env:
+X-Cron-Env:
+X-Cron-Env:
+X-Cron-Env:
+
+$IP_DIR/ipaudit died prematurely
+         line 0: all points undefined!
+
+         line 0: all points undefined!
+
+         line 0: all points undefined!
+
+gzip: /home/ipaudit/raw/30min/2001-03-09-15:30.raw: No such file or directory   gzip: /home/ipaudit/data/30min/2001-03-09-15:30.txt: No such file or directory
+        line 0: all points undefined!
+
+
+
+A: The above line
+
+$IP_DIR/ipaudit died prematurely
+
+indicates that ipaudit aborted. Perhaps its execute permissions are not
+correct. You can test the permissions by running the ipaudit command as the
+ipaudit user,
+
+   > ipaudit eth0
+
+If the you get the error
+
+   ipaudit: socket: Operation not permitted (Do you need root?)
+
+then the permisissions have not been set correctly. You can fix this by logging
+on as root and typing
+
+   > cd ~ipaudit/bin
+   > chown root ipaudit
+   > chgrp ipaudit ipaudit
+   > chmod 4750 ipaudit
+
+#=============================================================================
+#3:  When starting IPaudit on BSD, I get this error:
+ipaudit: Trouble opening <rl0>, msg="/dev/bpf8: Device not configured"
+(Do you need root?)
+
+This usually means that you have run out of bpf pseudo devices. First
+try adding the device in /dev/ (if it is missing):
+
+cd /dev/
+./MAKEDEV bpf8
+
+If it is not missing, or you are still unable to use ipaudit, you will
+need to increase the number of pseudo devices in the kernel.  In the
+kernel, find the line that reads "pseudo-device bpfilter 8" and increase
+that number. Recompile. Reboot.
+
+#=============================================================================
+#4:  Where else can I find additional information?
+
+http://sourceforge.net/projects/ipaudit/

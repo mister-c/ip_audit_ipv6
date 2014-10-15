@@ -1,0 +1,57 @@
+#!/bin/sh
+
+IP_DIR=$1
+DATE=$2
+
+#  Set default IP_DIR to $HOME
+[ -z $IP_DIR ] && IP_DIR=$HOME
+
+BIN=$IP_DIR/bin
+
+#  Set default date to Sunday before last Sunday
+if [ -z $DATE   ] 
+then
+	DATE=`$BIN/pdate -f%Y-%m-%d -a-1d`
+fi
+
+OUTPUT=html/$DATE-type.html
+
+rm -f $OUTPUT
+
+#  Starting time
+START_SEC=`$BIN/pdate -f%s`;
+
+cat<<EOM >> $OUTPUT
+<br><br>
+<table width="600" border="0" cellspacing="1" cellpadding="2"
+bgcolor="#818181" align="center">
+  <tr bgcolor="#EDEDED">
+    <td colspan="4" align="center"><b>Traffic Type by Protocol</b></td>
+  </tr>
+  <tr bgcolor="#C9D5E5">
+    <td align="center">Protocol</td>
+    <td align="center">Incoming (bytes)</td>
+    <td align="center">Outgoing (bytes)</td>
+    <td align="center">Total (bytes)</td>
+  </tr>
+EOM
+
+(for dfile in $IP_DIR/data/30min/$DATE*; do zcat $dfile 2> /dev/null; done) |
+$IP_DIR/bin/traffic_type |
+$IP_DIR/bin/table2html -T -s% \
+	-c /ffffff/f5f5dc \
+	- '$1' 'c($2)%r' 'c($3)%r' 'c($4)%r' \
+	>> $OUTPUT
+
+
+#  Calculate elapsed time
+END_SEC=`$BIN/pdate -f%s`
+ELAPSED=`expr $END_SEC - $START_SEC`
+
+#  Write table footer
+cat<<EOM >> $OUTPUT
+<tr bgcolor="#C9D5E5"><td align="left" colspan="5">
+<i>Elapsed time is $ELAPSED seconds.</i>
+</td></tr>
+</table>
+EOM

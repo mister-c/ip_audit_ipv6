@@ -1,0 +1,394 @@
+#!/usr/bin/perl -T
+
+
+BEGIN {
+  #make adjust-cgi will search and replace the below from
+  #what the configure script has detected as the ipaudit homedir.
+  unshift (@INC,"/home/ipaudit/");
+}
+
+use POSIX;
+use ipaudit_config;
+%conf = ipa_getconf();
+
+#
+#  Global data
+#
+#  Base directory for Watchdog
+$BASE_DIR ="$conf{'IP_DIR'}";
+$BASE_DIR ="/home/ipaudit" if !$BASE_DIR;
+
+$CGI_SCRIPT=$ENV{SCRIPT_NAME};
+
+
+#
+#  Read report configuration
+#
+
+#  Directory containing output from Report
+
+#
+#  Choose whether doing directory listing or showing page
+#
+
+#  For mod_perl compatability, obtain @ARGV from $ENV{QUERY_STRING}
+@ARGV = split /\+/, $ENV{QUERY_STRING};
+
+if (0==scalar(@ARGV)) {
+	&NoPage;
+	exit;
+}
+
+#  Get report name
+$REPORT_NAME =  $ARGV[0];
+$REPORT_DIR  = "$BASE_DIR/reports/$REPORT_NAME";
+$HTML_DIR    = "$REPORT_DIR/html";
+
+
+#  Read report configuration
+if ( -r "$REPORT_DIR/report.conf" ) {
+	open (INFILE, "$REPORT_DIR/report.conf");
+	while (<INFILE>) {
+		chomp;
+		next if /^\s*#/;
+		($key,$val) = /^\s*(\S+)\s+(.*)$/;
+		$REP{$key} = $val;
+	}
+	close (INFILE);
+}
+
+#  Set default values
+$REP{NCOL} = 7  if  ! defined($REP{NCOL});
+
+
+#  Only directory specified - list all files in that directory
+#    whose file name starts with yyyy-mm-dd
+if (1==scalar(@ARGV)) {
+	&ShowListing;
+
+
+#  Directory and file specified - show file
+#
+} else {
+	$FILE=$ARGV[1];
+
+	#  Request for current file
+	if ($FILE=~/current/i) {
+		@FILE = &GetFileList;
+		$FILE = $FILE[0];
+	}
+
+	&ShowPage;
+	}
+
+exit;
+
+
+
+#-----------------------------------------------------------------------
+#  List files by date
+#-----------------------------------------------------------------------
+sub ShowListing {
+
+	@SortFiles = &GetFileList;
+
+	#  Label for current date, time
+	$DateStr = &date ("", "%a, %b %d %Y, %I:%M %p");
+
+	#  Print list page
+print <<EOM;
+Content-type: text/html
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+  <head>
+    <title>$REP{TITLE}</title>
+    <meta http-equiv="Content-Type" content=
+    "text/html; charset=windows-1252">
+    <link href="../ip.ico" rel="SHORTCUT ICON">
+    <link href="../ipaudit_style.css" rel="stylesheet" type="text/css">
+  </head>
+
+  <body text="#080808" vlink="#942B9D" alink="#6C8FBB" link=
+  "#2B4E9D" bgcolor="White">
+    <table cellspacing="0" cellpadding="2" width="100%" border="0">
+      <tr>
+        <td align="center" bgcolor="#6C8FBB" colspan="5" height="25">
+          <h4 class="ed"><b>$REP{TITLE}</b></h4>
+        </td>
+      </tr>
+      <tr bgcolor="#EDEDED">
+
+        <td  width="15%" align="center">
+	  <a href="/~ipaudit">Home</a>
+        </td>
+
+        <td width="20%" align="center">&nbsp;</td>
+
+        <td width="30%" align="center">
+          <h5><b>$DateStr</b></h5>
+        </td>
+
+	<td width="%15" align="center">&nbsp;</td>
+
+	<td width="%15" align="center">&nbsp;</td>
+
+      </tr>
+    </table>
+<br><br>
+<font size=-1>
+EOM
+
+
+	#  No files found
+	if ($#SortFiles<0) {
+		print "<br><br><font size=+1>No files found.</font><br><br>\n";
+	#  Files with times
+	} elsif ($SortFiles[0]=~/-\d{2}:\d{2}/) {
+		&ListTimes(@SortFiles);
+	#  Max 1 file per day
+	} else {
+		&ListDates(@SortFiles);
+	}
+
+
+
+	print "</font></body></html>\n";
+}
+
+
+
+#------------------------------------------------------------------
+#   Show Individual Page
+#------------------------------------------------------------------
+sub ShowPage {
+	#  Find day and time of requested file, or just day or month
+	if ($FILE=~/(\d{4})-(\d{2})-(\d{2})-(\d{2}:\d{2})/) {
+		$DateStr = &date ("$1-$2-$3-$4", "%a, %b %d %Y, %I:%M %p");
+	} elsif ($FILE=~/(\d{4})-(\d{2})-(\d{2})/) {
+		$DateStr = &date ("$1-$2-$3", "%a, %b %d %Y");
+	} elsif ($FILE=~/(\d{4})-(\d{2})/) {
+		$DateStr = &date ("$1-$2-01", "%b %Y");
+
+	}
+
+
+	#  List of all files
+	@SortFiles = &GetFileList;
+
+	#  Find file in list
+	$i=0;
+	for (@SortFiles) {
+		last if ($_ eq $FILE);
+		$i++;
+	}
+
+	#  File Not Found Message
+	if ($i>$#SortFiles) {
+print <<EOM;
+Content-type: text/html
+
+<html><head><title>$REP{TITLE}</title></head>
+<body bgcolor=white>
+<p><b>
+ERROR:  Requested file not found.
+</b>
+EOM
+	exit;
+	}
+
+	#  Print report header
+	$Curr = $HTML_DIR . "/" . $SortFiles[$i];
+	$Next = "$CGI_SCRIPT?$REPORT_NAME+$SortFiles[$i-1]"  if ($i>0);
+	$Prev = "$CGI_SCRIPT?$REPORT_NAME+$SortFiles[$i+1]"  if ($i<$#SortFiles);
+
+
+print<<EOM;
+Content-type: text/html
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+  <head>
+    <title>$REP{TITLE}: $DateStr
+    </title>
+    <meta http-equiv="Content-Type" content=
+    "text/html; charset=windows-1252">
+    <link href="../ip.ico" rel="SHORTCUT ICON">
+    <link href="../ipaudit_style.css" rel="stylesheet" type="text/css">
+  </head>
+
+  <body text="#080808" vlink="#942B9D" alink="#6C8FBB" link=
+  "#2B4E9D" bgcolor="White">
+
+    <table width="100%" border="0" cellspacing="0" cellpadding="2"
+    align="center" bgcolor="#EDEDED">
+      <tr>
+        <td height="25" colspan=5 align="center" bgcolor="#6C8FBB">
+          <h4 class="ed"><b>$REP{TITLE}<b></h4>
+        </td>
+      </tr>
+      <tr>
+        <td width="15%" align="center"><a href=
+        "/~ipaudit">Home</a></td>
+
+        <td width="15%" align="center"><a href=
+        "/~ipaudit/cgi-bin/ipahttp?$REPORT_NAME">
+        Index</a></td>
+
+        <td width="30%" align="center">
+          <h5><b>$DateStr</b></h5>
+        </td>
+
+EOM
+
+	#  Print 'Prev Report' link (part of header)
+	print '<td width="15%" align="center">';
+
+	if ($Prev) {
+		print "<a href=$Prev>&laquo; Prev Report</a></td>\n";
+	} else {
+		print "&nbsp;</td>\n";
+	}
+
+
+	#  Print 'Next Report' link (part of header)
+	print '<td width="15%" align="center">';
+
+	if ($Next) {
+		print "<a href=$Next>Next Report &raquo;</a></td>\n";
+	} else {
+		print "&nbsp;</td>\n";
+	}
+
+	print "</tr></table>\n";
+
+	# Print Report
+	if (open (INFILE,$Curr)) {
+		while (<INFILE>) { 
+			print $_;
+		}
+		close (INFILE);
+	}
+
+	print "</body></html>\n";
+}
+
+
+#-----------------------------------------------------------------------
+#  Get list of files
+#-----------------------------------------------------------------------
+sub GetFileList {
+
+	opendir DATADIR, $HTML_DIR;
+	@Files = sort readdir DATADIR;
+	closedir DATADIR;
+	# Keep files that fit filename pattern only
+	$next=0;
+	for ($i=0; $i<=$#Files; $i++)
+		{
+
+		if ($Files[$i]=~m/^\d\d\d\d-\d\d.*\.html$/)
+			{
+			$Files[$next] = $Files[$i] if ($next!=$i);
+			$next++;
+			}
+		}
+	$#Files=$next-1;
+
+	# Sort file
+	@SortFiles = sort {$b cmp $a} @Files;
+}
+
+#-----------------------------------------------------------------------
+#  Print links to reports according to their dates
+#-----------------------------------------------------------------------
+sub ListDates {
+	my (@SortFiles) = @_;
+	my ($i,$Date);
+
+	#  Print list page
+
+	for ($i=0; $i<=$#SortFiles; $i++) {
+		($Date) = ($SortFiles[$i]=~/(\d{4}-\d{2}-\d{2})/);
+		($Date) = ($SortFiles[$i]=~/(\d{4}-\d{2})/)  if  $Date eq "";
+		print "<a href=$CGI_SCRIPT?$REPORT_NAME+$SortFiles[$i]>$Date</a>\n";
+		print "&nbsp; &nbsp; &nbsp;\n";
+		print "<br>\n" if ( ($i+1) % $REP{NCOL} == 0);
+		}
+}
+
+
+
+#-----------------------------------------------------------------------
+#  Print links to reports according to their times
+#-----------------------------------------------------------------------
+sub ListTimes {
+	my (@SortFiles) = @_;
+	my ($time,$date,$prevdate,$code,@timelist);
+
+	@timelist=();
+	$prevdate="";
+	for (@SortFiles) {
+		($date,$time) = /^(\d{4}-\d\d-\d\d)-(\d\d:\d\d)/;
+		if ($date ne $prevdate) {
+			if (@timelist) {
+				print "<b>$prevdate</b>: &nbsp;\n";
+				print join("\n", @timelist);
+				print "\n<br>\n";
+				@timelist=();
+			}
+			$prevdate = $date;
+			@timelist = ();
+		}
+		$time=~/^(\d\d):(\d\d)$/;
+		if ($2 eq "30") {
+			$code = ".";
+		} else {
+			$code = $1;
+		}
+		unshift @timelist, ("<a href=$CGI_SCRIPT?$REPORT_NAME+$_>$code</a>\n");
+	}
+	if (@timelist) {
+			print "<b>$date</b>: &nbsp;\n";
+			print join("\n", @timelist);
+			print "\n<br>\n";
+	}
+}
+
+
+
+sub NoPage {
+print <<"EOM";
+Content-type: text/html
+
+<html><head></head><body></body></html>
+EOM
+}
+
+
+# Local date command  &date(format,date,incr)
+#
+#  format is standard strftime() format
+#  date   in format  yyyy-mm-dd
+#  incr   days to add/sub from date
+#
+sub date {
+	my ($date,$format,$incr) = @_;
+	my ($time);
+
+	if ($date=~/^(\d{4})-(\d{1,2})-(\d{1,2})-(\d{1,2}):(\d{1,2})/) {
+		#  mktime() needs -1 in isdst (is daylight saving time)
+                #  so it doesn't try to adjust time
+		$time = mktime (0,$5,$4,$3,$2-1,$1-1900,0,0,-1);
+	} elsif ($date=~/^(\d{4})-(\d{1,2})-(\d{1,2})$/) {
+		$time = mktime (0,0,0,$3,$2-1,$1-1900);
+	} else {
+		$time = time;
+	}
+	$time += $incr * 86_400;
+	return strftime $format, localtime($time);
+}

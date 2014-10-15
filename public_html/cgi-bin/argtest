@@ -1,0 +1,74 @@
+#!/usr/bin/perl
+
+$Title = "Perl CGI Input Test";
+print <<"EOM";
+Content-type: text/html\n
+<html><head><title>$Title</title></head>
+<body bgcolor=#dddddd>
+<h2>$Title</h2>
+EOM
+
+print "<br><hr noshade><br>\n";
+
+print "\n<br>Value of Perl variable <b>\@ARGV</b> &nbsp; <i>(URL Method)</i><b>:</b>\n";
+print " &nbsp; &nbsp &nbsp; &nbsp\n";
+print "<b><font color=blue>@ARGV</font></b><br>\n";
+
+print "<br><hr noshade><br>\n";
+
+print "Data read from Perl <b>&lt;STDIN&gt;</b> &nbsp; <i>(POST Method)</i><b>:</b>\n";
+$in = <STDIN>;
+print " &nbsp; &nbsp &nbsp; &nbsp\n";
+print "<b><font color=blue>", $in,  "</font></b><br>\n";
+
+print "<br><hr noshade><br>\n";
+
+print 'Value of Perl variable <b>$ENV{QUERY_STRING}</b> &nbsp; <i>(GET Method)</i><b>:</b>'; 
+print " &nbsp; &nbsp &nbsp; &nbsp\n";
+print "<b><font color=blue>$ENV{QUERY_STRING}</font></b><br>\n";
+
+print "<br><hr noshade><br>\n";
+
+print "<b>Key,Value pairs from Perl Variable %ENV</b><br><br>\n";
+print "<table cellpadding=1 border=1>\n";
+for (sort keys %ENV) {
+	$val = $ENV{$_} ? $ENV{$_} : "&nbsp;";
+	print "<tr><th align=left>$_</th><td align=left> $val</td></tr>\n";
+	}
+print "</table>\n";
+
+print "<br><hr noshade><br>\n";
+
+
+#  Form
+$URL="http://$ENV{HTTP_HOST}/$ENV{SCRIPT_NAME}";
+print<<"EOM";
+<b>POST Form:</b> 
+<br><br>
+&nbsp; &nbsp; <i>POST values are read via the Perl &lt;STDIN&gt; input stream.</i><br>
+<FORM ACTION="$URL" METHOD=POST></P>
+&nbsp; &nbsp; <b>Box 1</b>: &nbsp; &nbsp;
+<INPUT TYPE="text" NAME="box1" VALUE="" SIZE=40, MAXLENGTH=40>
+&nbsp; &nbsp; <b>Box 2</b>: &nbsp; &nbsp;
+<INPUT TYPE="text" NAME="box2" VALUE="" SIZE=40, MAXLENGTH=40>
+<INPUT type="submit" value="Submit POST">
+</FORM>
+<br><br><br>
+<b>GET Form:</b> 
+<br><br>
+&nbsp; &nbsp; <i>GET values are read via the environmental varable \$ENV{QUERY_STRING}</i><br>
+&nbsp; &nbsp; <i>&nbsp; &nbsp; The values also are appended to the URL.</i><br>
+<FORM ACTION="$URL" METHOD=GET></P>
+&nbsp; &nbsp; <b>Box 1</b>: &nbsp; &nbsp;
+<INPUT TYPE="text" NAME="box1" VALUE="" SIZE=40, MAXLENGTH=40>
+&nbsp; &nbsp; <b>Box 2</b>: &nbsp; &nbsp;
+<INPUT TYPE="text" NAME="box2" VALUE="" SIZE=40, MAXLENGTH=40>
+<INPUT type="submit" value="Submit GET">
+</FORM>
+
+<br><br><br>
+<b>Mail URL:</b><br>
+<a href="mailto:jon.rifkin\@uconn.edu?subject=Mail from argtest on sp.uconn.edu">
+mailto:jon.rifkin\@uconn.edu?subject="Mail from argtest on sp.uconn.edu"</a>
+
+EOM

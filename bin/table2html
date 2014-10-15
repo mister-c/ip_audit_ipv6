@@ -1,0 +1,292 @@
+#!/usr/bin/perl
+
+use Getopt::Std;
+use Socket;
+
+
+$opt_b = "";
+$opt_h = "";
+$opt_s = ":";
+$opt_C = "";
+$opt_H = "";
+$opt_O = "";
+$opt_R = "";
+$opt_1 = "";
+$opt_2 = "";
+$opt_g = "";
+getopts ("1:2:bc:ghs:C:H:O:R:T");
+
+
+
+&PrintUsage if $opt_h;
+
+sub PrintUsage {
+print<<"EOM";
+
+   table2html [options] {file|-} [col-format [col-format .. ]] 
+
+   Print text data as HTML table.
+
+   OPTIONS
+      -h                  Print this help
+      -C cTAG[cTAG[..]]   <td ..> tag options (column formatting)
+      -H cTAG[cTAG[..]]   Column headers
+      -O                  <table ..> options  (table  formatting)
+      -R                  <tr ..> tag options (row    formatting)
+      -T                  Do not print <table></table> tags
+      -c cCLR[cCLR[..]]   List of alternate row colors
+      -1 text             Text to print before table 
+      -2 text             Text to print after table 
+      -b                  Surround table by <html>,<head>,<body> tags
+      -g                  Print Content-type: header for use in cgi-script 
+      -s                  Expression option separator (default :)
+
+      cTAG[cTAG[..]] means tags for columns are separated by 'c',
+      for example
+   
+         -H /Name/Address/Dues
+   
+      the first character / is the separator, the columns are 
+      "Name", "Address", "Dues"
+   
+      -H option format example
+            /IP/DNS/Incoming/Outgoing/Total
+         will print 5 headings, "IP" "DNS", "Incoming", etc.
+         Note that first charcter ',' must be string separator character
+   
+      -C option format example
+            /align=left/align=left/bgcolor=#eeeee///
+   
+      -l option format example
+            :cgi-bin/Lookup?::::
+
+   COL-FORMAT
+      By default, every text line of the input file is split into fields
+      according to blanks and displayed as a single HTML table row, each
+      field as one column.
+
+      The format of each field can be controlled by the COL-FORMAT specifications,
+      one for each input field.  Here are some examples
+
+      Suppose datafile contains the two lines
+
+          4.5  10.20.171.5  Jill
+          5  192.20.175.3  Mary
+
+      The command
+
+          table2html datafile 
+
+      will produce
+
+          <table><tr><td>4.5</td><td>10.20.171.5</td><td>Jill</td></tr>
+          <tr><td>5</td><td>192.20.175.3</td><td>Mary</td></tr></table>
+
+      The command
+
+          table2html datafile 3 2 1
+
+      will reverse the order of the fields.
+
+
+          table2html datafile 3:c:%05.1d d(2) 3
+
+      while produce something like (omitting the HTML codes)
+
+          004.5 jill.some-where.net Jill
+          005.0 mary.some-place.org Mary
+
+      Here the c indicates center the field in the table column, 
+      the %05.1d is a printf() format specifier.  The expression
+      separator is :, the first expression part is the input
+      field to use, the second can any combination of ibucrl
+      where the letters stand for italics, bold, underline,
+      center align, right align, left align.  The
+      Third expression part is the printf format.  The expression
+      seperator can be changed with the -s option.
+
+      The d() function takes an ip address as an argument and 
+      returns the resolved dns name, or '-' if there is no name.
+
+      There are two other functions, c() which inserts commas
+      in numbers with 4 or more digits, and the l(url,label) which
+      produces HTML code for a link with indicated url and text label.
+      
+EOM
+exit;
+}
+
+#  Insert commas in number: c(1234) returns 1,234
+sub c {
+        my ($string) = @_;
+        1 while $string=~s/(\d)(\d\d\d)(?!\d)/$1,$2/g;
+        return $string;
+}
+
+#  Substitute DNS name for ip address
+sub d {
+	my ($ip) = @_;
+	$ip = sprintf "%d.%d.%d.%d", split(/\./,$ip);
+	$name = gethostbyaddr(inet_aton($ip), AF_INET);
+	$name = "-" if ($name  eq "");
+	return $name;
+}
+
+#  Convert strings to link
+sub l {
+	my ($url,$label) = @_;
+	return sprintf "<a href=\"%s\">%s</a>", $url, $label;
+}
+
+
+
+
+#  Parse options
+@Headings   = parseOpt($opt_H)     if $opt_H;
+@CellFormat = parseOpt($opt_C)     if $opt_C;
+@RowColors  = parseOpt($opt_c)     if $opt_c;
+
+#  Format row color
+for (@RowColors) {
+	$_ = "#$_" if /[0-9a-fA-F]{6}/;
+}
+
+
+#  Read file name
+$file = shift @ARGV;
+$file = "-" unless $file;
+
+#  Read column expression, format commands
+for (@ARGV) {
+	#  Split input into expression, modifier character, print format
+	($expr,$modifier,$format) = split /$opt_s/;
+	#  Modify expression according to expression type
+	#  Expression uses $F[n], so don't modify
+	if ($expr=~/\$F\[\d+\]/) {
+	#  Expression uses $1, $2, etc
+	} elsif ($expr=~/\$\d+/) {
+		$expr=~s/\$(\d+)/\$F[$1]/g;
+	#  Expression uses 1, 2, etc
+	} else {
+		$expr=~s/(\d+)/\$F[$1]/g;
+	}
+	#  Save
+	push @ColExpr, $expr;
+	push @ColModf, $modifier;
+	push @ColForm, $format ? $format : "%s";
+}
+
+#  Some modifiers apply to CellFormat
+$icol=0;
+for  (@ColModf) {
+	$CellFormat[$icol] .= " align=left"    if /l/;
+	$CellFormat[$icol] .= " align=right"   if /r/;
+	$CellFormat[$icol] .= " align=center"  if /c/;
+	$icol++;
+}
+
+#  Some modifiers are applied within the cell such as <i></i>
+$icol=0;
+for (@ColModf) {
+	for $m (split(//)) {
+		if ($m=~/[ibu]/) {
+			$ColPre[$icol] = $ColPre[$icol] . "<$m>";
+			$ColSuf[$icol] = "</$m>" . $ColSuf[$icol];
+		}
+	}
+	$icol++;
+}
+	
+#  Pad HTML option tags with blank
+$opt_O = " $opt_O" if $opt_O;
+$opt_R = " $opt_R" if $opt_R;
+
+#  Process row color option
+if ($opt_c ne "") {
+}
+
+
+#  Open file
+open F, $file or die "Cannot open input file ($file)\n";
+
+#  Print content-type tag
+print "Content-type: text/html\n\n"  if $opt_g;
+print "<html><body bgcolor=white>\n" if $opt_b;
+
+#  Print header text
+print "$opt_1\n" if $opt_1;
+
+#  Print table 
+print "<table$opt_O>\n" unless $opt_T;
+
+#  Print table headings
+print "<tr><th>", join("</th><th>",@Headings), "</th></tr>\n" if $opt_H;
+
+#  Print table rows
+$icolor=0;
+$color="";
+while ($line=<F>) {
+
+	#  Skip comments
+	next if $line=~/^\s*$/ || $line=~/^\s*#/;
+	chomp $line;
+
+	#  Determine row color(s)
+	if (@RowColors) {
+		$color  = sprintf " bgcolor=\"%s\"", $RowColors[$icolor];
+		$icolor = ($icolor+1) % scalar @RowColors;
+	}
+
+	#  Print row start
+	print "<tr$opt_R$color>\n";
+
+	#  Find tokens for input data
+	@F = split (/\s+/,$line);
+
+	#  No format strings, just print raws as-is
+	unless (@ColExpr) {
+		print "<td>", join("</td>\n<td>", @F), "</td>\n</tr>\n";
+		next;
+	}
+	
+	#  Shift fields (0->1, 1->2, etc)
+	unshift @F, "0";
+
+	#  Print out this row
+	$icol=0;
+	for $expr (@ColExpr) {
+		#  Print cell start
+		print "<td$CellFormat[$icol]>";
+		#  Print modifier prefix
+		print "$ColPre[$icol]";
+		#  Quote argument to l(*,*) if present
+		while ($expr=~s/l\(([^"'].*),([^"'].*)\)/l("$1","$2")/) {}
+		printf $ColForm[$icol],  eval $expr;
+		#  Print modifier suffix
+		print "$ColSuf[$icol]";
+		print "</td>\n";
+		$icol++;
+	}
+
+	#  Print row end
+	print "</tr>\n";
+}
+print "</table>\n"  unless $opt_T;
+
+#  Print footer text
+print "$opt_2\n" if $opt_2;
+
+#  Print ending html
+print "</body></html>\n" if $opt_b;
+
+exit;
+
+#=======================================================================
+
+sub parseOpt {
+	my ($opt) = @_;
+	$sep = substr ($opt,0,1);
+	$opt =~ s/^.//;
+	$sep = "\\$sep" if $sep eq ".";
+	return split ($sep, $opt);
+}

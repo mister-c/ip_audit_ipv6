@@ -1,0 +1,22 @@
+#!/bin/sh
+
+WORKDIR=ipaudit-web
+#
+#  Copy ipaudit-web files from working installation to cvs directory
+#  for subsequent uploading to repository or creation of package
+#
+cd $HOME
+mkdir $WORKDIR
+
+#  Copy entire directory tree adding cvs directory
+listcvsdir | grep -v ^"$WORKDIR"$ | grep -v ^$ | while read a; do mkdir $WORKDIR/$a; done
+
+#  Copy relevant files from working installation
+listcvsfile | while read a; do cp $a $WORKDIR/$a; done
+
+#  Replace some working file versions with original versions
+cp -f $WORKDIR/ipaudit-web.conf.orig $WORKDIR/ipaudit-web.conf
+
+#  Clean compilation
+cd ~/$WORKDIR/src
+make clean &> /dev/null

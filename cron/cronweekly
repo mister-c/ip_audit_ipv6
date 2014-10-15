@@ -1,0 +1,61 @@
+#!/bin/sh
+#
+#
+#  Usage: cronweekly [date]
+#
+#  Run WeeklyReport for week starting on [date] or
+#    on 7 days before today.
+#
+#
+#  Examples:
+#
+#     cronweekly               (report for week starting 7 days ago)
+#
+#     cronweekly  1999-03-02   (report for week starting March 2, 1999)
+#
+#     cronweekly  3/2/1999     (report for week starting 1999)
+#
+
+
+#  Determine date string DATE
+IP_DIR=$HOME
+if [ $# -gt 0 ]
+then
+	DATE=`$IP_DIR/bin/pdate -t "$1" -f "%Y-%m-%d"`
+else
+	DATE=`$IP_DIR/bin/pdate -a-7d   -f "%Y-%m-%d"`
+fi
+
+
+
+#  Ipaudit Base directory
+IP_DIR=$HOME
+
+#  Program for performing totals asn subtotals on text files
+TOTAL=$IP_DIR/bin/total
+
+#  Read config file
+. $IP_DIR/ipaudit-web.conf
+
+#  Get list of file names for past 7 days of local host info
+DAILY_DIR=$IP_DIR/data/daily/localhost
+WEEKLY_DIR=$IP_DIR/data/weekly/localhost
+DATA_FILES=`$IP_DIR/bin/pdate -p "$DAILY_DIR/" -f "%Y-%m-%d.txt.gz" -n 7 -t $DATE`
+$ZCAT $DATA_FILES | $TOTAL 1 2,3 - > $WEEKLY_DIR/$DATE.txt
+
+#  Search directories under $IP_DIR/reports/daily and $IP_DIR/reports/local/daily
+#  to run reports.  
+#  Add your local reports under $IP_DIR/reports/local
+for dir in $IP_DIR/reports/weekly/* $IP_DIR/reports/local/weekly/*
+do
+   if [ -d $dir ] 
+   then
+      cd $dir
+      if [ -x runcron ]
+      then
+         ./runcron $IP_DIR $DATE
+      fi
+   fi
+done
+
+$GZIP -f $WEEKLY_DIR/$DATE.txt

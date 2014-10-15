@@ -1,0 +1,173 @@
+.TH ipstrings 1 "22 May 2000" "ipstrings 0.5"
+
+.SH NAME
+ipstrings \- Reads strings from pcap dump files
+
+.SH SYNOPSIS
+.BI "ipstrings [-cefimnprstwvz] [interface]"
+.sp
+
+.SH DESCRIPTION
+.B ipstrings 
+reads text strings from all traffic on a network interface
+or from a pcap format data file (produced by tcpdump and
+other programs).
+
+.SH OPTIONS
+
+.TP
+.B interface
+Network interface to read data from.
+
+.TP
+.B "-c <npacket>"
+Terminate program after reading <npacket> packets.
+
+.TP
+.B "-e"
+Print source and destination ethernet address with each string.
+
+.TP
+.B "-f"
+Filter incoming packets according to filter string.  For example,
+
+   ipstrings -f "host 137.99.17.17" eth0
+
+will pass the string "host 137.99.17.17" to the pcap library's 
+filter routine.  Thus ipstrings will only see packets with 137.99.17.17
+in one of the two ip addresses.  The filter commands are extensive and
+are explained fully in the 
+.B tcpdump
+man page.
+
+Note that if you are trying to observe vlan traffic with your filter,
+you will have to specify the 'vlan' filter before other filters.  In
+fact if all your traffic was vlan tagged, the command above would
+filter out all traffic, because the 'vlan' specifier was not included.
+To see vlan traffic the example above would need to change to
+
+   ipaudit -f "vlan and host 137.99.17.17" eth0
+
+.TP
+.B "-i"
+Print source and destination ip address with each string.
+
+.TP
+.B "-m"
+Do not enter promiscuous mode when reading network interface.
+
+.TP
+.B "-n <nchar>"
+Consider strings to be any set of printable characters
+(ASCII 32 to 126) <NCHAR> characters long or greater.
+When <NCHAR> is set to zero, then only those sets
+of printable characters which are terminated by 
+an ASCII 0 are printed.
+
+.TP
+.B "-p"
+Print protocol number, source and destination port number for packets
+for each string printed.  If protocol number is not 6 or 17 (tcp or udp)
+then port values are printed as 0.
+
+.TP
+.B "-r <dumpfile>"
+Reads network info from <dumpfile> instead of reading live from network.
+Such a dumpfile could have been produced by the programs
+.B "ipstrings",
+.B "tcpdump"
+or
+.B "ethereal"
+(http://www.zing.org).
+You can read from standard input using '-' as the file name, this
+feature is provided by the pcap libarary.
+
+.TP
+.B "-s <nlen>"
+Read no more than first <nlen> packet bytes.  Default is 96,
+minimum is 68.
+
+
+.TP
+.B "-t"
+Write packet time in format HH:MM:SS.SSSS for string printed.
+
+.TP
+.B "-w <dumpfile>"
+Writes first <nlen> bytes of every packet to <dumpfile> 
+in pcap format
+(see -s option about <nlen>).
+Can later be read by programs such as
+.B "ipaudit",
+.B "ipstrings",
+.B "tcpdump"
+or
+.B "ethereal", 
+Use '-' to write to standard out (this is a feature provided
+by the pcap library).
+
+.TP
+.B "-v"
+Print version information.
+
+.TP
+.B "-z"
+Write packet size in bytes (size of ip portion, does not include
+ethernet or other header).
+
+
+
+.SH INPUT EXAMPLES
+
+To read strings from packets going by interface eth0
+   ipstrings eth0
+
+To read all strings from a pcap dump file 'pcap.dump'
+   ipstrings -r pcap.dump
+
+To read only for host 10.2.2.2
+   ipstrings -r pcap.dump -f "host 10.2.2.2"
+
+To read 'pcap.dump' only for host 10.2.2.2 and port 21 (ftp)
+   ipstrings -r pcap.dump -f "host 10.2.2.2 and port 21"
+
+To read gzip'ed 'pcap.dump.gz" for all hosts and only port 23 (telnet)
+   zcat pcap.dump.gz | ipstrings -r- "port 23"
+
+.SH OUTPUT EXAMPLES
+
+A short FTP session to 127.0.0.1 was captured in pcap.file.  When we give the command
+   ipstrings -i -rpcap.fil
+
+the output is
+
+   127.000.000.001 127.000.000.001   6     21   1323  220 bluebird FTP server (Versi
+   127.000.000.001 127.000.000.001   6   1323     21  USER jibe
+   127.000.000.001 127.000.000.001   6     21   1323  331 Password required for jibe
+   127.000.000.001 127.000.000.001   6   1323     21  PASS xxxxxxxx
+   127.000.000.001 127.000.000.001   6     21   1323  230 User jibe logged in.
+   127.000.000.001 127.000.000.001   6   1323     21  SYST
+   127.000.000.001 127.000.000.001   6     21   1323  215 UNIX Type: L8
+   127.000.000.001 127.000.000.001   6   1323     21  QUIT
+   127.000.000.001 127.000.000.001   6     21   1323  221-You have transferred 0 byt
+   127.000.000.001 127.000.000.001   6     21   1323  221-Total traffic for this ses
+
+The first two columns are the source and destination ip addresses.
+Column three is the protocol, in this example all are 6 meaning all packets
+are tcp.  Columns four and five are the source and destination port numbers.
+Starting in the sixth column are the printable strings that were found
+in the packets.
+
+.SH BUGS
+Report any to jon.rifkin@uconn.edu.
+
+.SH URL
+http://www.sp.uconn.edu/~jrifkin/ipstrings/
+
+.SH VERSION
+0.5 May 25, 2000
+
+.SH SEE ALSO
+.BR tcpdump (1)
+.BR pcap (3)
+.BR ipaudit (1)

@@ -1,0 +1,89 @@
+#!/usr/bin/perl
+
+use Socket;
+
+#
+#  Search log/text file for occurances of "telnet",
+#  collect remote ip address and print out their DNS names
+#
+if ($ARGV[0] eq "-h") {
+($base) = ($0 =~ /([^\/]+)$/);
+
+print<<"EOM";
+
+$base [-h] [-l] <file>
+
+   Echo lines from <file> or standard input and append
+   the dns name for each ip address on the line.  If no
+   dns name is avilable, then print '-'.
+
+   -l  Don't echo input file, just collect IP addresses
+       and print list of IP address and DNS name, one to a line.
+EOM
+
+exit;
+}
+
+$lineflag = 1;
+if ($ARGV[0] eq "-l") {
+	shift;
+	$lineflag = 0;
+	}
+
+#  line mode, find all ip address on line, print line followed by name
+if ($lineflag)
+{
+while (<>) {
+	#  echo line
+        chomp;
+	print $_;
+        #  Ignore commented lines.
+        next if /^\s*#/;
+        #  Get multiple ip address per line
+        @ip = /(\d+\.\d+\.\d+\.\d+)/g;
+        for $ip (@ip) {
+           #  Form ip address with leading 0s
+           $formatted_ip = sprintf("%03d.%03d.%03d.%03d", split(/\./, $ip));
+           #  Record occurance of ip address
+           $cnt = $ip{$formatted_ip}++;
+           #  Look up name if first time
+           if ($cnt==0) {
+		@ipdigit = ($ip=~/(\d+)\.(\d+)\.(\d+)\.(\d+)/);
+		$ip = sprintf ("%d.%d.%d.%d", @ipdigit);
+		#  Get DNS name
+		$name = gethostbyaddr(inet_aton($ip), AF_INET);
+		$name = "-" if ($name  eq "");
+		$name{$formatted_ip} = $name;
+		}
+           print " $name{$formatted_ip}";
+           }
+        print "\n";
+        }
+exit;
+}
+
+while (<>) {
+        #  Ignore commented lines.
+        next if /^\s*#/;
+        #  Get multiple ip address per line
+        @ip = /(\d+\.\d+\.\d+\.\d+)/g;
+        for $ip (@ip) {
+           #  Form ip address with leading 0s
+           $formatted_ip = sprintf("%03d.%03d.%03d.%03d", split(/\./, $ip));
+           #  Record occurance of ip address
+           $ip{$formatted_ip}++;
+           }
+        }
+
+
+for (sort keys %ip) {
+        #  Remove leading 0s from ip address
+        @ip = /(\d+)\.(\d+)\.(\d+)\.(\d+)/;
+        $ip = sprintf ("%d.%d.%d.%d", @ip);
+        #  Get DNS name
+        $name = gethostbyaddr(inet_aton($ip), AF_INET);
+        $name = "-" if ($name  eq "");
+        #  Format ip number with leading 0s
+        @ip = /(\d+)\.(\d+)\.(\d+)\.(\d+)/;
+        print  "$_  $name\n";
+        }

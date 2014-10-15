@@ -1,0 +1,4 @@
+#!/bin/bash
+
+# find $HOME \( -name html -o -name data \) -prune -o -type f -not -name "*.log" -a -not -name "*~"
+find $HOME \( -name "*.pid" -o -name "*.o" -o -name "*.png" -o -name ".*" -o  -name raw -o -name html -o -name data \) -prune -o -type f -not -name "*.log" -a -not -name "*~" -printf %P\\n

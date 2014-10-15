@@ -1,0 +1,14 @@
+CREDITS
+jon rifkin     - Author.
+rellerbrock    - Database options (-P, -q).
+vvs            - Standalone mode (-D -F).
+jh             - configure script, portability, etc, lots of things.
+cgreen         - SearchIpauditData rewrite, "ipaudits" CLI tool.
+gluft          - Debugging.
+e. viglione    - Web page design (the nicer ones).
+m. lang        - Ditto and bug fixes.
+eric jacobsen  - Bug fixes.
+bernd leibing  - Bug fixes.
+jim alton      - Bug fixes.
+shannon wynter - Bug report.
+mike zanker    - Bug report.

@@ -1,0 +1,1860 @@
+2004-02-15 20:21  jrifkin
+
+	* reports/30min/graphic/GraphBusy: Correct GraphBusy so second
+	curve is a line, not an area ('l', not 'i')
+
+2004-01-16 12:26  jrifkin
+
+	* man/man1/ipaudit.1: Add example of localrange (-l) using '-'- and
+	':', like    10.10.10.0-10.10.10.127:10.10.10.129-10.10.10.255
+
+2003-12-30 13:52  jrifkin
+
+	* public_html/cgi-bin/SearchIpauditData: Fixed data handling when
+	no date entered, this bug caused failure to start when following
+	link from front page.
+
+2003-12-30 13:51  jrifkin
+
+	* reports/30min/0traffic/MakeReport30: Fixed problem with ic()
+	which rendered '0' as '', which caused misprints in 30 minute
+	reports and which in turn was mis-read by 30min/graphics reports.
+
+2003-12-10 00:23  jrifkin
+
+	* compile/src/pdate.c: pdate's -t option now uses get_digit().
+
+2003-11-19 23:04  jrifkin
+
+	* public_html/cgi-bin/SearchIpauditData: Forgot to include perl's
+	taint checking switch.
+
+2003-11-17 23:36  jrifkin
+
+	* public_html/cgi-bin/SearchIpauditData: Fixed more Taint check
+	problems, streamlined the code too.
+
+2003-11-17 13:12  jrifkin
+
+	* man/man1/ipaudit.1: Correct ICMP codes as was just done for
+	port.lst
+
+2003-11-17 12:42  jrifkin
+
+	* public_html/cgi-bin/port.lst: Fix ICMP entiries.
+
+2003-11-08 00:28  jrifkin
+
+	* compile/src/ipdbase.c: Fix implementation of multiline sql to
+	create database.
+
+2003-11-03 22:41  jrifkin
+
+	* man/man1/ipaudit.1, compile/src/ipdbase.c: Create index when
+	creating mysql file and fix man page typo.
+
+2003-11-03 06:07  jrifkin
+
+	* man/man1/ipaudit.1: Document new 'chroot' and 'user' config file
+	options, and change version from 0.98 to 0.99.
+
+2003-11-03 06:06  jrifkin
+
+	* compile/src/ipaudit.h: Change the binary version number from 0.98
+	to 0.99.
+
+2003-10-19 14:41  jrifkin
+
+	* compile/src/ipaudit.c: Add 'user' and 'chroot' options.
+
+2003-10-09 07:34  jrifkin
+
+	* reports/30min/0traffic/MakeReport30: Fix column headings 'Remote
+	Hosts Contacted' and 'Local Hosts Contacted'
+
+2003-10-08 23:08  jrifkin
+
+	* public_html/cgi-bin/SearchIpauditData: Fix value of $cgidir taken
+	from regex.
+
+2003-10-08 19:06  jh8
+
+	* compile/Makefile.in: * Fix adjust-cgi for the new
+	ipaudit_config.pm
+
+2003-10-07 23:03  jh8
+
+	* compile/src/pdate.c: * Putting down the crackpipe and fixing
+	error.h -> errno.h
+
+2003-10-07 23:00  jh8
+
+	* compile/src/: ipaudit.c, ipstrings.c: * Moving errno.h outside of
+	the ifdef, duno what I was thinking when I put	 it there. Should
+	always be included.
+
+2003-10-07 22:42  jh8
+
+	* public_html/cgi-bin/SafeCAT: * Fixed broken error msgs from going
+	to httpd's error log to now going   to the client. This script
+	needs more tweaking - more to come later.
+
+2003-10-07 22:31  jh8
+
+	* compile/src/makelocal.c: * Fixed initialization problem as
+	pointed out by Jan Krupa
+
+2003-10-07 22:26  jh8
+
+	* bin/traffic_type: * Fixed typo pointed out by Jan Krupa * Misc
+	clean-ups of somewhat similar issues.
+
+2003-10-07 22:02  jh8
+
+	* reports/30min/0traffic/MakeReport30: * Fix for Uninitialized
+	errors.
+
+2003-10-07 12:48  jrifkin
+
+	* compile/config.h.in: Add config code for HAVE_ERRNO_H
+
+2003-10-06 21:52  jh8
+
+	* ipaudit_config.pm, man/man3/ipaudit_config.3pm: * Added a
+	function to sanitize variables.  * Code reorg, and debugging added.
+	 * Updated manpage.
+
+2003-10-05 20:29  jrifkin
+
+	* public_html/cgi-bin/SearchIpauditData: New cleaned version of
+	previously submitted SearchIpauditData which had the fix for 'RH9.0
+	bug', i.e.  Perl Taint Problem.
+
+2003-10-04 22:49  jrifkin
+
+	* public_html/cgi-bin/SearchIpauditData: Untaint
+	ZCAT,ZGREP,ip_pattern and @file_list
+
+2003-09-29 23:53  jh8
+
+	* compile/: config.h.in, configure, configure.in, src/calcbytes.c,
+	src/hash.c, src/ipaudit.c, src/ipdbase.c, src/ipstrings.c,
+	src/lookforzero.c, src/makelocal.c, src/pdate.c, src/total.c: *
+	Fixes for compilation on powerpc * Fixes for compilation on RH9
+
+2003-06-09 16:06  jrifkin
+
+	* public_html/cgi-bin/SearchIpauditData: Add test for correct
+	configuration of ZCAT and ZGREP variables.
+
+2003-05-31 14:39  jrifkin
+
+	* compile/src/Makefile.in: Correct MySQL compilation.
+
+2003-05-31 14:29  jrifkin
+
+	* public_html/index.html: Change default home page.
+
+2003-05-31 12:50  jrifkin
+
+	* man/man1/ipaudit.1: Added more info on MySQL native support.
+
+2003-05-31 12:20  jrifkin
+
+	* compile/src/ipdbase.c: Change default MySQL table name from
+	'ipaudit' to the more descriptive 'connections'.
+
+2003-05-31 12:11  jrifkin
+
+	* compile/src/Makefile.in: Fix makefile for new ipdbase.c module
+
+2003-05-31 12:03  jrifkin
+
+	* compile/src/Makefile.in, compile/src/ipaudit.h,
+	compile/src/ipdbase.c, compile/src/ipdbase.h, man/man1/ipaudit.1:
+	More MySQL support.
+
+2003-05-31 11:57  jrifkin
+
+	* compile/src/ipaudit.c: Add native MySQL support, and separate
+	code for ipaudit.c output into ipdbase.c to facilitate future
+	additions of alternate output formats.	Compilation of MySQL
+	support is selected by uncommenting lines in
+	compile/src/Makefile.in
+
+2003-05-22 16:41  jrifkin
+
+	* reports/30min/0traffic/MakeReport30: Initialize NumPacket,NumConn
+	(thanks Eric Jacobsen)
+
+2003-05-06 05:48  jrifkin
+
+	* public_html/cgi-bin/SearchIpauditData: Correct message "less than
+	twelve fields", 'twelve' should be 'thirteen'.
+
+2003-05-06 05:45  jrifkin
+
+	* compile/src/makelocal.c: Correct output order of
+	internal,external when using '-s' option.
+
+2003-04-25 11:28  jrifkin
+
+	* man/man1/: ipaudit.1, ipstrings.1: Add info about -f with 'vlan'
+	specifier.
+
+2003-04-17 08:58  jrifkin
+
+	* man/man1/ipaudit.1: Add to -q paragraph an example using -D
+	option.
+
+2003-04-14 08:55  jrifkin
+
+	* compile/src/ipaudit.c: Fix -q option (change 'q:' to 'q' in
+	'getopts()')
+
+2003-04-01 08:44  jrifkin
+
+	* reports/monthly/traffic/runcron: Now works if monthly localhost
+	file is either zipped or not.
+
+2003-03-28 23:30  jrifkin
+
+	* compile/src/ipaudit.c: Set errno=0 in read_config() so that
+	pcap_next() will be called in main.
+
+2003-03-19 19:57  jh8
+
+	* INSTALL, compile/Makefile.in: The end user no longer has to
+	specifically use "make adjust-cgi" anymore.  This will run
+	automatically, if needed.
+
+2003-03-18 09:38  jrifkin
+
+	* compile/src/ipaudit.c: Tweak network-down code to reset errno=0
+	and ultimiately wait at select() for network to come up or interupt
+	to be sent.
+
+2003-03-18 08:39  jrifkin
+
+	* cron/cronclean: Include all report/*/*/html directories for
+	cleaning with cron/cronclean
+
+2003-03-17 10:36  jrifkin
+
+	* CREDITS: [no log message]
+
+2003-03-17 10:15  jrifkin
+
+	* compile/src/ipaudit.c: Enable ipaudit to handle "Network is down"
+	transition.
+
+2003-03-17 08:07  jrifkin
+
+	* reports/daily/type/runcron: Change 'rm $OUTPUT' to 'rm -f
+	$OUTPUT'
+
+2003-03-16 13:00  jrifkin
+
+	* compile/src/ipaudit.c: correct LINUX_SLL offset to 16
+
+2003-03-16 12:59  jrifkin
+
+	* compile/src/ipaudit.c: Add packet type DLT_LINUX_SLL
+
+2003-03-14 08:50  jrifkin
+
+	* reports/30min/0traffic/MakeReport30: Install Bernd Liebing's
+	patch to sub PrintTraffic to make variables local so PrintSummary
+	could be moved to bottom of report.
+
+2003-03-08 12:54  jrifkin
+
+	* INSTALL: Fix spelling typo
+
+2003-03-07 12:08  jh8
+
+	* compile/: configure, configure.in: IFS weirdness correction.
+
+2003-03-07 10:00  jrifkin
+
+	* CREDITS, ChangeLog, reports/monthly/traffic/runcron: Fix runcron
+	CVS upload type, updated CREDITS ChangeLog
+
+2003-03-07 09:40  jrifkin
+
+	* reports/monthly/traffic/runcron: Use data from
+	data/monthly/localhost/YYYY-mm-monthly.txt
+
+2003-03-07 09:14  jrifkin
+
+	* cron/cronmonthly: Fix typo
+
+2003-03-05 15:39  jrifkin
+
+	* man/man1/ipaudit.1: Update ipaudit man page for -x option (and
+	its relation to -E option)
+
+2003-03-05 15:38  jh8
+
+	* compile/: configure, Makefile.in, configure.in: Moved checking
+	for existing ipaudit-web.conf from configure to Makefile.
+
+2003-03-05 15:14  jrifkin
+
+	* compile/src/ipaudit.c, man/man1/ipaudit.1: Add vlan to man page,
+	'vlan' command to ipaudit conf file syntax.
+
+2003-03-05 13:51  jrifkin
+
+	* compile/src/ipaudit.c: Apply J. Gooch's vlan patch
+
+2003-03-04 22:05  jh8
+
+	* compile/Makefile.in: added ipaudit_config.pm to the install
+	(missing). Updated the "copy files" tag to ignore CVS directories.
+
+2003-03-04 22:00  jh8
+
+	* INSTALL: 
+	Updated adjust-cgi instructions, and removed some extraneous
+	verbage that I had added at one time.
+
+2003-03-04 11:33  jrifkin
+
+	* compile/Makefile.in: Fix 'make install-files'
+
+2003-02-28 13:24  jrifkin
+
+	* CREDITS: [no log message]
+
+2003-02-28 13:23  jrifkin
+
+	* public_html/cgi-bin/ipahttp, cron/cron30min: ipahttp: changed
+	link from 'ipaudit.css' to '../ipaudit.css' cron30min: change 'ps
+	-aux' to 'ps aux' for BSD compatibility (thanks B.Liebing)
+
+2003-02-25 21:22  jrifkin
+
+	* compile/Makefile.in: Use @INSTALL@ in place of 'cp -r'
+
+2003-02-23 20:04  jrifkin
+
+	* public_html/index.html: Maybe I've got it right this time.
+
+2003-02-23 20:00  jrifkin
+
+	* public_html/: index1.html, index.html: Make new home page style
+	the default
+
+2003-02-23 16:57  jrifkin
+
+	* ChangeLog: [no log message]
+
+2003-02-23 16:35  jrifkin
+
+	* INSTALL: Now one INSTALL for both tarballs and CVS.
+
+2003-02-23 16:22  jrifkin
+
+	* INSTALL: update INSTALL to match new layout.
+
+2003-02-23 16:18  jrifkin
+
+	* compile/Makefile.in: Multiple changes - improved user messages,
+	minor fixes, add file copy.
+
+2003-02-23 13:18  jrifkin
+
+	* compile/Makefile.in: Added install-files to install produced to
+	copy distribution files from install tree to target tree.
+
+2003-02-23 11:50  jrifkin
+
+	* compile/Makefile.in: Create more directories in Makefile.in
+
+2003-02-23 11:01  jrifkin
+
+	* compile/Makefile.in: Add public_html/cgi-bin to list of
+	directories to make
+
+2003-02-22 16:19  jrifkin
+
+	* FAQ: Justify text
+
+2003-02-22 16:12  jrifkin
+
+	* compile/src/total.c: Suppress sorting when no records in list
+
+2003-02-22 15:47  jrifkin
+
+	* bin/psort: Clean up Usage formatting.
+
+2003-02-20 20:49  jh8
+
+	* FAQ: Added questions.
+
+2003-02-20 20:29  jh8
+
+	* contrib/jh/ipaudit-webconf.pl: This is old, unused, unfinished,
+	and mostly abandonded. When I've got more time to work on this,
+	I'll do something a bit better.
+
+2003-02-20 20:26  jh8
+
+	* compile/ipaudit-web.conf.in: speeling fixes and text formating
+	change for step 1.
+
+2003-02-20 20:19  jh8
+
+	* compile/: Makefile.in, configure, configure.in: Changes to
+	support the new directory structure
+
+2003-02-20 20:14  jh8
+
+	* Makefile.in, config.guess, config.h.in, config.sub, configure,
+	configure.in, install-sh, ipaudit-web.conf.in, compile/Makefile.in,
+	compile/config.guess, compile/config.h.in, compile/config.sub,
+	compile/configure, compile/configure.in, compile/install-sh,
+	compile/ipaudit-web.conf.in, compile/src/Makefile.in,
+	compile/src/calcbytes.c, compile/src/hash.c, compile/src/hash.h,
+	compile/src/ipaudit.c, compile/src/ipaudit.conf.sample,
+	compile/src/ipstrings.c, compile/src/lookforzero.c,
+	compile/src/makelocal.c, compile/src/pdate.c, compile/src/total.c,
+	src/Makefile.in, src/calcbytes.c, src/hash.c, src/hash.h,
+	src/ipaudit.c, src/ipaudit.conf.sample, src/ipstrings.c,
+	src/lookforzero.c, src/makelocal.c, src/pdate.c, src/total.c:
+	Directory restructuring to compartmentalize the src tree and make
+	it easier to do upgrades.
+	
+	This is not finished yet - there are still a few install routines
+	missing, so this won't completely install/upgrade ipaudit.
+
+2003-02-20 11:22  jrifkin
+
+	* public_html/cgi-bin/SearchIpauditData: Initialized $arg{} to
+	avoid error messages.
+
+2003-02-19 20:41  jrifkin
+
+	* src/ipaudit.c: Correct VLAN implentation - don't assume packet is
+	IP just because it's VLAN.
+
+2003-02-17 11:27  jrifkin
+
+	* INSTALL: Add note about Apache Alias directive for CGI scripts.
+
+2003-02-17 11:18  jrifkin
+
+	* INSTALL: Add instructions about running ipaudit.
+
+2003-02-17 10:25  jrifkin
+
+	* CREDITS: [no log message]
+
+2003-02-17 10:17  jrifkin
+
+	* src/pdate.c, cron/cronweekly: Correct timestr[] allocation, and
+	use pdate more efficiently in cronweekly (thanks to Eric J.)
+
+2003-02-17 10:05  jrifkin
+
+	* FAQ, OLDFAQ: Old faq from web page and new version.
+
+2003-02-17 09:14  jrifkin
+
+	* reports/monthly/traffic/runcron: Correct error reading weekly
+	localhost files instead of month of daily localhost files.
+
+2003-02-17 09:13  jrifkin
+
+	* reports/weekly/traffic/runcron: Add ability to operate on either
+	gzipped or ungzipped weekly localhost file.
+
+2003-02-17 09:12  jrifkin
+
+	* man/man1/ipaudit.1: Bring option info up to date, list options in
+	sorted order.
+
+2003-02-17 09:11  jrifkin
+
+	* src/ipaudit.c: Clean up options, removed -D, changed -F to -D,
+	ipaudit now has a daemon mode to write output every N seconds, the
+	ability to optionally append to -o output file, and ability to use
+	strftime() time formats in arguments to -o, -w and -x.
+
+2003-02-10 16:23  jrifkin
+
+	* src/ipaudit.c: Add -E/sniffinterval option for sniff for fixed
+	time interval in seconds.
+
+2003-02-05 09:13  jrifkin
+
+	* src/makelocal.c, reports/30min/0traffic/MakeReport30,
+	reports/daily/traffic/runcron: Fix initialization errors in
+	MakeReport30 with OTHERRANGE and daily/traffic/runcron with
+	DAILY_TRAFFIC_HOSTPAIR_MIN and error with IS_REMOTE() macro in
+	makelocal.c.
+
+2003-02-04 13:29  jrifkin
+
+	* ChangeLog: [no log message]
+
+2003-02-04 13:28  jrifkin
+
+	* reports/30min/graphic/runcron: Correct parseing of Busiest Local
+	and Busiest Remote host total bytes.
+
+2003-02-04 10:49  jrifkin
+
+	* Makefile.in: Change 'chmod 711 ../ipaudit' to 'chmod 711 .', its
+	more portable (?)
+
+2003-02-04 09:41  jrifkin
+
+	* ipaudit-web.conf.in: Added options to support 'other' range,
+	'overflow' ips and limits to number of 'local hosts', 'remote
+	hosts' and 'host pairs' processed by the 30min report to prevent
+	memory overflow.
+
+2003-02-04 09:34  jrifkin
+
+	* reports/: 30min/0traffic/MakeReport30,
+	30min/graphic/GraphExternal, daily/traffic/runcron,
+	monthly/traffic/runcron, weekly/traffic/runcron: Changed traffic
+	label from 'unknown' to 'other', added ability to use 'other'
+	range, and added traffic summary to daily traffic report.
+
+2003-02-04 09:32  jrifkin
+
+	* src/makelocal.c: Added option -f to filter by local, local/local,
+	remote or remote/remote.  Added option -s to calculate traffic
+	summary.  Added ability to read 'other' range.
+
+2003-02-04 09:30  jrifkin
+
+	* src/ipaudit.c: Added support for overflow ips and upgraded the
+	behavior of hostportlimit so that when limit is reached only new,
+	unclassfied connections are lumped into the generic group.  In the
+	previous version all connections were stored as generic after the
+	limit was reached (thanks Phil).
+
+2003-02-01 15:49  jrifkin
+
+	* ipaudit-web.conf.in: Add fields to configure
+	reports/30min/0traffic/MakeReport30 to prevent overflow of number
+	of Local Hosts, Remote Hosts and Host Pairs.
+
+2003-02-01 15:48  jrifkin
+
+	* reports/30min/0traffic/MakeReport30: Add support for limiting
+	total number of remote hosts, local hosts and host pairs to avoid
+	memory overflow.
+
+2003-01-31 16:05  jrifkin
+
+	* public_html/: index.html, index2.html: Add META Refresh tag to
+	index*.html files
+
+2003-01-31 16:04  jrifkin
+
+	* public_html/: ReportExternal-image.html,
+	ReportLocalBusy-image.html, ReportLocalHost-image.html,
+	ReportRemoteBusy-image.html, ReportRemoteHost-image.html,
+	ReportTraffic-image.html, cgi-bin/ipa_clientstat,
+	cgi-bin/ipa_hoststat: Add META Refresh tag to *-image.html files,
+	and Home link to ipa_{host,client}stat
+
+2003-01-31 14:01  jrifkin
+
+	* public_html/cgi-bin/SearchIpauditData: Fixed implentation of line
+	coloring again!  This time use CSS - result works in Mozilla,
+	Phoenix, IE, but not in Netscape 4.78 - rats.
+
+2003-01-31 13:57  jrifkin
+
+	* src/makelocal.c: Add ability to do network specification like
+	137.99.92.0/255.255.255.0
+
+2003-01-30 23:27  jrifkin
+
+	* reports/30min/0traffic/MakeReport30: Use jh's ParseLocalNet in
+	MakeReport30
+
+2003-01-30 22:38  jrifkin
+
+	* reports/30min/0traffic/MakeReport30: Correct error in
+	ParseLocalNet for /32 networks.
+
+2003-01-30 12:32  jrifkin
+
+	* public_html/cgi-bin/SearchIpauditData: Fixed implentation of line
+	coloring
+
+2003-01-30 08:35  jrifkin
+
+	* src/makelocal.c: Corrected error in initialization of variable
+	filter.
+
+2003-01-29 22:36  jrifkin
+
+	* src/makelocal.c, reports/monthly/traffic/runcron,
+	reports/weekly/traffic/runcron: Correct weekly, monthly runcron by
+	adding function to makelocal.c
+
+2003-01-29 21:15  jrifkin
+
+	* src/pdate.c: pdate now supports multiple instances of -a option
+	for adding more than one time increment.
+
+2003-01-29 20:21  jrifkin
+
+	* src/ipaudit.c: Add -O option to usage message
+
+2003-01-27 16:55  jrifkin
+
+	* src/hash.c, src/hash.h, src/ipaudit.c, man/man1/ipaudit.1: 1) Add
+	ht_getnewer() to transverse hash table in order of element creation
+	time.  2) Added -O option to assign local/remote addresses to
+	overflow packets.
+
+2003-01-25 18:18  jrifkin
+
+	* reports/30min/0traffic/MakeReport30: Limited max count of Local
+	Hosts, Remote Hosts and Host Pairs stored in hash to prevent memory
+	overflow.  Set limits at top of perl code.  Currently defaults to
+	100,000 for each.
+
+2002-12-02 12:32  jrifkin
+
+	* reports/: weekly/traffic/runcron, monthly/traffic/runcron:
+	Weekly, Monthly runcron replaces call to Perl report script with
+	self-contained shell based report generation.
+
+2002-11-30 23:19  jrifkin
+
+	* Makefile.in: Add installation of lookforzero calcbytes
+
+2002-11-27 00:09  jh8
+
+	* configure, configure.in: Added png check to gnuplot - warns if no
+	png support. This should do until after the holidays.
+	
+	Added a perl version check.
+
+2002-11-26 11:50  jrifkin
+
+	* bin/table2html: Add -T,-c options
+
+2002-11-26 00:06  jrifkin
+
+	* reports/30min/graphic/README, ipaudit-web.conf.in: Tidy up
+	documentation (such as it is).
+
+2002-11-25 23:01  jh8
+
+	* reports/30min/graphic/: index.template, mk.index, runcron: More
+	removal of "verbose graphs" for this release
+
+2002-11-25 22:53  jh8
+
+	* ipaudit-web.conf.in: Removing "verbose graphs" option for now -
+	will fiddle with this again when we hit the next development cycle.
+
+2002-11-25 22:48  jh8
+
+	* configure, Makefile.in, configure.in: Added ability to specify
+	homedir when not doing a userchk, as well as override the detected
+	homedir from /etc/passwd.
+	
+	Minor change to Makefile.in to remove an unnecessary slash that
+	pops up when using adjust-cgi
+
+2002-11-23 20:07  jrifkin
+
+	* public_html/cgi-bin/: PortLookup, SearchIpauditData,
+	ipa_clientstat, ipa_hoststat, ipahttp: Add perl taint check (-T) to
+	perl cgi scripts.
+
+2002-11-22 15:17  jrifkin
+
+	* reports/30min/graphic/runcron: Fix search string from UPPER to
+	lower case.
+
+2002-11-22 12:58  jrifkin
+
+	* public_html/: ReportExternal-image.html,
+	ReportLocalBusy-image.html, ReportLocalHost-image.html,
+	ReportRemoteBusy-image.html, ReportRemoteHost-image.html,
+	ReportTraffic-image.html: Add HTML for enlarged image pages.
+
+2002-11-22 12:52  jrifkin
+
+	* public_html/: ReportExternal-doc.html, ReportLocalBusy-doc.html,
+	ReportLocalHost-doc.html, ReportRemoteBusy-doc.html,
+	ReportRemoteHost-doc.html, ReportTraffic-doc.html, index.html,
+	index2.html: HTML fix up
+
+2002-11-22 10:05  jrifkin
+
+	* public_html/: index.html, index3.html: Rearrange default,
+	optional home pages.
+
+2002-11-22 09:57  jrifkin
+
+	* public_html/: ReportExternal-doc.html, ReportLocalBusy-doc.html,
+	ReportLocalHost-doc.html, ReportRemoteBusy-doc.html,
+	ReportRemoteHost-doc.html, ReportTraffic-doc.html: New format doc
+	pages.
+
+2002-11-22 09:55  jrifkin
+
+	* public_html/index3.html: Another version of the home page.
+
+2002-11-22 09:40  jrifkin
+
+	* public_html/index.html: Legacy home page, remove link to old
+	'Local Server' report.
+
+2002-11-22 09:34  jrifkin
+
+	* src/Makefile.in: Makefile to compile small new C programs
+	calcbytes.c and lookforzero.c
+
+2002-11-22 09:28  jrifkin
+
+	* public_html/index2.html: New provisional home page.
+
+2002-11-22 09:25  jrifkin
+
+	* reports/daily/server/: MakeReportServer, report.conf, runcron:
+	[no log message]
+
+2002-11-22 09:20  jrifkin
+
+	* reports/30min/0traffic/MakeReport30: New HTML format.
+
+2002-11-21 21:45  jrifkin
+
+	* ipaudit-web.conf.install, ChangeLog: [no log message]
+
+2002-11-21 21:21  jrifkin
+
+	* ChangeLog.0, ChangeLog.1, Changelog, bin/datelist: [no log
+	message]
+
+2002-11-21 21:14  jrifkin
+
+	* reports/daily/server2/runcron, ipaudit-web.conf.in,
+	bin/traffic_type, public_html/ipaudit_style.css,
+	public_html/cgi-bin/SearchIpauditData,
+	public_html/cgi-bin/ipa_hoststat, public_html/cgi-bin/ipahttp,
+	reports/daily/traffic/runcron, reports/daily/type/runcron,
+	src/pdate.c, src/total.c: runcron, cgi scripts and CSS style sheet
+	provide HTML updates.  pdate.c adds ability to sum multiple -a
+	options.  total.c uses more efficeint algorithm for -f option, and
+	gains speed   by not freeing storage before program exit. 
+	daily/runcron files use double invokation of total to conserver  
+	storage - can now do daily remote host and host pair reports.
+
+2002-11-21 20:54  jrifkin
+
+	* reports/: monthly/traffic/MakeReportMonthly,
+	weekly/traffic/MakeReportWeekly: Replace perl scripts
+	MakeReport{Weekly,Monthly} with respective shell scripts runcron
+
+2002-11-19 14:40  jrifkin
+
+	* src/lookforzero.c: Remove newline character before looking for
+	zero
+
+2002-11-19 13:27  jrifkin
+
+	* src/: calcbytes.c, lookforzero.c: simple C programs to replace
+	simple 'awk' calls and speed up some report calculations.
+
+2002-11-16 14:12  jrifkin
+
+	* src/pdate.c: pdate: multiple -a options are now cumulative.
+
+2002-11-13 17:29  jh8
+
+	* reports/30min/graphic/mk.index: Fixed decimal placement format.
+
+2002-11-13 17:26  jh8
+
+	* public_html/cgi-bin/SafeCAT: Fixed headers hash
+
+2002-11-12 12:38  jrifkin
+
+	* src/pdate.c, reports/monthly/traffic/MakeReportMonthly,
+	reports/weekly/traffic/MakeReportWeekly: pdate.c - increase maximum
+	time string length to 1024, added warning if exceeded. 
+	weekly,monthly reports - removed IP address link to raw data viewer
+
+2002-11-02 16:31  jh8
+
+	* contrib/cgreen/ipaudits-0.1.1.tar.gz: Minor changes to make
+	warnings on solaris go away
+
+2002-11-02 16:14  jh8
+
+	* Makefile.in: Fixed a bug found by Michael Coburn, where Makefile
+	tried to run "install" in the "src" directory. This is unnecessary,
+	as the main Makefile contains the install routine for the "src"
+	dir.
+	
+	Some Makefile tidy-ups
+	
+	Added MAKE macro, so it will use whatever "make" configure finds
+	(I'd rather use GNU make if possible).
+	
+	Added a safty check that verifies the ipaudit homedir was detected
+	before "adjust-cgi" will run.
+
+2002-11-02 16:00  jh8
+
+	* configure, configure.in: Made configure look for GNU make -
+	everything to my knowledge works ok without, but looks better with.
+	Also, a small bugfix where extra programs weren't skipped properly
+	if their source was not found.
+
+2002-10-24 22:45  jrifkin
+
+	* src/total.c: Fixed bug that prevented needed column sum when
+	action average (a), standard dev (d), or error in average (e)
+	selected.
+
+2002-10-24 15:10  jrifkin
+
+	* src/total.c, man/man1/total.1: Added 'e' column modifier to
+	calculate "error in average" and corrected standard deviation
+	calculation.
+
+2002-09-08 11:24  jrifkin
+
+	* public_html/: index.html, ip.ico: Added silly little 'shortcut
+	icon' to home page.
+
+2002-09-08 11:22  jrifkin
+
+	* src/: ipaudit.c, ipstrings.c: ipaudit,ipstrings handles vlan
+	packets correctly now.
+
+2002-09-08 11:21  jrifkin
+
+	* public_html/cgi-bin/: ipa_clientstat, ipa_hoststat: Added check
+	to POSTED values to prevent minor security vulnerabilty.
+
+2002-09-08 11:09  jrifkin
+
+	* public_html/cgi-bin/: ipa_autoread, ipa_read, ipa_resnet_read,
+	ipa_traffic_read: Remove old cgi-scripts that are no longer used
+	and contain security vulnerability.
+
+2002-09-08 11:06  jrifkin
+
+	* CREDITS: - Remove ipa_{autoread,read,resnet_red,traffic_read}
+	because they are old and not used and contain securiy problem.	-
+	ipa_{client,host}stat have minor security fix.	- ipaudit.c
+	ipstrings.c fixed to handle vlan traffic.
+
+2002-08-29 10:29  jrifkin
+
+	* src/ipaudit.c: Added -T option for date/time output.
+
+2002-08-29 08:59  jrifkin
+
+	* src/ipaudit.c: Eliminate debug code ...
+
+2002-08-29 08:56  jrifkin
+
+	* src/ipaudit.c: Added -A option (experimental) to write all raw
+	packets (in addition to -w option)
+
+2002-08-24 13:46  jrifkin
+
+	* src/ipaudit.c: Fixed bug/type with sql output feature (alerted by
+	J Whistance)
+
+2002-08-20 21:57  jrifkin
+
+	* ChangeLog: Update ChangeLog
+
+2002-08-12 23:55  jh8
+
+	* src/pdate.c: Pedantic fixes for including config.h
+
+2002-08-12 23:53  jh8
+
+	* src/Makefile.in: Added CFLAGS to compile lines - oops.
+
+2002-08-12 23:52  jh8
+
+	* configure, configure.in: Added support (--disable-userchk) to
+	disable bailing out of configure when the IPaudit user isn't found.
+	 Useful for compiling on a staging machine or something of the
+	like.
+
+2002-07-28 15:33  jh8
+
+	* Makefile.in, configure, configure.in: Minor changes - configure
+	sets up a default install prefix of /home/ipaudit.  This is passed
+	to any enabled packages as well. Added install routine for any
+	enabled packages in Makefile.
+
+2002-07-28 15:26  jh8
+
+	* contrib/cgreen/: README.ipaudits, ipaudits-0.1.1.tar.gz: Minor
+	updates, mostly to configure and makefiles. Should be able to use
+	BSD's "make," and not a GNU make (works for me on FreeBSD
+	4.6-RELEASE).
+
+2002-07-25 22:59  jh8
+
+	* contrib/cgreen/ipaudits/: AUTHORS, COPYING, ChangeLog, INSTALL,
+	Makefile.am, Makefile.in, NEWS, README, TODO, aclocal.m4,
+	config.h.in, configure, configure.in, install-sh, ipaudit_util.c,
+	ipaudit_util.h, ipaudits.c, ipaudits.h, missing, mkinstalldirs,
+	stamp-h.in, str_util.c, str_util.h: No need for these to be
+	unpacked - configure will unpack it now.
+
+2002-07-25 22:52  jh8
+
+	* contrib/cgreen/ipaudits-0.1.1.tar.gz: Updated Makefiles,
+	configures, etc so that it compiles on Solaris. Still has some
+	compile warnings though, but otherwise seems to work. Will fix
+	warnings later.
+
+2002-07-25 22:51  jh8
+
+	* contrib/cgreen/README.ipaudits: Updated Readme
+
+2002-07-25 22:46  jh8
+
+	* configure, configure.in: Updated configure to automagically
+	unpack "ipaudits" if it is --enabled, don't need to distribute it
+	unpacked now.
+
+2002-07-24 23:47  jh8
+
+	* INSTALL: Small blurb about ipaudits (and --with-pcap switches)
+	under INSTALLATION section
+
+2002-07-24 23:33  jh8
+
+	* CREDITS, Makefile.in, configure, configure.in: Updated for
+	"ipaudits" to be enabled and magically compiled with "make."
+
+2002-07-24 23:25  jh8
+
+	* contrib/cgreen/: README.ipaudits, ipaudits-0.1.tar.gz,
+	ipaudits/AUTHORS, ipaudits/COPYING, ipaudits/ChangeLog,
+	ipaudits/INSTALL, ipaudits/Makefile.am, ipaudits/Makefile.in,
+	ipaudits/NEWS, ipaudits/README, ipaudits/TODO, ipaudits/aclocal.m4,
+	ipaudits/config.h.in, ipaudits/configure, ipaudits/configure.in,
+	ipaudits/install-sh, ipaudits/ipaudit_util.c,
+	ipaudits/ipaudit_util.h, ipaudits/ipaudits.c, ipaudits/ipaudits.h,
+	ipaudits/missing, ipaudits/mkinstalldirs, ipaudits/stamp-h.in,
+	ipaudits/str_util.c, ipaudits/str_util.h: Chris Green's Ipaudits
+	package - currently needs GNU make (gmake).
+
+2002-07-24 00:47  jh8
+
+	* reports/30min/graphic/: GraphExternal, GraphTraffic,
+	index.template, mk.index, runcron: Returned GraphExternal and
+	GraphTraffic back to their original pre-bytes/s state.
+	
+	Moved the Graph's bytes/s (which is now bits/s to match the graphs)
+	out of the PNG space and into the index.html space using a separate
+	program, mk.index.
+	
+	runcron is modifed to export IP_DIR for mk.index, removed older
+	code related to the above, speeling fix, other small things.
+
+2002-05-18 14:50  jh8
+
+	* configure, configure.in: updated configure script to check for
+	the existance of the ipaudit home directory
+
+2002-05-05 20:06  jrifkin
+
+	* public_html/cgi-bin/: ipa_clientstat, ipa_hoststat: Cleaner
+	web-page appearance.
+
+2002-05-01 23:08  jh8
+
+	* ipaudit-web.conf.in, reports/30min/graphic/GraphExternal,
+	reports/30min/graphic/GraphTraffic, reports/30min/graphic/runcron:
+	Added more verbose graph option that shows the average bandwidth
+	used. This probably needs a little tweaking.
+
+2002-04-23 17:00  jrifkin
+
+	* bin/psort: Add ability to sort by ip address
+
+2002-04-23 13:53  jrifkin
+
+	* ChangeLog: [no log message]
+
+2002-04-23 13:52  jrifkin
+
+	* public_html/cgi-bin/SearchIpauditData: Fixed DST problem when not
+	using Time::ParseDate, and corrected code to make Time::ParseDate
+	optional.
+
+2002-04-23 03:48  jrifkin
+
+	* cron/cron30min: Don't try to zip *.raw file if not present
+
+2002-04-23 03:18  jrifkin
+
+	* INSTALL: Added WARNING about possible mod_perl problems.
+
+2002-04-21 18:03  jrifkin
+
+	* INSTALL, public_html/index.html,
+	public_html/cgi-bin/ipa_hoststat: INSTALL: Remove reference to CGI
+	perl module index.html:  Organisational and cosmetic changes
+	ipa_hoststat:  Replace missing 'print' tokens from print statments
+
+2002-04-11 08:53  jrifkin
+
+	* ChangeLog: [no log message]
+
+2002-04-11 08:50  jrifkin
+
+	* reports/30min/graphic/ReportLog: Fixed SpringTime Daylight
+	Savings Time bug which dropped date from -00:00 and -00:30 times
+	from the 30min graphic logs and from the graphs.
+
+2002-04-07 15:43  jh8
+
+	* ipaudit-web.conf.in: This new conf supercedes the .install conf.
+	This one utilizes macro substitutions for binaries defined in
+	ipaudit-web.conf, which will be automatically generated if it
+	doesn't exist.
+
+2002-04-07 15:40  jh8
+
+	* public_html/cgi-bin/SearchIpauditData: Previous changes to this
+	file so that it utilizes the ipaudit perl module seems to have been
+	poofed. Re-added.
+
+2002-04-07 15:38  jh8
+
+	* configure, configure.in: Ipaudit-web.conf.install installation is
+	now handled here. This is somewhat different than before, whereas
+	now if ipaudit-web.conf exists, this file isn't backed-up and
+	replaced with a new one - it is left alone.
+	
+	Configure also checks for and does macro substitutions on AWK,
+	GZIP, ZCAT, ZGREP, and looks for the Time::ParseDate perl module.
+	If any above binaries aren't found, a warning is produced, and
+	default values are selected. AWK also uses a macro that checks for
+	mawk,gawk,nawk,awk.
+	
+	Fixed a bug where Ipaudit's homedir, when not found, also wasn't
+	getting a default value.
+
+2002-04-07 15:31  jh8
+
+	* Makefile.in, src/Makefile.in: Added top_srcdir and srcdir macros.
+	 Added -Itop_srcdir for src/Makefile.  Disabled installation of
+	ipaudit-web.conf.install from Makefile - This is now in the
+	configure script. The configure script checks for the existance of
+	the config, does macro substutions, and moves it into place
+	(however, this is only if the config doesn't already exist.
+	Otherwise configure skips this step).
+
+2002-04-07 15:24  jh8
+
+	* src/: hash.c, pdate.c, total.c: Pedantic tweak for config.h
+	include lines. No longer uses ../config.h.  Makefile will supply
+	-I$top_srcdir now.
+
+2002-03-29 10:03  jrifkin
+
+	* bin/table2html: Added more accurate help.
+
+2002-03-04 16:07  jrifkin
+
+	* public_html/cgi-bin/SearchIpauditData: Fixed bug in Last Talker
+	output field.
+
+2002-03-04 15:55  jrifkin
+
+	* public_html/cgi-bin/SearchIpauditData: Fix Form defaults and test
+	for presence of ParseDate module
+
+2002-03-04 11:52  jrifkin
+
+	* INSTALL, public_html/cgi-bin/SearchIpauditData: SearchIpauditData
+	wasn't working right with mod_perl, fixed by removing CGI module. 
+	Also made ParseDate module optional, and update INSTALL file to
+	reflect that.
+
+2002-03-02 10:49  jrifkin
+
+	* ChangeLog: [no log message]
+
+2002-03-02 10:47  jrifkin
+
+	* public_html/cgi-bin/SearchIpauditData: For mod_perl
+	compatibility: copy $ENV{QUERY_STRING} to @ARGV
+
+2002-03-01 12:58  jrifkin
+
+	* INSTALL: Add information about configuring mod_perl
+
+2002-03-01 12:27  jrifkin
+
+	* public_html/cgi-bin/: PortLookup, SafeCAT, ipa_clientstat,
+	ipa_hoststat, ipahttp: Modify cgi scripts for mod_perl
+	compatability: SafeCAT, ipahttp, PortLookup now fill @ARGV from
+	$ENV{QUERY_SCRIPT}.  ipa_clientstat, ipa_hoststat print directly to
+	starndard out (rather than use unnecessary HTML handle which
+	pointed to '-')
+
+2002-03-01 12:22  jrifkin
+
+	* public_html/cgi-bin/argtest: for troubleshooting - script to
+	display CGI environment
+
+2002-02-18 11:11  jrifkin
+
+	* ChangeLog: [no log message]
+
+2002-02-18 11:10  jrifkin
+
+	* src/ipaudit.c, man/man1/ipaudit.1: ipaudit.c now uses unsigned
+	long for byte and packet counts.  ipaudit.1 now documents -R
+	(packetsample) option
+
+2002-02-12 15:44  jrifkin
+
+	* src/makelocal.c: Added option to specify remote network in
+	addition to local network.
+
+2002-02-08 16:33  jh8
+
+	* Makefile.in: tweaked "find" in "adjust-cgi" for Solaris
+
+2002-02-08 16:25  jh8
+
+	* ipaudit-web.conf.install: clarification on point 5
+
+2002-02-08 16:21  jh8
+
+	* public_html/index.html: META refresh tag disappeared, readding.
+
+2002-02-08 16:19  jh8
+
+	* public_html/cgi-bin/: SearchIpauditData, ipa_autoread,
+	ipa_clientstat, ipa_hoststat, ipa_read, ipa_resnet_read,
+	ipa_traffic_read, ipahttp: Tidy up "use ipaudit_config" lines. Also
+	commented out the comments in SearchIpauditData about the size of
+	compressed log files, which is only relevant to CGreen.
+
+2002-02-08 16:11  jh8
+
+	* public_html/cgi-bin/SafeCAT: Changed to a better method of
+	detecting when the beginning or end of a file has been reached.
+
+2002-02-08 16:07  jh8
+
+	* public_html/cgi-bin/ipa_autoread_new: obsoleted by ipa_hoststat
+
+2002-02-08 16:02  jh8
+
+	* configure, configure.in: Reverted back to autoconf 2.13:
+	alleviatives "operation not permitted" errors with config.status on
+	fbsd (and possibly other bsds that chgrp 0 on files in /tmp.
+
+2002-02-06 13:19  jrifkin
+
+	* src/ipaudit.c: When reading config file remove enclosing " or '
+	from value field.
+
+2002-02-04 23:41  jh8
+
+	* ipaudit_config.pm, man/man3/ipaudit_config.3pm: Changed a bit to
+	allow it to work on older versions of perl that do not understand
+	"our"
+
+2002-02-04 17:27  jh8
+
+	* Makefile.in: small distclean tag tweak
+
+2002-02-04 17:25  jh8
+
+	* public_html/cgi-bin/ipahttp: removed some debug code that I added
+
+2002-02-03 18:46  jh8
+
+	* Makefile.in: added "make adjust-cgi" for setting up the cgi INC
+	paths - only needed if ipaudit is installed somewhere other than
+	/home/ipaudit
+
+2002-02-03 18:44  jh8
+
+	* configure, configure.in: added checks for finding the ipaudit
+	homedir - needed for the INC array in the cgi scripts so as to be
+	able to find the ipaudit_conf module.
+
+2002-02-03 18:39  jh8
+
+	* contrib/jh/: ipaudit_config.3pm, ipaudit_config.pm: These files
+	are in the main src now.
+
+2002-02-03 18:35  jh8
+
+	* ipaudit_config.pm: ipaudit_config perl conf reading module for
+	cgi scripts
+
+2002-02-03 18:34  jh8
+
+	* man/man3/ipaudit_config.3pm: man page for ipaudit_config
+
+2002-02-03 18:31  jh8
+
+	* public_html/cgi-bin/: SafeCAT, SearchIpauditData, ipa_autoread,
+	ipa_autoread_new, ipa_clientstat, ipa_hoststat, ipa_read,
+	ipa_resnet_read, ipa_traffic_read, ipahttp: added the
+	ipaudit_config perl module for reading in vars (no more hard coded
+	vars)
+
+2002-02-03 18:24  jh8
+
+	* ipaudit-web.conf.install: added IP_DIR, which is read by
+	ipaudit_config within the cgi scripts, as many of them had that
+	hard coded. Default is still /home/ipaudit within the scripts.
+	Removed DATA_DIR, as it was no longer needed in the config.
+
+2002-02-03 18:14  jh8
+
+	* INSTALL: updated instructions for "make adjust-cgi"
+
+2002-02-03 18:06  jh8
+
+	* reports/daily/: server2/runcron, traffic/runcron: replaced ==
+	with = in runcron. Default sh on BSD/Solaris dislike ==
+
+2002-01-31 12:32  jh8
+
+	* contrib/jh/: ipaudit_config.3pm, ipaudit_config.pm: New version
+	of the ipaudit config parsing module. Now just a module that can be
+	installed pretty much anywhere (will need to adjust @INC in the
+	perl scripts). Also includes a man page. This is still in a
+	'testing' stage, though it should work fine in a production
+	environment.
+
+2002-01-31 12:20  jh8
+
+	* contrib/jh/: ipaudit-conf-0.01.tar.gz, ipaudit-conf.readme: This
+	conf module is now just a lone module and a man page instead of a
+	full-blown perl module distro. Seems easier this way.
+
+2002-01-29 04:08  jrifkin
+
+	* ChangeLog: [no log message]
+
+2002-01-29 04:07  jrifkin
+
+	* public_html/: index.html, cgi-bin/ipa_clientstat: Made sepearte
+	cgi scripts for searchable host statistics and web-client-only host
+	statistics
+
+2002-01-28 12:21  jrifkin
+
+	* ipaudit-web.conf.install: Change old CONN_LIMIT directive to new
+	style HostPortLimit
+
+2002-01-25 22:05  jrifkin
+
+	* src/ipaudit.c: Add parsing of vlan tagged packets
+
+2002-01-21 22:17  jrifkin
+
+	* ChangeLog: [no log message]
+
+2002-01-20 23:32  jh8
+
+	* Makefile.in: Makefile now uses the system bin, "id," a supplied
+	by configure.
+
+2002-01-20 23:31  jh8
+
+	* configure, configure.in: Added a strict path search when looking
+	for "id," as the one in the Solaris default path hates -u. Split up
+	checks for the ipaudit user/group
+
+2002-01-20 20:38  jh8
+
+	* Makefile.in: added Makefile in src dir to distclean tag. Added a
+	BSD compat install, and other small misc stuff.
+
+2002-01-20 20:08  jh8
+
+	* contrib/jh/ipaudit-conf.readme: basic readme for
+	ipaudit-conf-0.01.tar.gz
+
+2002-01-20 20:02  jh8
+
+	* contrib/jh/ipaudit-webconf.pl: Not for general use, more of a
+	proof of concept web-based config test
+
+2002-01-20 19:47  jh8
+
+	* public_html/index.html: Added META tag to refresh every 30 mins
+
+2002-01-20 19:46  jh8
+
+	* public_html/index.html: Got mixed up with other updates,
+	reverting to use proper comment
+
+2002-01-20 19:39  jh8
+
+	* INSTALL: Added "Portability" to CONTENTS
+
+2002-01-20 19:31  jh8
+
+	* ipaudit-web.conf.install: Fixed ZGREP variable - was defined
+	wrong
+
+2002-01-20 19:27  jh8
+
+	* public_html/cgi-bin/SafeCAT: Removed dependency on the shell -
+	for those machines without tac.
+
+2002-01-20 19:13  jh8
+
+	* public_html/cgi-bin/SafeCAT: Got caught up in a commit foulup -
+	fixing with appropriate comment
+
+2002-01-20 19:06  jh8
+
+	* cron/cron30min: reverting, got commited and it was not supposed
+	to be
+
+2002-01-20 18:14  jh8
+
+	* contrib/jh/ipaudit-conf-0.01.tar.gz, cron/cron30min,
+	public_html/index.html, public_html/cgi-bin/SafeCAT,
+	src/Makefile.in: added Makefile in src dir to distclean tag. Added
+	a BSD compat install, and other small misc stuff.
+
+2002-01-20 18:08  jh8
+
+	* configure, configure.in: upgraded to autoconf2.52. checks for
+	gnuplot and perl, as well as checking for whether ipaudit
+	user/group exist. Lib check reorg as the pcap check could fail on
+	Solaris.
+
+2002-01-09 15:19  jrifkin
+
+	* ChangeLog: [no log message]
+
+2002-01-09 15:18  jrifkin
+
+	* reports/30min/graphic/runcron: Fix small bug in scan of Busiest
+	Local Host data
+
+2002-01-09 14:21  jrifkin
+
+	* ChangeLog: [no log message]
+
+2002-01-09 14:12  jrifkin
+
+	* INSTALL: Correct installation order - edit ipaudit-web.conf
+	_last_.
+
+2002-01-09 14:08  jrifkin
+
+	* reports/30min/graphic/: ReportLog, runcron: Fix small bug when
+	trying to get 5 busiest hosts but only 4 or less listed on html
+	report
+
+2002-01-07 14:26  jrifkin
+
+	* ChangeLog: Build new ChangeLog using cvs2cl.pl
+
+2002-01-07 14:24  jrifkin
+
+	* public_html/cgi-bin/SafeCAT: Correct URL for ip address link
+
+2002-01-07 14:24  jrifkin
+
+	* public_html/images/: ReportExternal-large.png,
+	ReportExternal.png, ReportLocalBusy-large.png, ReportLocalBusy.png,
+	ReportLocalHost-large.png, ReportLocalHost.png,
+	ReportRemoteBusy-large.png, ReportRemoteBusy.png,
+	ReportRemoteHost-large.png, ReportRemoteHost.png,
+	ReportTraffic-large.png, ReportTraffic.png: New sample graphs.
+
+2002-01-07 14:22  jrifkin
+
+	* public_html/: ReportLocalBusy-doc.html,
+	ReportRemoteBusy-doc.html, index.html: Add link to Local/Remote
+	Busy graphs, doc pages.
+
+2002-01-07 14:21  jrifkin
+
+	* reports/30min/graphic/: GraphBusy, ReportLog, runcron: New
+	Local/Remote Busiest Hosts graphs.
+
+2002-01-07 13:32  jrifkin
+
+	* reports/30min/graphic/: GraphLocalHost, GraphRemoteHost: Remove
+	obsolete reports - they are now consoladated in GraphHost
+
+2002-01-05 23:03  jh8
+
+	* src/Makefile.in: Small changes to accommodate the smarter
+	configure script.
+
+2002-01-05 22:59  jh8
+
+	* configure, configure.in: Taught configure how to bail when
+	libpcap isn't found. Added ability to specify where libpcap
+	libs/inc dirs are.
+
+2002-01-05 22:57  jh8
+
+	* INSTALL: Added a "How to use perl's CPAN from the command line"
+	directions
+
+2002-01-05 14:29  jrifkin
+
+	* INSTALL: Add note about URLs for CGI.pm and Time::ParseDate.	I
+	always have trouble finding them.
+
+2001-12-14 00:01  jh8
+
+	* configure, configure.in: Changed function to look for in socket
+	library
+
+2001-12-13 23:58  jh8
+
+	* INSTALL: Added specific OS versions in the portability section
+
+2001-12-13 23:51  jh8
+
+	* src/pdate.c: The config.h include and ifdef disappeared -
+	readded.
+
+2001-12-13 23:48  jh8
+
+	* Makefile.in: Tweaked the "su" calls. Fixed a booboo that caused
+	Solaris\' "make" to fail
+
+2001-12-13 23:45  jh8
+
+	* src/Makefile.in: Removed the "distclean" like rm commands, they
+	don\'t belong there
+
+2001-12-13 19:48  jh8
+
+	* INSTALL: Added PORTABILITY section
+
+2001-12-13 19:47  jh8
+
+	* public_html/cgi-bin/SearchIpauditData: Taught SearchIpauditData
+	how to read its vars from ipaudit-web.conf
+
+2001-12-13 19:45  jh8
+
+	* contrib/jh/ipadate: Made note about ipadate now being obsoleted
+
+2001-12-13 19:44  jh8
+
+	* ipaudit-web.conf.install: Added multinet example for LOCALRANGE.
+	Added a few config vars for SearchIpauditData
+
+2001-12-13 19:42  jh8
+
+	* CREDITS: Fixed some typos
+
+2001-12-13 19:38  jh8
+
+	* Makefile.in: Added a more cross-platform crontab install
+
+2001-12-06 11:19  jrifkin
+
+	* reports/daily/server2/runcron: Use CGI_BIN from ipaudit-web.conf
+	in reports/daily/server2/runcron
+
+2001-12-05 11:46  jrifkin
+
+	* cron/cron30min: Use ps -aux instead of ps -ef to make more
+	portable (thanx Stefan A)
+
+2001-12-05 09:31  jrifkin
+
+	* ipaudit-web.conf.install, cron/cron30min: By default no raw
+	packets saved.
+
+2001-12-03 15:17  jrifkin
+
+	* src/ipaudit.c, ipaudit-web.conf.install, cron/cron30min,
+	public_html/ReportRemoteHost-doc.html: Enable on/off control of raw
+	packet logging from ipaudit-web.conf
+
+2001-12-03 12:57  jrifkin
+
+	* ChangeLog.jh: [no log message]
+
+2001-12-03 12:50  jrifkin
+
+	* CREDITS, ChangeLog.0, ChangeLog.1, INSTALL: Documentation
+
+2001-12-03 11:22  jrifkin
+
+	* ipaudit-web.conf, ipaudit-web.conf.orig: [no log message]
+
+2001-12-03 11:06  jrifkin
+
+	* Makefile.in, ipaudit-web.conf.install: make install now backs up
+	previously existing ipaudit-web.conf
+
+2001-11-29 13:03  jrifkin
+
+	* public_html/ReportExternal-doc.html: Removed link
+
+2001-11-29 10:38  jrifkin
+
+	* public_html/: ReportExternal-doc.html, ReportLocalHost-doc.html,
+	ReportRemoteHost-doc.html, ReportTraffic-doc.html: Added online
+	info about graphs
+
+2001-11-27 16:49  jrifkin
+
+	* reports/daily/traffic/runcron: Fix it again - much faster if use
+	total rather than awk for first pass
+
+2001-11-27 16:27  jrifkin
+
+	* reports/daily/traffic/runcron: Corrected fields summed for
+	remote/local hosts traffic
+
+2001-11-27 16:24  jrifkin
+
+	* ipaudit-web.conf: replace PORT_LIST with saveport
+
+2001-11-27 16:18  jrifkin
+
+	* src/hash.c: remove WRITEVAR debugging statements
+
+2001-11-22 04:06  jrifkin
+
+	* reports/daily/traffic/runcron: Fixed AWK fields to read byte
+	count (cols 6,7, not 2,3)
+
+2001-11-20 13:27  jrifkin
+
+	* ChangeLog, ChangeLog.jh: [no log message]
+
+2001-11-20 13:13  jrifkin
+
+	* reports/daily/server2/runcron: daily/server2/runcron: fixed
+	SearchIpauditData link
+
+2001-11-18 15:39  jrifkin
+
+	* src/total.c: total.c: Fix 'n' option when doing 'total 1,2 n
+	infile'
+
+2001-11-14 13:41  jrifkin
+
+	* reports/daily/traffic/runcron: reports/daily/traffic/runcron: 
+	improved print format from awk
+
+2001-11-09 08:46  jrifkin
+
+	* reports/daily/traffic/runcron: repots/daily/traffic/runcron:	Use
+	CGI_BIN home directory from ipaudit-web.conf
+
+2001-11-08 09:52  jrifkin
+
+	* bin/ipaudit, bin/ipstrings, bin/pdate, bin/total,
+	cron/crontab.install, cron/cronweekly, public_html/index.html,
+	reports/30min/0traffic/MakeReport30,
+	reports/daily/traffic/MakeReportDaily,
+	reports/weekly/traffic/report.conf: index.html: rewording
+	MakeReport30: intialize variables (Local/Remote)(Probed/Respond)
+	remove precombile binaries and MakeReportDaily
+
+2001-11-07 16:27  jrifkin
+
+	* public_html/index.html: public_html/index.html: fix link to large
+	jpg
+
+2001-11-07 16:16  jrifkin
+
+	* public_html/images/: ReportExternal-large.png,
+	ReportExternal.png, ReportLocalHost-large.png, ReportLocalHost.png,
+	ReportRemoteHost-large.png, ReportRemoteHost.png,
+	ReportTraffic-large.png, ReportTraffic.png:
+	public_html/images/*.png:  sample images
+
+2001-11-07 16:15  jrifkin
+
+	* public_html/index.html: index.html: add links to large images
+
+2001-11-07 13:17  jrifkin
+
+	* Makefile.in: Makefile.in:  on 'make install' do 'chmod g-w
+	public_html/cgi-bin'
+
+2001-11-07 12:39  jrifkin
+
+	* Makefile.in: Makefile.in:  make install does 'chmod g-w
+	public_html/cgi-bin/*' to insure that Apache suexec allows cgi to
+	run
+
+2001-11-07 08:33  jrifkin
+
+	* public_html/index.html, reports/daily/traffic/runcron:
+	index.html: fixed indentation reports/daily/traffic/runcron: change
+	old LOCAL_NET to new LOCALRANGE
+
+2001-11-06 16:51  jrifkin
+
+	* ipaudit-web.conf, ipaudit-web.conf.orig, src/ipaudit.c:
+	ipaudit-web.conf: fix PidFile argument ipaudit.c: Fix test for no
+	raw file
+
+2001-11-06 16:42  jrifkin
+
+	* ipaudit-web.conf, ipaudit-web.conf.orig: ipaudit-web.conf: remove
+	" from around LOCALRANGE
+
+2001-11-06 16:00  jrifkin
+
+	* Makefile.in, bin/create_dir: create_dir: script to create empty
+	directories to hold generated output
+
+2001-11-06 13:21  jrifkin
+
+	* ipaudit-web.conf, ipaudit-web.conf.orig: ipaudit-web.conf: added
+	PidFile, WriteTime, IcmpType, PacketLen, WritePacketLimit entries.
+
+2001-11-06 13:20  jrifkin
+
+	* man/man1/: ipaudit.1, ipstrings.1, total.1: Man pages for C
+	programs ipaudit, total, ipstrings
+
+2001-11-06 13:12  jrifkin
+
+	* ipaudit-web.conf, ipaudit-web.conf.orig: ipaudit-web.conf: change
+	LOCAL_NET to LOCALRANGE
+
+2001-11-06 10:52  jrifkin
+
+	* Makefile.in: Makefile.in:  correct chmod commands for home and
+	public_html permissions
+
+2001-11-06 10:40  jrifkin
+
+	* src/ipaudit.c: ipaudit: Fix crash when invalid raw file name
+	entered.
+
+2001-11-06 10:26  jrifkin
+
+	* Makefile.in: Makefile.in: make install now changes permissions on
+	home and public_html for http access
+
+2001-11-05 16:11  jrifkin
+
+	* Makefile.in: Add copy of src/makelocal to bin/
+
+2001-11-05 12:47  jrifkin
+
+	* reports/30min/graphic/ReportLog: ReportLog: no longer confused by
+	DayLight Saving Time / Standard Time switch
+
+2001-11-05 11:06  jrifkin
+
+	* cron/cronmonthly: cronmonthly:  Change ZCAT of file glop to
+	separate call for each file - less likely to die if a bad input
+	file is found.
+
+2001-11-05 10:55  jrifkin
+
+	* cron/crontab.install: crontab.install:  added entry for monthly
+	cron job
+
+2001-11-05 09:48  jrifkin
+
+	* src/: Makefile.in, hash.c, hash.h, ipaudit.c, ipstrings.c,
+	makelocal.c, pdate.c, total.c: hash.c - hashing now much better for
+	very similar keys, faster hashing algorithm.  total.c - much faster
+	getfields() - new ioptions for sorting makelocal.c - re-order
+	ipaudit output according to specified local net, used to help
+	replace Perl reports with combitation of total, makelocal,
+	table2html
+
+2001-11-05 09:43  jrifkin
+
+	* reports/monthly/traffic/: MakeReportMonthly, report.conf,
+	runcron: Montly report
+
+2001-11-05 09:40  jrifkin
+
+	* reports/weekly/traffic/MakeReportWeekly: [no log message]
+
+2001-11-05 09:37  jrifkin
+
+	* reports/daily/traffic/runcron: runcron: uses utilities
+	makelocal,total,table2html instead of Perl - faster
+
+2001-11-05 09:31  jrifkin
+
+	* reports/daily/server2/: report.conf, runcron:
+	runcron/report.conf: new server2 (client/server) report
+
+2001-11-05 09:29  jrifkin
+
+	* reports/30min/graphic/: GraphHost, runcron: GraphHost: new script
+	to graph both Local/Remote host runcron:   calls new GraphHost
+
+2001-11-05 09:27  jrifkin
+
+	* public_html/cgi-bin/: SafeCAT, ipahttp: ipahttp: added option to
+	display most current report, cosmetic changes to links SafeCAT:
+	changes to listing for Remote/Local Host Count to match graphs
+
+2001-11-05 09:25  jrifkin
+
+	* ipaudit-web.conf, ipaudit-web.conf.orig: added AWK, removed
+	GNUDATE, fixed CGI_BIN.
+
+2001-11-05 09:20  jrifkin
+
+	* cron/cronmonthly: Called from crontab to run monthly reports.
+
+2001-11-05 09:19  jrifkin
+
+	* bin/table2html: Filter program to convert text to html tables.
+
+2001-11-05 09:18  jrifkin
+
+	* bin/traffic_type: Added morpheus category.
+
+2001-11-05 09:17  jrifkin
+
+	* public_html/index.html: Added ! links to most current report,
+	also weekly/monthly reports.
+
+2001-10-12 16:34  jrifkin
+
+	* cron/cronweekly: Substitute call datelist with call to pdate
+
+2001-10-12 16:33  jrifkin
+
+	* public_html/cgi-bin/ipa_read: Set code switch so that no form is
+	displayed.
+
+2001-10-12 16:33  jrifkin
+
+	* public_html/index.html: Change link from ipa_autoread to ipa_read
+
+2001-10-12 16:32  jrifkin
+
+	* bin/combine_ipaudit: Script to combine two or more ipaudit output
+	files
+
+2001-10-10 18:29  jh8
+
+	* src/: Makefile, Makefile.in: Configure Makefile for the "src" dir
+
+2001-10-10 18:24  jh8
+
+	* Changelog, Makefile, Makefile.in, config.guess, config.h.in,
+	config.sub, configure, configure.in, install-sh,
+	contrib/jh/ipadate: first round of updates - jh@dok.org
+
+2001-10-10 18:14  jh8
+
+	* INSTALL, ipaudit-web.conf, bin/datelist,
+	public_html/cgi-bin/SearchIpauditData, src/hash.c, src/ipaudit.c,
+	src/ipstrings.c, src/pdate.c, src/total.c: various small changes
+	and added gnu configure. See Changelog
+
+2001-09-24 12:20  jrifkin
+
+	* public_html/cgi-bin/SearchIpauditData: Port/ICMP Codes are
+	displayed as linked to PortLookUp cgi-script which provides info.
+
+2001-09-24 12:19  jrifkin
+
+	* public_html/cgi-bin/port.lst: Add "port" descriptions for ICMP
+	codes.
+
+2001-09-12 15:55  jrifkin
+
+	* INSTALL: INSTALL: note to hit enter for anon cvs
+
+2001-09-12 15:40  jrifkin
+
+	* INSTALL, Makefile, ipaudit-web.conf, bin/copycvs, bin/datelist,
+	bin/dnslist, bin/getoui, bin/icf, bin/igf, bin/ipaudit, bin/ipf,
+	bin/ipstrings, bin/ipz, bin/listcvsdir, bin/listcvsfile, bin/pdate,
+	bin/psort, bin/reptrash, bin/total, bin/traffic_type, src/Makefile,
+	src/hash.c, src/hash.h, src/ipaudit.conf.sample, src/ipstrings.c,
+	src/total.c, cron/cron30min, cron/cronclean, cron/crondaily,
+	cron/crontab.install, cron/cronweekly, public_html/index.html,
+	public_html/cgi-bin/PortLookup, public_html/cgi-bin/SafeCAT,
+	public_html/cgi-bin/SearchIpauditData,
+	public_html/cgi-bin/ipa_autoread,
+	public_html/cgi-bin/ipa_autoread_new,
+	public_html/cgi-bin/ipa_hoststat, public_html/cgi-bin/ipa_read,
+	public_html/cgi-bin/ipa_resnet_read,
+	public_html/cgi-bin/ipa_traffic_read, public_html/cgi-bin/ipahttp,
+	public_html/cgi-bin/port.lst, reports/30min/0traffic/MakeReport30,
+	reports/30min/0traffic/report.conf, reports/30min/0traffic/runcron,
+	reports/30min/graphic/GraphExternal,
+	reports/30min/graphic/GraphLocalHost,
+	reports/30min/graphic/GraphRemoteHost,
+	reports/30min/graphic/GraphTraffic, reports/30min/graphic/README,
+	reports/30min/graphic/ReportLog, reports/30min/graphic/runcron,
+	reports/daily/server/MakeReportServer,
+	reports/daily/server/report.conf, reports/daily/server/runcron,
+	reports/daily/traffic/MakeReportDaily,
+	reports/daily/traffic/report.conf, reports/daily/traffic/runcron,
+	reports/daily/type/report.conf, reports/daily/type/runcron,
+	reports/weekly/traffic/MakeReportWeekly,
+	reports/weekly/traffic/report.conf, reports/weekly/traffic/runcron,
+	src/ipaudit.c, src/pdate.c: Intial CVS upload of ipaudit-web
+
+2001-09-12 15:40  jrifkin
+
+	* INSTALL, Makefile, ipaudit-web.conf, bin/copycvs, bin/datelist,
+	bin/dnslist, bin/getoui, bin/icf, bin/igf, bin/ipaudit, bin/ipf,
+	bin/ipstrings, bin/ipz, bin/listcvsdir, bin/listcvsfile, bin/pdate,
+	bin/psort, bin/reptrash, bin/total, bin/traffic_type, src/Makefile,
+	src/hash.c, src/hash.h, src/ipaudit.conf.sample, src/ipstrings.c,
+	src/total.c, cron/cron30min, cron/cronclean, cron/crondaily,
+	cron/crontab.install, cron/cronweekly, public_html/index.html,
+	public_html/cgi-bin/PortLookup, public_html/cgi-bin/SafeCAT,
+	public_html/cgi-bin/SearchIpauditData,
+	public_html/cgi-bin/ipa_autoread,
+	public_html/cgi-bin/ipa_autoread_new,
+	public_html/cgi-bin/ipa_hoststat, public_html/cgi-bin/ipa_read,
+	public_html/cgi-bin/ipa_resnet_read,
+	public_html/cgi-bin/ipa_traffic_read, public_html/cgi-bin/ipahttp,
+	public_html/cgi-bin/port.lst, reports/30min/0traffic/MakeReport30,
+	reports/30min/0traffic/report.conf, reports/30min/0traffic/runcron,
+	reports/30min/graphic/GraphExternal,
+	reports/30min/graphic/GraphLocalHost,
+	reports/30min/graphic/GraphRemoteHost,
+	reports/30min/graphic/GraphTraffic, reports/30min/graphic/README,
+	reports/30min/graphic/ReportLog, reports/30min/graphic/runcron,
+	reports/daily/server/MakeReportServer,
+	reports/daily/server/report.conf, reports/daily/server/runcron,
+	reports/daily/traffic/MakeReportDaily,
+	reports/daily/traffic/report.conf, reports/daily/traffic/runcron,
+	reports/daily/type/report.conf, reports/daily/type/runcron,
+	reports/weekly/traffic/MakeReportWeekly,
+	reports/weekly/traffic/report.conf, reports/weekly/traffic/runcron,
+	src/ipaudit.c, src/pdate.c: Initial revision
+

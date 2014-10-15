@@ -1,0 +1,7 @@
+#!/bin/bash
+
+#
+#  List directories from ipaudit-web that should be
+#  included in cvs repository and package
+#
+find $HOME -type d -name ".*" -prune -o -type d -printf %P\\n
