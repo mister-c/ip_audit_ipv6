@@ -203,8 +203,7 @@ int main (int argc, char *argv[]) {
    U_CHAR       *raw_pkt = NULL;
    U_CHAR       *raw_pkt_save = NULL;
    eth_struct_t *eth_pkt = NULL;
-   ip_struct_t  *ip4_pkt  = NULL;
-   ip_struct_t  *ip6_pkt  = NULL;
+   ip_struct_t  *ip_pkt  = NULL;
    pcap_dumper_t *df  = NULL;
    pcap_dumper_t *dfa = NULL;
    int dump_this = FALSE;
@@ -231,7 +230,7 @@ int main (int argc, char *argv[]) {
    int  ndump = 0;
    int  ndump_all = 0;
    int  status;
-   int  is_ip4, is_ip6, is_vlan;
+   int  is_ip, is_vlan;
    pid_t oldpid, newpid;
    /*  Set so first unselected packet is "sampled" (saved) */
    int  sample_count = 1; 
@@ -561,10 +560,9 @@ if (debug_g) {
       if (pcapoffset_m[next_intf]==POFF_ETH) {
          eth_pkt = (eth_struct_t *) raw_pkt;
          /*  Check if packet is IP  */
-         is_ip4 = (eth_pkt->ptype[0]==0x08 && eth_pkt->ptype[1]==0);
-         is_ip6 = (eth_pkt->ptype[0]==0x86 && eth_pkt->ptype[1]==DD);
+         is_ip = (eth_pkt->ptype[0]==0x08 && eth_pkt->ptype[1]==0);
          /*  If not IP, is it VLAN?  */
-         if (!is_ip4 && !is_ip6) {
+         if (!is_ip) {
             is_vlan =  eth_pkt->ptype[0]==0x81 && eth_pkt->ptype[1]==0;
             /*  If is VLAN, check for IP further down packet  */
             if (is_vlan) {
@@ -575,25 +573,17 @@ if (debug_g) {
                 /* If this packet isn't from the VLAN we're listening to, ignore it */
                 if ((vlan_m!=0) && (vlan_id!=vlan_m)) continue;
                 /* Check IP protocol */
-		is_ip4 = (eth_pkt->ptype[4]==0x08 && eth_pkt->ptype[5]==0);
-		is_ip6 = (eth_pkt->ptype[4]==0x86 && eth_pkt->ptype[5]==DD);
+                is_ip = eth_pkt->ptype[4]==0x08 && eth_pkt->ptype[5]==0;
             }
          }
-         if (!is_ip4 && !is_ip6) continue;
+         if (!is_ip) continue;
       }
 
+      /*  Find pointer to ip packet  */
+      ip_pkt = (ip_struct_t *) (raw_pkt + pcapoffset_m[next_intf]);
 
-      /*  Find pointer to ip packet  
-	  TODO split this part
-	  Either create a pointer to a IPv4 packet or create a pointer to a IPv6 packet
-      */
-      if(version == 4){
-	ip4_pkt = (ipv4_struct_t *) (raw_pkt + pcapoffset_m[next_intf]);
-	if (is_vlan) ip4_pkt = (ip_struct_t *) ( ((char *) ip4_pkt) + 4);
-      } else {
-	ip6_pkt = (ipv6_struct_t *) (raw_pkt + pcapoffset_m[next_intf]);
-	if (is_vlan) ip6_pkt = (ip_struct_t *) ( ((char *) ip6_pkt) + 4);
-      }
+      /*  Vlan packet is offset by extra 4 bytes  */
+      if (is_vlan) ip_pkt = (ip_struct_t *) ( ((char *) ip_pkt) + 4);
 
       /*  Don't exceed limit of ip packets  */
       nippkt_m++;
@@ -634,15 +624,6 @@ if (debug_g) {
       /*  Save raw packet so can write original packet later to capture
        *  file  */
       memcpy (raw_pkt_save, raw_pkt, pkthdr.caplen);
-
-      /* TODO
-	 create alternate statements here that reference the
-	 IPv4 and IPv6 structs
-	 This section only runs if the user has disabled the option for storing port
-	 numbers.
-
-	 Maybe all these memset thingies can be refactored into a seperate method
-      */
 
       /*  Host only storage, set prot, port to zero  */
       if (hostonly_m) {

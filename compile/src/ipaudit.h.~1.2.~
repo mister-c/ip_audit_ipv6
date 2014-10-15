@@ -134,41 +134,20 @@ typedef struct {
    U_CHAR ptype[2];     /*  ==0x800 if ip  */
    } eth_struct_t;
 
-/* NOTE
-   The ipv4 and ipv6 structs are a little odd. 
-   These structs contain the IP header like you
-   would expect.
-
-   BUT they also contain a little bit of the TCP header
-   (source and destination port). So keep that in mind. */
-
 typedef struct {
-	U_CHAR version[1];
-	U_CHAR service[1];
-	U_CHAR length[2];
-	U_CHAR id[2];
-	U_CHAR flag[2];
-	U_CHAR ttl[1];
-	U_CHAR prot[1];
-	U_CHAR chksum[2];
-	U_CHAR srcip[4];
-	U_CHAR dstip[4];
-	U_CHAR srcpt[2];
-	U_CHAR dstpt[2];
-	} ipv4_struct_t;
-
-/* My struct for storing ipv6 packets */
-
-typedef struct {
-  unsigned char vtf[4];
-  unsigned char length[2];
-  unsigned char nxthdr[1];
-  unsigned char hoplmt[1];
-  unsigned char srcip[16];
-  unsigned char dstip[16];
-  unsigned char srcpt[2];
-  unsigned char dstpt[2];
-} ipv6_struct_t;
+   U_CHAR version[1];
+   U_CHAR service[1];
+   U_CHAR length[2];
+   U_CHAR id[2];
+   U_CHAR flag[2];
+   U_CHAR ttl[1];
+   U_CHAR prot[1];
+   U_CHAR chksum[2];
+   U_CHAR srcip[4];
+   U_CHAR dstip[4];
+   U_CHAR srcpt[2];
+   U_CHAR dstpt[2];
+   } ip_struct_t;
 
 
 
