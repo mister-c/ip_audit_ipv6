@@ -161,7 +161,9 @@ Local Function Prototypes
 void ihandler (int);
 void parent_ihandler (int);
 int  storepkt 
-   (struct pcap_pkthdr *, eth_struct_t *, ip_struct_t *, htable_t *, int);
+   (struct pcap_pkthdr *, eth_struct_t *, ipv4_struct_t *, htable_t *, int);
+int  storev6pkt 
+   (struct pcap_pkthdr *, eth_struct_t *, ipv6_struct_t *, htable_t *, int);
 void PrintUsage();
 
 void parse_portstr(char *str);
@@ -190,7 +192,7 @@ void read_interface_str (char *);
 void alloc_interface (void);
 void open_interface (void);
 void set_defaults   (void);
-int  impose_host_port_limit (U_CHAR *, int);
+int  impose_host_port_limit (U_CHAR *, int, int);
 
 
 /*
@@ -203,8 +205,8 @@ int main (int argc, char *argv[]) {
    U_CHAR       *raw_pkt = NULL;
    U_CHAR       *raw_pkt_save = NULL;
    eth_struct_t *eth_pkt = NULL;
-   ip_struct_t  *ip4_pkt  = NULL;
-   ip_struct_t  *ip6_pkt  = NULL;
+   ipv4_struct_t  *ip4_pkt  = NULL;
+   ipv6_struct_t  *ip6_pkt  = NULL;
    pcap_dumper_t *df  = NULL;
    pcap_dumper_t *dfa = NULL;
    int dump_this = FALSE;
@@ -561,8 +563,8 @@ if (debug_g) {
       if (pcapoffset_m[next_intf]==POFF_ETH) {
          eth_pkt = (eth_struct_t *) raw_pkt;
          /*  Check if packet is IP  */
-         is_ip4 = (eth_pkt->ptype[0]==0x08 && eth_pkt->ptype[1]==0);
-         is_ip6 = (eth_pkt->ptype[0]==0x86 && eth_pkt->ptype[1]==DD);
+         is_ip4 = (eth_pkt->ptype[0]==0x08 && eth_pkt->ptype[1]==0x00);
+         is_ip6 = (eth_pkt->ptype[0]==0x86 && eth_pkt->ptype[1]==0xDD);
          /*  If not IP, is it VLAN?  */
          if (!is_ip4 && !is_ip6) {
             is_vlan =  eth_pkt->ptype[0]==0x81 && eth_pkt->ptype[1]==0;
@@ -575,8 +577,8 @@ if (debug_g) {
                 /* If this packet isn't from the VLAN we're listening to, ignore it */
                 if ((vlan_m!=0) && (vlan_id!=vlan_m)) continue;
                 /* Check IP protocol */
-		is_ip4 = (eth_pkt->ptype[4]==0x08 && eth_pkt->ptype[5]==0);
-		is_ip6 = (eth_pkt->ptype[4]==0x86 && eth_pkt->ptype[5]==DD);
+		is_ip4 = (eth_pkt->ptype[4]==0x08 && eth_pkt->ptype[5]==0x00);
+		is_ip6 = (eth_pkt->ptype[4]==0x86 && eth_pkt->ptype[5]==0xDD);
             }
          }
          if (!is_ip4 && !is_ip6) continue;
@@ -587,12 +589,12 @@ if (debug_g) {
 	  TODO split this part
 	  Either create a pointer to a IPv4 packet or create a pointer to a IPv6 packet
       */
-      if(version == 4){
+      if(is_ip4){
 	ip4_pkt = (ipv4_struct_t *) (raw_pkt + pcapoffset_m[next_intf]);
-	if (is_vlan) ip4_pkt = (ip_struct_t *) ( ((char *) ip4_pkt) + 4);
+	if (is_vlan) ip4_pkt = (ipv4_struct_t *) ( ((char *) ip4_pkt) + 4);
       } else {
 	ip6_pkt = (ipv6_struct_t *) (raw_pkt + pcapoffset_m[next_intf]);
-	if (is_vlan) ip6_pkt = (ip_struct_t *) ( ((char *) ip6_pkt) + 4);
+	if (is_vlan) ip6_pkt = (ipv6_struct_t *) ( ((char *) ip6_pkt) + 4);
       }
 
       /*  Don't exceed limit of ip packets  */
@@ -645,24 +647,37 @@ if (debug_g) {
       */
 
       /*  Host only storage, set prot, port to zero  */
+      /*
       if (hostonly_m) {
          memset (ip_pkt->srcpt, 0, 2);
          memset (ip_pkt->dstpt, 0, 2);
          memset (ip_pkt->prot,  0, 1);
       }
-
+      */
             
       /*  Set ports to 0 if not UDP or TCP  */
-      if ( ip_pkt->prot[0]!=0x11 && ip_pkt->prot[0]!=0x06 ) {
-         if (ip_pkt->prot[0]==1 && useicmptype_m) {
-            memset (ip_pkt->dstpt, 0, 2);
-         } else {
-            memset (ip_pkt->srcpt, 0, 2);
-            memset (ip_pkt->dstpt, 0, 2);
-         }
+      if(is_ip4){
+	if ( ip4_pkt->prot[0]!=0x11 && ip4_pkt->prot[0]!=0x06 ) {
+	  if (ip4_pkt->prot[0]==1 && useicmptype_m) {
+	    memset (ip4_pkt->dstpt, 0, 2);
+	  } else {
+	    memset (ip4_pkt->srcpt, 0, 2);
+	    memset (ip4_pkt->dstpt, 0, 2);
+	  }
+	}       
+      } else{
+	if ( ip6_pkt->nxthdr[0]!=0x11 && ip6_pkt->nxthdr[0]!=0x06 ) {
+	  if (ip6_pkt->nxthdr[0]==1 && useicmptype_m) {
+	    memset (ip6_pkt->dstpt, 0, 2);
+	  } else {
+	    memset (ip6_pkt->srcpt, 0, 2);
+	    memset (ip6_pkt->dstpt, 0, 2);
+	  }
+	}
       }
+      
 
-
+      /*
 #ifdef DEBUG
       if (debug_g) {
       printf ("%03d.%03d.%03d.%03d %03d.%03d.%03d.%03d  %3d %5d %5d\n", 
@@ -673,9 +688,14 @@ if (debug_g) {
          ip_pkt->dstpt[0]*256+ip_pkt->dstpt[1]);
       }
 #endif
+      */
 
       /*  Store packets  */
-      is_not_duplicate = storepkt (&pkthdr, eth_pkt, ip_pkt, hconn, next_intf);
+      if(is_ip4){
+	is_not_duplicate = storepkt (&pkthdr, eth_pkt, ip4_pkt, hconn, next_intf);
+      } else {
+	is_not_duplicate = storev6pkt (&pkthdr, eth_pkt, ip6_pkt, hconn, next_intf);
+      }
 
       /*  Dump all raw packets  */
       if (is_not_duplicate && writeallfile_m) {
@@ -703,37 +723,78 @@ if (debug_g) {
             dump_this = TRUE;
 
 
-         /*  Is this packet correct protocol/port  */
-         if (prots_m) {
-            dump_this = prots_m[ip_pkt->prot[0]];
+	 if(is_ip4){
 
-            /*  If udp or tcp, are ports specified ?  */
-            if (PROT_ACC_SOME==dump_this) {
-               dumptable = (PROT_TCP==ip_pkt->prot[0]) ? 
-                  tcp_ports_m : udp_ports_m;
+	   /*  Is this packet correct protocol/port  */
+	   if (prots_m) {
+	     dump_this = prots_m[ip4_pkt->prot[0]];
+
+	     /*  If udp or tcp, are ports specified ?  */
+	     if (PROT_ACC_SOME==dump_this) {
+               dumptable = (PROT_TCP==ip4_pkt->prot[0]) ? 
+		 tcp_ports_m : udp_ports_m;
                dump_this = 
-                  dumptable[(ip_pkt->srcpt[0]<<8)+ip_pkt->srcpt[1]] ||
-                  dumptable[(ip_pkt->dstpt[0]<<8)+ip_pkt->dstpt[1]];
-            }
-         } 
+		 dumptable[(ip4_pkt->srcpt[0]<<8)+ip4_pkt->srcpt[1]] ||
+		 dumptable[(ip4_pkt->dstpt[0]<<8)+ip4_pkt->dstpt[1]];
+	     }
+	   }
 
-         /*  Save raw packet if watching this ip address (ip_m) */
-         if ((!dump_this) && ip_m) {
-            dump_this = (!memcmp(ip_m,ip_pkt->srcip,4) || 
-               !memcmp(ip_m,ip_pkt->dstip,4));
-         }
+	   /*  Save raw packet if watching this ip address (ip_m) */
+	   if ((!dump_this) && ip_m) {
+	     dump_this = (!memcmp(ip_m,ip4_pkt->srcip,4) || 
+			  !memcmp(ip_m,ip4_pkt->dstip,4));
+	   }
          
-         /*  Save raw packet if sampling packets  */
-         if ((!dump_this) && packet_sample_m && --sample_count==0) {
-            dump_this = TRUE;
-            sample_count = packet_sample_m;
-         }
+	   /*  Save raw packet if sampling packets  */
+	   if ((!dump_this) && packet_sample_m && --sample_count==0) {
+	     dump_this = TRUE;
+	     sample_count = packet_sample_m;
+	   }
 
-         /*  Dump packet  */
-         if (dump_this && (ndump_limit_m==0 || ndump<ndump_limit_m)) {
-            pcap_dump ((U_CHAR *) df, &pkthdr, raw_pkt_save);
-            ndump++;
-         }
+	   /*  Dump packet  */
+	   if (dump_this && (ndump_limit_m==0 || ndump<ndump_limit_m)) {
+	     pcap_dump ((U_CHAR *) df, &pkthdr, raw_pkt_save);
+	     ndump++;
+	   }
+
+	 
+	 } else {
+
+	   /*  Is this packet correct protocol/port  */
+	   if (prots_m) {
+	     dump_this = prots_m[ip6_pkt->nxthdr[0]];
+
+	     /*  If udp or tcp, are ports specified ?  */
+	     if (PROT_ACC_SOME==dump_this) {
+               dumptable = (PROT_TCP==ip6_pkt->nxthdr[0]) ? 
+		 tcp_ports_m : udp_ports_m;
+               dump_this = 
+		 dumptable[(ip6_pkt->srcpt[0]<<8)+ip6_pkt->srcpt[1]] ||
+		 dumptable[(ip6_pkt->dstpt[0]<<8)+ip6_pkt->dstpt[1]];
+	     }
+	   }
+
+	   /*  Save raw packet if watching this ip address (ip_m) */
+	   if ((!dump_this) && ip_m) {
+	     dump_this = (!memcmp(ip_m,ip6_pkt->srcip,4) || 
+			  !memcmp(ip_m,ip6_pkt->dstip,4));
+	   }
+         
+	   /*  Save raw packet if sampling packets  */
+	   if ((!dump_this) && packet_sample_m && --sample_count==0) {
+	     dump_this = TRUE;
+	     sample_count = packet_sample_m;
+	   }
+
+	   /*  Dump packet  */
+	   if (dump_this && (ndump_limit_m==0 || ndump<ndump_limit_m)) {
+	     pcap_dump ((U_CHAR *) df, &pkthdr, raw_pkt_save);
+	     ndump++;
+	   }
+
+	 
+	 }
+
       }
 
       no_dump:
@@ -863,11 +924,11 @@ data  is number of incoming/outgoing bytes, packets
 int storepkt (
 struct pcap_pkthdr *pkthdr, 
 eth_struct_t *ep, 
-ip_struct_t *ip, 
+ipv4_struct_t *ip,
 htable_t *ht,
 int intf
 ) {
-   U_CHAR     key[25];  /*  space for ip1,ip2,prot,prt1,prt2,eth1,eth2  */
+   U_CHAR     key[26];  /*  space for ip1,ip2,prot,prt1,prt2,eth1,eth2  */
    data_t     *data;
    int        ndata;
    int        length;
@@ -881,16 +942,18 @@ int intf
    /*  Calculate data packet length  */
    length = ip->length[1] + 256*(int) ip->length[0] + 14;
 
+   key[KEY_VSN_V4] = 0x04; /* version number */
+
    /*  Make key - order so smallest ip first store data,
     *  and reorder data accordingly  */
    if (memcmp(ip->srcip, ip->dstip, 4) < 0) {
-      memcpy (key + KEY_SRCIP, ip->srcip, sizeof(ip->srcip));
-      memcpy (key + KEY_DSTIP, ip->dstip, sizeof(ip->dstip));
-      memcpy (key + KEY_SRCPT, ip->srcpt, sizeof(ip->srcpt));
-      memcpy (key + KEY_DSTPT, ip->dstpt, sizeof(ip->dstpt));
+      memcpy (key + KEY_SRCIP_V4, ip->srcip, sizeof(ip->srcip));
+      memcpy (key + KEY_DSTIP_V4, ip->dstip, sizeof(ip->dstip));
+      memcpy (key + KEY_SRCPT_V4, ip->srcpt, sizeof(ip->srcpt));
+      memcpy (key + KEY_DSTPT_V4, ip->dstpt, sizeof(ip->dstpt));
       if (ep) {
-         memcpy (key + KEY_SRCEP, ep->src,   sizeof(ep->src));
-         memcpy (key + KEY_DSTEP, ep->dst,   sizeof(ep->dst));
+         memcpy (key + KEY_SRCEP_V4, ep->src,   sizeof(ep->src));
+         memcpy (key + KEY_DSTEP_V4, ep->dst,   sizeof(ep->dst));
       }
       /*  Order data according to ip order  */
       idata.nbyte1 = 0;
@@ -900,13 +963,13 @@ int intf
       idata.intf   = intf;
 
    } else {
-      memcpy (key + KEY_SRCIP, ip->dstip, sizeof(ip->dstip));
-      memcpy (key + KEY_DSTIP, ip->srcip, sizeof(ip->srcip));
-      memcpy (key + KEY_SRCPT, ip->dstpt, sizeof(ip->dstpt));
-      memcpy (key + KEY_DSTPT, ip->srcpt, sizeof(ip->srcpt));
+      memcpy (key + KEY_SRCIP_V4, ip->dstip, sizeof(ip->dstip));
+      memcpy (key + KEY_DSTIP_V4, ip->srcip, sizeof(ip->srcip));
+      memcpy (key + KEY_SRCPT_V4, ip->dstpt, sizeof(ip->dstpt));
+      memcpy (key + KEY_DSTPT_V4, ip->srcpt, sizeof(ip->srcpt));
       if (ep) {
-         memcpy (key + KEY_SRCEP, ep->dst,   sizeof(ep->dst));
-         memcpy (key + KEY_DSTEP, ep->src,   sizeof(ep->src));
+         memcpy (key + KEY_SRCEP_V4, ep->dst,   sizeof(ep->dst));
+         memcpy (key + KEY_DSTEP_V4, ep->src,   sizeof(ep->src));
       }
       /*  Order data according to ip order  */
       idata.nbyte1 = length;
@@ -916,7 +979,7 @@ int intf
       idata.intf   = intf;
    }
    /*  Save protocol  */
-   memcpy (key + KEY_PROT, ip->prot,  sizeof(ip->prot));
+   memcpy (key + KEY_PROT_V4, ip->prot,  sizeof(ip->prot));
 
    /*  Set keysize according to whether we are storing eth packets  */
    if (printeth_g) {
@@ -944,9 +1007,9 @@ int intf
    }
 
 #ifdef DUMP
-printf ("%03u.%03u.%03u.%03u ", key[0], key[1], key[2], key[3]);
-printf ("%03u.%03u.%03u.%03u ", key[4], key[5], key[6], key[7]);
-printf ("%u %u %u %d %d\n", key[12], (int )key[8]*256+key[9], (int )key[10]*256+key[11], length, 1);
+printf ("%03u.%03u.%03u.%03u ", key[1], key[2], key[3], key[4]);
+printf ("%03u.%03u.%03u.%03u ", key[5], key[6], key[7], key[8]);
+printf ("%u %u %u %d %d\n", key[13], (int )key[9]*256+key[10], (int )key[11]*256+key[12], length, 1);
 #endif
 
    /*  Assume for now that this packet is unique  */
@@ -960,7 +1023,7 @@ printf ("%u %u %u %d %d\n", key[12], (int )key[8]*256+key[9], (int )key[10]*256+
     *  Call function that (1) tests for key overflow and if so,
     *  (2) maps key to smaller set.  Then call key search again.
     *  */
-   if (impose_host_port_limit (key, keysize)) {
+   if (impose_host_port_limit (key, keysize, TRUE)) {
       is_new_key = 
          ! ht_findkey(ht,(U_CHAR *)&key, keysize, (U_CHAR **)&data,&ndata);
    }
@@ -1016,6 +1079,181 @@ idata[0], idata[1], idata[2], idata[3]);
    }
    return is_unique_packet;
 }
+
+
+
+/*
+Store packet info in hash table, 
+keyed by ip1,ip2,port1,por2,protocol
+data  is number of incoming/outgoing bytes, packets
+*/
+int storev6pkt (
+struct pcap_pkthdr *pkthdr, 
+eth_struct_t *ep, 
+ipv6_struct_t *ip, 
+htable_t *ht,
+int intf
+) {
+   U_CHAR     key[50];  /*  space for ip1,ip2,prot,prt1,prt2,eth1,eth2  */
+   data_t     *data;
+   int        ndata;
+   int        length;
+   data_t     idata;
+   datatime_t idatatime;
+   int        datasize;
+   int        keysize;
+   int        is_unique_packet;
+   int        is_new_key;
+
+   /*  Calculate data packet length  */
+   length = ip->length[1] + 256*(int) ip->length[0] + 14;
+
+   key[KEY_VSN_V6] = 0x06; /* version number */
+
+   /*  Make key - order so smallest ip first store data,
+    *  and reorder data accordingly  */
+   if (memcmp(ip->srcip, ip->dstip, 4) < 0) {
+      memcpy (key + KEY_SRCIP_V6, ip->srcip, sizeof(ip->srcip));
+      memcpy (key + KEY_DSTIP_V6, ip->dstip, sizeof(ip->dstip));
+      memcpy (key + KEY_SRCPT_V6, ip->srcpt, sizeof(ip->srcpt));
+      memcpy (key + KEY_DSTPT_V6, ip->dstpt, sizeof(ip->dstpt));
+      if (ep) {
+         memcpy (key + KEY_SRCEP_V6, ep->src,   sizeof(ep->src));
+         memcpy (key + KEY_DSTEP_V6, ep->dst,   sizeof(ep->dst));
+      }
+      /*  Order data according to ip order  */
+      idata.nbyte1 = 0;
+      idata.nbyte2 = length;
+      idata.npkt1  = 0;
+      idata.npkt2  = 1;
+      idata.intf   = intf;
+
+   } else {
+      memcpy (key + KEY_SRCIP_V6, ip->dstip, sizeof(ip->dstip));
+      memcpy (key + KEY_DSTIP_V6, ip->srcip, sizeof(ip->srcip));
+      memcpy (key + KEY_SRCPT_V6, ip->dstpt, sizeof(ip->dstpt));
+      memcpy (key + KEY_DSTPT_V6, ip->srcpt, sizeof(ip->srcpt));
+      if (ep) {
+         memcpy (key + KEY_SRCEP_V6, ep->dst,   sizeof(ep->dst));
+         memcpy (key + KEY_DSTEP_V6, ep->src,   sizeof(ep->src));
+      }
+      /*  Order data according to ip order  */
+      idata.nbyte1 = length;
+      idata.nbyte2 = 0;
+      idata.npkt1  = 1;
+      idata.npkt2  = 0;
+      idata.intf   = intf;
+   }
+   /*  Save protocol  */
+   memcpy (key + KEY_PROT_V6, ip->nxthdr,  sizeof(ip->nxthdr));
+
+   /*  Set keysize according to whether we are storing eth packets  */
+   if (printeth_g) {
+      keysize = sizeof(key);
+   } else {
+      keysize = sizeof(key)-12;
+   }
+
+   /*  Store time if requested  */
+   if (write_time_g) {
+      idata.time.first_time_sec  = pkthdr->ts.tv_sec;
+      idata.time.first_time_usec = pkthdr->ts.tv_usec;
+      /*  If machine 1 received packet, then source was 2, else 1  */
+      idata.time.first_mach = (idata.npkt1==1) ? 2 : 1;
+      /*  Set first and last machine info the same  */
+      idata.time.last_time_sec  = idata.time.first_time_sec;
+      idata.time.last_time_usec = idata.time.first_time_usec;
+      idata.time.last_mach      = idata.time.first_mach;
+      /*  Set size of full data structure  */
+      datasize = sizeof(data_t);
+
+   /*  Set datasize to not store time (saves memory space)  */
+   } else {
+      datasize = sizeof(data_t) - sizeof(datatime_t);
+   }
+
+#ifdef DUMP
+
+//This prints the src and dest ips
+printf ("%x%x:%x%x:%x%x:%x%x:%x%x:%x%x:%x%x:%x%x ", key[1], key[2], key[3], key[4], key[5], key[6],
+	   key[7], key[8], key[9], key[10], key[11], key[12], key[13], key[14], key[15], key[16]);
+printf ("%x%x:%x%x:%x%x:%x%x:%x%x:%x%x:%x%x:%x%x ", key[17], key[18], key[19], key[20], key[21], key[22],
+	   key[23], key[24], key[25], key[26], key[27], key[28], key[29], key[30], key[31], key[32]);
+//This prints the protocol followed by the two port numbers then the length and the number 1 for some reason
+printf ("%u %u %u %d %d\n", key[37], (int )key[33]*256+key[34], (int )key[35]*256+key[36], length, 1);
+
+#endif
+
+   /*  Assume for now that this packet is unique  */
+   is_unique_packet = 1;
+
+   /*  See if key is present in hash table  */
+   is_new_key = 
+      ! ht_findkey(ht,(U_CHAR *)&key, keysize, (U_CHAR **)&data,&ndata);
+
+   /*  
+    *  Call function that (1) tests for key overflow and if so,
+    *  (2) maps key to smaller set.  Then call key search again.
+    *  */
+   if (impose_host_port_limit (key, keysize, FALSE)) {
+      is_new_key = 
+         ! ht_findkey(ht,(U_CHAR *)&key, keysize, (U_CHAR **)&data,&ndata);
+   }
+
+   /*  A new key must be stored  */
+   if ( is_new_key ) {
+
+      /*  Store time if requested  */
+      if (write_time_g) {
+         idata.time.first_time_sec  = pkthdr->ts.tv_sec;
+         idata.time.first_time_usec = pkthdr->ts.tv_usec;
+         /*  If machine 1 received packet, then source was 2, else 1  */
+         idata.time.first_mach = (idata.npkt1==1) ? 2 : 1;
+         /*  Set first and last machine info the same  */
+         idata.time.last_time_sec  = idata.time.first_time_sec;
+         idata.time.last_time_usec = idata.time.first_time_usec;
+         idata.time.last_mach      = idata.time.first_mach;
+         /*  Set size of full data structure  */
+         datasize = sizeof(data_t);
+   
+      /*  Set datasize to not store time (saves memory space)  */
+      } else {
+         datasize = sizeof(data_t) - sizeof(datatime_t);
+      }
+
+      ht_storekey (ht, (U_CHAR *) &key, keysize, (U_CHAR *) &idata, datasize);
+      nconn_m++;  /*  Increment number of connections  */
+
+   /*  Key already present, update info  
+    *  If this key (ip address/protocol/port) already seen on a
+    *  different interface, we ignore this instance since it
+    *  must(?) be duplicate information  */
+   } else if (allow_duplicate_m || data->intf==intf) {
+      data->nbyte1 += idata.nbyte1;
+      data->nbyte2 += idata.nbyte2;
+      data->npkt1  += idata.npkt1;
+      data->npkt2  += idata.npkt2;
+      /*  Update last packet time  */
+      if (write_time_g) {
+         data->time.last_time_sec   = idata.time.last_time_sec;
+         data->time.last_time_usec  = idata.time.last_time_usec;
+         data->time.last_mach       = idata.time.last_mach;
+      }
+#ifdef DUMP
+printf ("data idata  <%u %u %u %u>a  <%u %u %u %u>\n", 
+data[0], data[1], data[2], data[3],
+idata[0], idata[1], idata[2], idata[3]);
+#endif
+
+   /*  This packet must also be present on another interface  */
+   } else {
+      is_unique_packet = 0;
+   }
+   return is_unique_packet;
+}
+
+
+
 
 
 void PrintUsage(void) {
@@ -1973,49 +2211,94 @@ void set_defaults(void) {
  *  exceeded then just store host info.  If number of packets
  *  with host info exceeded, then just increment byte and packet
  *  info with a dummy host pair 0.0.0.0 0.0.0.0   */
-int impose_host_port_limit (U_CHAR * key, int keysize) {
+int impose_host_port_limit (U_CHAR * key, int keysize, int is_ip4) {
 
    /*  Exceeded host/port limit  */
    if (uselimit_m && nconn_m >= hostportlimit_m) {
       
+     if(is_ip4){
+
       /*  Set both host ports to 0  */
-      memset (key + KEY_SRCPT, 0, 2);
-      memset (key + KEY_DSTPT, 0, 2);
+      memset (key + KEY_SRCPT_V4, 0, 2);
+      memset (key + KEY_DSTPT_V4, 0, 2);
 
       /*  Exceeed host-only limit also  */
       if (nconn_m >= hostportlimit_m + hostlimit_m) {
    
          /*  Set ethernet addresses to 0  */
-         if (keysize>=KEY_DSTEP+6) {
-            memset (key + KEY_SRCEP, 0, 6);
-            memset (key + KEY_DSTEP, 0, 6);
+         if (keysize>=KEY_DSTEP_V4+6) {
+            memset (key + KEY_SRCEP_V4, 0, 6);
+            memset (key + KEY_DSTEP_V4, 0, 6);
          }
    
          /*  Determine if addresses are local/remote  */
          if (niplist_g) {
    
-            if (in_iprange (ntohl(* (int *) (key + KEY_SRCIP) ), 
+            if (in_iprange (ntohl(* (int *) (key + KEY_SRCIP_V4) ), 
                iplist_g, niplist_g))
-               memcpy (key + KEY_SRCIP, &iploc_m, 4);
+               memcpy (key + KEY_SRCIP_V4, &iploc_m, 4);
             else
-               memcpy (key + KEY_SRCIP, &iprem_m, 4);
+               memcpy (key + KEY_SRCIP_V4, &iprem_m, 4);
    
-            if (in_iprange (ntohl(* (int *) (key + KEY_DSTIP) ),
+            if (in_iprange (ntohl(* (int *) (key + KEY_DSTIP_V4) ),
                iplist_g, niplist_g))
-               memcpy (key + KEY_DSTIP, &iploc_m, 4);
+               memcpy (key + KEY_DSTIP_V4, &iploc_m, 4);
             else
-               memcpy (key + KEY_DSTIP, &iprem_m, 4);
+               memcpy (key + KEY_DSTIP_V4, &iprem_m, 4);
    
          /*  No local/remote configured, so set host IPs to 0.0.0.0  */
          } else {
-            memset (key + KEY_SRCIP, 0, 4);
-            memset (key + KEY_DSTIP, 0, 4);
+            memset (key + KEY_SRCIP_V4, 0, 4);
+            memset (key + KEY_DSTIP_V4, 0, 4);
          }
    
       }  /*  Host-only limit exceeded  */
 
       /*  Return value corresponding to limit was imposed */
       return 1;
+
+     } else{
+
+       /*  Set both host ports to 0  */
+       memset (key + KEY_SRCPT_V6, 0, 2);
+       memset (key + KEY_DSTPT_V6, 0, 2);
+
+       /*  Exceeed host-only limit also  */
+       if (nconn_m >= hostportlimit_m + hostlimit_m) {
+   
+         /*  Set ethernet addresses to 0  */
+         if (keysize>=KEY_DSTEP_V6+6) {
+	   memset (key + KEY_SRCEP_V6, 0, 6);
+	   memset (key + KEY_DSTEP_V6, 0, 6);
+         }
+   
+         /*  Determine if addresses are local/remote  */
+         if (niplist_g) {
+   
+	   if (in_iprange (ntohl(* (int *) (key + KEY_SRCIP_V6) ), 
+			   iplist_g, niplist_g))
+	     memcpy (key + KEY_SRCIP_V6, &iploc_m, 4);
+	   else
+	     memcpy (key + KEY_SRCIP_V6, &iprem_m, 4);
+   
+	   if (in_iprange (ntohl(* (int *) (key + KEY_DSTIP_V6) ),
+			   iplist_g, niplist_g))
+	     memcpy (key + KEY_DSTIP_V6, &iploc_m, 4);
+	   else
+	     memcpy (key + KEY_DSTIP_V6, &iprem_m, 4);
+   
+	   /*  No local/remote configured, so set host IPs to 0.0.0.0  */
+         } else {
+	   memset (key + KEY_SRCIP_V6, 0, 4);
+	   memset (key + KEY_DSTIP_V6, 0, 4);
+         }
+   
+       }  /*  Host-only limit exceeded  */
+
+       /*  Return value corresponding to limit was imposed */
+       return 1;
+     
+     }
 
    } /*  Exceeded host/port limit  */
 

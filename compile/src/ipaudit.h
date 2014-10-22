@@ -2,17 +2,17 @@
 #define _IPAUDIT_H
 
 /*
-------------------------------------------------------------------------
-Includes
-------------------------------------------------------------------------
+  ------------------------------------------------------------------------
+  Includes
+  ------------------------------------------------------------------------
 */
 #include <time.h>
 
 
 /*
-------------------------------------------------------------------------
-Defines
-------------------------------------------------------------------------
+  ------------------------------------------------------------------------
+  Defines
+  ------------------------------------------------------------------------
 */
 #define VERSION_STR "ipaudit 0.99"
 
@@ -38,8 +38,8 @@ Defines
 #define PLEN_MIN 68  /* min allowed  */
 
 /*  
-Length of packet headers  
-(culled this info from tcpdump source code)
+    Length of packet headers  
+    (culled this info from tcpdump source code)
 */
 #define POFF_ETH  14
 #define POFF_NULL  4   /* Used by loopback ?  */
@@ -48,8 +48,8 @@ Length of packet headers
 #define POFF_LINUX_SLL 16
 
 /*  
-Number of hash slots
-NOT number of packets, they're unlimited (except for memory)
+    Number of hash slots
+    NOT number of packets, they're unlimited (except for memory)
 */
 #define N_HASH_SLOTS 1000000
 
@@ -58,14 +58,28 @@ NOT number of packets, they're unlimited (except for memory)
 
 #define NO_FILE_WAITING -1
 
+
+
 /*  Key positions  */
-#define KEY_SRCIP  0
-#define KEY_DSTIP  4
-#define KEY_SRCPT  8
-#define KEY_DSTPT 10
-#define KEY_PROT  12
-#define KEY_SRCEP 13
-#define KEY_DSTEP 19
+#define KEY_VSN_V4    0
+#define KEY_SRCIP_V4  1
+#define KEY_DSTIP_V4  5
+#define KEY_SRCPT_V4  9
+#define KEY_DSTPT_V4 11
+#define KEY_PROT_V4  13
+#define KEY_SRCEP_V4 14
+#define KEY_DSTEP_V4 20
+
+/*  Key positions  */
+#define KEY_VSN_V6    0
+#define KEY_SRCIP_V6  1
+#define KEY_DSTIP_V6  17
+#define KEY_SRCPT_V6  33
+#define KEY_DSTPT_V6  35
+#define KEY_PROT_V6   37
+#define KEY_SRCEP_V6  38
+#define KEY_DSTEP_V6  44
+
 
 
 #define IP_NAME_LEN 256
@@ -74,65 +88,65 @@ NOT number of packets, they're unlimited (except for memory)
 
 
 /*
-------------------------------------------------------------------------
-DEBUGGING MACROS
-------------------------------------------------------------------------
+  ------------------------------------------------------------------------
+  DEBUGGING MACROS
+  ------------------------------------------------------------------------
 */
-#define WRITEMSG \
-   if (debug_g) { \
-   printf ("File %s line %d: ", __FILE__, __LINE__); \
-   printf ("errmsg <%s>\n", strerror(errno)); fflush(stdout); \
-   }
-#define WRITETXT(txt) \
-   if (debug_g) { \
-   printf ("File %s line %d: ** %s **\n", __FILE__, __LINE__, (txt)); \
-   }
-#define WRITEVAR(VAL,FMT) \
-   if (debug_g) { \
-   printf ("File %s line %d: ", __FILE__, __LINE__); \
-   printf ("%s=",#VAL); printf (#FMT, VAL); printf ("\n"); \
-   fflush(stdout); \
-   }
-#define WRITEHEX(VAL,N) \
-   if (debug_g) { \
-   int i; \
-   printf ("File %s line %d: ", __FILE__, __LINE__); \
-   printf ("%s :", #VAL); \
-   for (i=0;i<N;i++) { printf (" %02x", VAL[i]); } \
-   printf ("\n"); \
-   fflush(stdout); \
-   }
+#define WRITEMSG							\
+  if (debug_g) {							\
+		printf ("File %s line %d: ", __FILE__, __LINE__);	\
+		printf ("errmsg <%s>\n", strerror(errno)); fflush(stdout); \
+		}
+#define WRITETXT(txt)							\
+  if (debug_g) {							\
+    printf ("File %s line %d: ** %s **\n", __FILE__, __LINE__, (txt));	\
+  }
+#define WRITEVAR(VAL,FMT)					\
+  if (debug_g) {						\
+    printf ("File %s line %d: ", __FILE__, __LINE__);		\
+    printf ("%s=",#VAL); printf (#FMT, VAL); printf ("\n");	\
+    fflush(stdout);						\
+  }
+#define WRITEHEX(VAL,N)					\
+  if (debug_g) {					\
+    int i;						\
+    printf ("File %s line %d: ", __FILE__, __LINE__);	\
+    printf ("%s :", #VAL);				\
+    for (i=0;i<N;i++) { printf (" %02x", VAL[i]); }	\
+    printf ("\n");					\
+    fflush(stdout);					\
+  }
 
 /*
-------------------------------------------------------------------------
-Type Definitions
-------------------------------------------------------------------------
+  ------------------------------------------------------------------------
+  Type Definitions
+  ------------------------------------------------------------------------
 */
 
 /*  Packet structure used by pcap library  */
 typedef struct {
-   U_CHAR src[6];
-   U_CHAR dst[6];
-   U_CHAR ptype[2];     /*  ==0x800 if ip  */
-   U_CHAR version[1];
-   U_CHAR service[1];
-   U_CHAR length[2];
-   U_CHAR id[2];
-   U_CHAR flag[2];
-   U_CHAR ttl[1];
-   U_CHAR prot[1];
-   U_CHAR chksum[2];
-   U_CHAR srcip[4];
-   U_CHAR dstip[4];
-   U_CHAR srcpt[2];
-   U_CHAR dstpt[2];
-   } pkt_struct_t;
+  U_CHAR src[6];
+  U_CHAR dst[6];
+  U_CHAR ptype[2];     /*  ==0x800 if ip  */
+  U_CHAR version[1];
+  U_CHAR service[1];
+  U_CHAR length[2];
+  U_CHAR id[2];
+  U_CHAR flag[2];
+  U_CHAR ttl[1];
+  U_CHAR prot[1];
+  U_CHAR chksum[2];
+  U_CHAR srcip[4];
+  U_CHAR dstip[4];
+  U_CHAR srcpt[2];
+  U_CHAR dstpt[2];
+} pkt_struct_t;
 
 typedef struct {
-   U_CHAR src[6];
-   U_CHAR dst[6];
-   U_CHAR ptype[2];     /*  ==0x800 if ip  */
-   } eth_struct_t;
+  U_CHAR src[6];
+  U_CHAR dst[6];
+  U_CHAR ptype[2];     /*  ==0x800 if ip  */
+} eth_struct_t;
 
 /* NOTE
    The ipv4 and ipv6 structs are a little odd. 
@@ -143,19 +157,19 @@ typedef struct {
    (source and destination port). So keep that in mind. */
 
 typedef struct {
-	U_CHAR version[1];
-	U_CHAR service[1];
-	U_CHAR length[2];
-	U_CHAR id[2];
-	U_CHAR flag[2];
-	U_CHAR ttl[1];
-	U_CHAR prot[1];
-	U_CHAR chksum[2];
-	U_CHAR srcip[4];
-	U_CHAR dstip[4];
-	U_CHAR srcpt[2];
-	U_CHAR dstpt[2];
-	} ipv4_struct_t;
+  U_CHAR version[1];
+  U_CHAR service[1];
+  U_CHAR length[2];
+  U_CHAR id[2];
+  U_CHAR flag[2];
+  U_CHAR ttl[1];
+  U_CHAR prot[1];
+  U_CHAR chksum[2];
+  U_CHAR srcip[4];
+  U_CHAR dstip[4];
+  U_CHAR srcpt[2];
+  U_CHAR dstpt[2];
+} ipv4_struct_t;
 
 /* My struct for storing ipv6 packets */
 
@@ -174,22 +188,22 @@ typedef struct {
 
 /*  Start and stop time of each connection  */
 typedef struct {
-   /*  Time (in sec/10,000) of first and last packet  */
-   time_t first_time_sec;
-   time_t last_time_sec;
-   int    first_time_usec; 
-   int    last_time_usec;
-   /*  Indentity of machine source for first, last packet  */
-   unsigned char first_mach, last_mach;
+  /*  Time (in sec/10,000) of first and last packet  */
+  time_t first_time_sec;
+  time_t last_time_sec;
+  int    first_time_usec; 
+  int    last_time_usec;
+  /*  Indentity of machine source for first, last packet  */
+  unsigned char first_mach, last_mach;
 } datatime_t;
 
 
 /*  All data for connection  */
 typedef struct {
-   unsigned long  nbyte1, nbyte2;
-   unsigned int   npkt1, npkt2;
-   U_CHAR     intf;
-   datatime_t time;
+  unsigned long  nbyte1, nbyte2;
+  unsigned int   npkt1, npkt2;
+  U_CHAR     intf;
+  datatime_t time;
 } data_t;
 
 #endif
