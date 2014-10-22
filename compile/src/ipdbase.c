@@ -190,7 +190,8 @@ void txt_writepkt (htable_t *ht, char *outname) {
    helem_t  *t;
    data_t   *data;
    FILE     *outfile = stdout;
-   char     ip1[16], ip2[16];
+   char     ip1_v4[16], ip2_v4[16];
+   char     ip1_v6[40], ip2_v6[40];
    int      pt1, pt2, prot;
    int      msec;
    int      switch_mach;
@@ -266,46 +267,134 @@ void txt_writepkt (htable_t *ht, char *outname) {
          fprintf (outfile, "%s ", hostname);
       }
 
-      /*  Get ip addresses and ports  */
-      if (printshort_g) {
-         sprintf (ip1, "%u.%u.%u.%u", 
-            t->key[0], t->key[1], t->key[2], t->key[3]);
-         sprintf (ip2, "%u.%u.%u.%u", 
-            t->key[4], t->key[5], t->key[6], t->key[7]);
-      } else {
-         sprintf (ip1, "%03u.%03u.%03u.%03u", 
-            t->key[0], t->key[1], t->key[2], t->key[3]);
-         sprintf (ip2, "%03u.%03u.%03u.%03u", 
-            t->key[4], t->key[5], t->key[6], t->key[7]);
-      }
-      pt1  = (int) t->key[ 8]*256 + t->key[ 9];
-      pt2  = (int) t->key[10]*256 + t->key[11];
-      prot = t->key[12];
 
-      /*  Re-order ip addresses if 2nd is local and first is not  */
-      switch_mach = 
-         !in_iprange (ntohl(*(int*)(t->key)),   iplist_g, niplist_g) &&
+      /* If the packet is ipv4 */
+      if( t->key[0] == 0x04){
+
+
+	/*  Get ip addresses and ports  */
+	if (printshort_g) {
+	  sprintf (ip1_v4, "%u.%u.%u.%u", 
+		   t->key[1], t->key[2], t->key[3], t->key[4]);
+	  sprintf (ip2_v4, "%u.%u.%u.%u", 
+		   t->key[5], t->key[6], t->key[7], t->key[8]);
+	} else {
+	  sprintf (ip1_v4, "%03u.%03u.%03u.%03u", 
+		   t->key[1], t->key[2], t->key[3], t->key[4]);
+	  sprintf (ip2_v4, "%03u.%03u.%03u.%03u", 
+		   t->key[5], t->key[6], t->key[7], t->key[8]);
+	}
+	pt1  = (int) t->key[ 9]*256 + t->key[10];
+	pt2  = (int) t->key[11]*256 + t->key[12];
+	prot = t->key[13];
+
+	/*  Re-order ip addresses if 2nd is local and first is not  */
+	switch_mach = 
+	  !in_iprange (ntohl(*(int*)(t->key)),   iplist_g, niplist_g) &&
           in_iprange (ntohl(*(int*)(t->key+4)), iplist_g, niplist_g);
 
-      if (switch_mach) {
+	if (switch_mach) {
       
-         /*  Print key info  */
-         fprintf (outfile, "%s %s %u %u %u", ip2, ip1, prot, pt2, pt1);
+	  /*  Print key info  */
+	  fprintf (outfile, "%s %s %u %u %u", ip2_v4, ip1_v4, prot, pt2, pt1);
 
-         /*  Data  */
-         data = (data_t *) t->data;
-         fprintf (outfile, " %lu %lu %u %u", 
-            data->nbyte2, data->nbyte1, data->npkt2, data->npkt1);
+	  /*  Data  */
+	  data = (data_t *) t->data;
+	  fprintf (outfile, " %lu %lu %u %u", 
+		   data->nbyte2, data->nbyte1, data->npkt2, data->npkt1);
 
+	} else {
+      
+	  /*  Print key info  */
+	  fprintf (outfile, "%s %s %u %u %u", ip1_v4, ip2_v4, prot, pt1, pt2);
+
+	  /*  Data  */
+	  data = (data_t *) t->data;
+	  fprintf (outfile, " %lu %lu %u %u", 
+		   data->nbyte1, data->nbyte2, data->npkt1, data->npkt2);
+	}
+
+	if (printeth_g) {
+	  sprintf (eth1str, "%02x%02x%02x%02x%02x%02x", 
+		   t->key[14], t->key[15], t->key[16], 
+		   t->key[17], t->key[18], t->key[19]);
+	  sprintf (eth2str, "%02x%02x%02x%02x%02x%02x", 
+		   t->key[20], t->key[21], t->key[22], 
+		   t->key[23], t->key[24], t->key[25]);
+	}
+
+
+
+	/* If the packet is ipv6 */
       } else {
-      
-         /*  Print key info  */
-         fprintf (outfile, "%s %s %u %u %u", ip1, ip2, prot, pt1, pt2);
 
-         /*  Data  */
-         data = (data_t *) t->data;
-         fprintf (outfile, " %lu %lu %u %u", 
-            data->nbyte1, data->nbyte2, data->npkt1, data->npkt2);
+
+	/*  Get ip addresses and ports  */
+	if (printshort_g) {
+	  sprintf (ip1_v6, "%x%x:%x%x:%x%x:%x%x:%x%x:%x%x:%x%x:%x%x", t->key[1], t->key[2], t->key[3], t->key[4], t->key[5], t->key[6],
+	   t->key[7], t->key[8], t->key[9], t->key[10], t->key[11], t->key[12], t->key[13], t->key[14], t->key[15], t->key[16]);
+	  sprintf (ip2_v6, "%x%x:%x%x:%x%x:%x%x:%x%x:%x%x:%x%x:%x%x", t->key[17], t->key[18], t->key[19], t->key[20], t->key[21], 
+	   t->key[22], t->key[23], t->key[24], t->key[25], t->key[26], t->key[27], t->key[28], t->key[29], t->key[30], t->key[31], 
+	   t->key[32]);
+	} else {
+	  /* TO DO 
+
+	     Rewrite this section so that we can have leading zeroes in the ipv6 addresses
+	     Maybe we don't need this?
+
+	  sprintf (ip1_v6, "%03u.%03u.%03u.%03u", 
+		   t->key[1], t->key[2], t->key[3], t->key[4]);
+	  sprintf (ip2_v6, "%03u.%03u.%03u.%03u", 
+		   t->key[5], t->key[6], t->key[7], t->key[8]);
+
+	  */
+	  sprintf (ip1_v6, "%x%x:%x%x:%x%x:%x%x:%x%x:%x%x:%x%x:%x%x", t->key[1], t->key[2], t->key[3], t->key[4], t->key[5], t->key[6],
+	   t->key[7], t->key[8], t->key[9], t->key[10], t->key[11], t->key[12], t->key[13], t->key[14], t->key[15], t->key[16]);
+	  sprintf (ip2_v6, "%x%x:%x%x:%x%x:%x%x:%x%x:%x%x:%x%x:%x%x", t->key[17], t->key[18], t->key[19], t->key[20], t->key[21], 
+	   t->key[22], t->key[23], t->key[24], t->key[25], t->key[26], t->key[27], t->key[28], t->key[29], t->key[30], t->key[31], 
+	   t->key[32]);
+
+	}
+	pt1  = (int) t->key[33]*256 + t->key[34];
+	pt2  = (int) t->key[35]*256 + t->key[36];
+	prot = t->key[37];
+
+	/*  Re-order ip addresses if 2nd is local and first is not  */
+	switch_mach = 
+	  !in_iprange (ntohl(*(int*)(t->key+KEY_SRCIP_V6)),   iplist_g, niplist_g) &&
+          in_iprange (ntohl(*(int*)(t->key+KEY_DSTIP_V6)), iplist_g, niplist_g);
+
+	if (switch_mach) {
+      
+	  /*  Print key info  */
+	  fprintf (outfile, "%s %s %u %u %u", ip2_v6, ip1_v6, prot, pt2, pt1);
+
+	  /*  Data  */
+	  data = (data_t *) t->data;
+	  fprintf (outfile, " %lu %lu %u %u", 
+		   data->nbyte2, data->nbyte1, data->npkt2, data->npkt1);
+
+	} else {
+      
+	  /*  Print key info  */
+	  fprintf (outfile, "%s %s %u %u %u", ip1_v6, ip2_v6, prot, pt1, pt2);
+
+	  /*  Data  */
+	  data = (data_t *) t->data;
+	  fprintf (outfile, " %lu %lu %u %u", 
+		   data->nbyte1, data->nbyte2, data->npkt1, data->npkt2);
+	}
+
+	if (printeth_g) {
+	  sprintf (eth1str, "%02x%02x%02x%02x%02x%02x", 
+		   t->key[38], t->key[39], t->key[40], 
+		   t->key[41], t->key[42], t->key[43]);
+	  sprintf (eth2str, "%02x%02x%02x%02x%02x%02x", 
+		   t->key[44], t->key[45], t->key[46], 
+		   t->key[47], t->key[48], t->key[49]);
+	}
+
+	
       }
 
       if (write_time_g) {
@@ -348,13 +437,6 @@ void txt_writepkt (htable_t *ht, char *outname) {
 
       /*  Print optional ethernet addresses  */
       if (printeth_g) {
-         sprintf (eth1str, "%02x%02x%02x%02x%02x%02x", 
-            t->key[13], t->key[14], t->key[15], 
-            t->key[16], t->key[17], t->key[18]);
-         sprintf (eth2str, "%02x%02x%02x%02x%02x%02x", 
-            t->key[19], t->key[20], t->key[21], 
-            t->key[22], t->key[23], t->key[24]);
-
          if (switch_mach) {
             fprintf (outfile, " %s %s", eth2str, eth1str);
          } else {
