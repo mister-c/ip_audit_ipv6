@@ -42,6 +42,7 @@ Include files
 #include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "hash.h"
 
 #ifdef HAVE_CONFIG_H
