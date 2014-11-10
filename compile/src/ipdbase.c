@@ -6,6 +6,7 @@ Include Files
 #include <stdio.h>
 #include <stdio.h>
 #include <time.h>
+#include <arpa/inet.h>
 #include "ipaudit.h"
 #include "ipdbase.h"
 #include "hash.h"
@@ -191,7 +192,7 @@ void txt_writepkt (htable_t *ht, char *outname) {
    data_t   *data;
    FILE     *outfile = stdout;
    char     ip1_v4[16], ip2_v4[16];
-   char     ip1_v6[40], ip2_v6[40];
+   char     ip1_v6[INET6_ADDRSTRLEN], ip2_v6[INET6_ADDRSTRLEN];
    int      pt1, pt2, prot;
    int      msec;
    int      switch_mach;
@@ -331,29 +332,18 @@ void txt_writepkt (htable_t *ht, char *outname) {
 
 	/*  Get ip addresses and ports  */
 	if (printshort_g) {
-	  sprintf (ip1_v6, "%x%x:%x%x:%x%x:%x%x:%x%x:%x%x:%x%x:%x%x", t->key[1], t->key[2], t->key[3], t->key[4], t->key[5], t->key[6],
-	   t->key[7], t->key[8], t->key[9], t->key[10], t->key[11], t->key[12], t->key[13], t->key[14], t->key[15], t->key[16]);
-	  sprintf (ip2_v6, "%x%x:%x%x:%x%x:%x%x:%x%x:%x%x:%x%x:%x%x", t->key[17], t->key[18], t->key[19], t->key[20], t->key[21], 
-	   t->key[22], t->key[23], t->key[24], t->key[25], t->key[26], t->key[27], t->key[28], t->key[29], t->key[30], t->key[31], 
-	   t->key[32]);
+	  if (inet_ntop(AF_INET6, t->key, ip1_v6, INET6_ADDRSTRLEN) == NULL ||
+	      inet_ntop(AF_INET6, t->key+17, ip2_v6, INET6_ADDRSTRLEN) == NULL ){
+	    printf("Error writing output\n");
+	    exit(1);
+	  }
 	} else {
-	  /* TO DO 
-
-	     Rewrite this section so that we can have leading zeroes in the ipv6 addresses
-	     Maybe we don't need this?
-
-	  sprintf (ip1_v6, "%03u.%03u.%03u.%03u", 
-		   t->key[1], t->key[2], t->key[3], t->key[4]);
-	  sprintf (ip2_v6, "%03u.%03u.%03u.%03u", 
-		   t->key[5], t->key[6], t->key[7], t->key[8]);
-
-	  */
-	  sprintf (ip1_v6, "%x%x:%x%x:%x%x:%x%x:%x%x:%x%x:%x%x:%x%x", t->key[1], t->key[2], t->key[3], t->key[4], t->key[5], t->key[6],
-	   t->key[7], t->key[8], t->key[9], t->key[10], t->key[11], t->key[12], t->key[13], t->key[14], t->key[15], t->key[16]);
-	  sprintf (ip2_v6, "%x%x:%x%x:%x%x:%x%x:%x%x:%x%x:%x%x:%x%x", t->key[17], t->key[18], t->key[19], t->key[20], t->key[21], 
-	   t->key[22], t->key[23], t->key[24], t->key[25], t->key[26], t->key[27], t->key[28], t->key[29], t->key[30], t->key[31], 
-	   t->key[32]);
-
+	  sprintf (ip1_v6, "%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x", 
+		   t->key[1], t->key[2], t->key[3], t->key[4], t->key[5], t->key[6], t->key[7], t->key[8], t->key[9], 
+		   t->key[10], t->key[11], t->key[12], t->key[13], t->key[14], t->key[15], t->key[16]);
+	  sprintf (ip2_v6, "%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x", 
+		   t->key[17], t->key[18], t->key[19], t->key[20], t->key[21], t->key[22], t->key[23], t->key[24], t->key[25], 
+		   t->key[26], t->key[27], t->key[28], t->key[29], t->key[30], t->key[31], t->key[32]);
 	}
 	pt1  = (int) t->key[33]*256 + t->key[34];
 	pt2  = (int) t->key[35]*256 + t->key[36];
