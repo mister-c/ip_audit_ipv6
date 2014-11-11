@@ -1784,7 +1784,7 @@ void read_options (int argc, char *argv[]) {
          hostonly_m = TRUE;
          break;
       case 'I':
-         sscanf (optarg, "%u.%u.%u.%u", &ip_m[0],&ip_m[1],&ip_m[2],&ip_m[3]);
+	 sscanf (optarg, "%u.%u.%u.%u", &ip_m[0],&ip_m[1],&ip_m[2],&ip_m[3]); //Todo allow ipv6 addresses
          break;
       case 'L':
          sscanf (optarg, "%d,%d", &hostportlimit_m, &hostlimit_m);

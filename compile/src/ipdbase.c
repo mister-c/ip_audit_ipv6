@@ -333,7 +333,7 @@ void txt_writepkt (htable_t *ht, char *outname) {
 
 	/*  Get ip addresses and ports  */
 	if (printshort_g) {
-	  if (inet_ntop(AF_INET6, t->key, ip1_v6, INET6_ADDRSTRLEN) == NULL ||
+	  if (inet_ntop(AF_INET6, t->key+1 , ip1_v6, INET6_ADDRSTRLEN) == NULL ||
 	      inet_ntop(AF_INET6, t->key+17, ip2_v6, INET6_ADDRSTRLEN) == NULL ){
 	    printf("Error writing output\n");
 	    exit(1);
@@ -346,6 +346,8 @@ void txt_writepkt (htable_t *ht, char *outname) {
 		   t->key[17], t->key[18], t->key[19], t->key[20], t->key[21], t->key[22], t->key[23], t->key[24], t->key[25], 
 		   t->key[26], t->key[27], t->key[28], t->key[29], t->key[30], t->key[31], t->key[32]);
 	}
+
+
 	pt1  = (int) t->key[33]*256 + t->key[34];
 	pt2  = (int) t->key[35]*256 + t->key[36];
 	prot = t->key[37];
@@ -742,21 +744,21 @@ void mysql_writepkt
 
       data = (data_t *) t->data;
 
-		ip1    = ntohl(*(unsigned int*)(t->key  ));
-		ip2    = ntohl(*(unsigned int*)(t->key+4));
+      ip1    = ntohl(*(unsigned int*)(t->key  ));
+      ip2    = ntohl(*(unsigned int*)(t->key+4));
       prot   = t->key[12];
       pt1    = (unsigned int) t->key[ 8]*256 + t->key[ 9];
       pt2    = (unsigned int) t->key[10]*256 + t->key[11];
-		nbyte1 = data->nbyte1;
-		nbyte2 = data->nbyte2;
-		npkt1  = data->npkt1;
-		npkt2  = data->npkt2;
-		sec1   = (unsigned int) data->time.first_time_sec;
-		msec1  = (unsigned int) data->time.first_time_usec;
-		sec2   = (unsigned int) data->time.last_time_sec;
-		msec2  = (unsigned int) data->time.last_time_usec;
-		talk1  = (unsigned int) data->time.first_mach;
-		talk2  = (unsigned int) data->time.last_mach;
+      nbyte1 = data->nbyte1;
+      nbyte2 = data->nbyte2;
+      npkt1  = data->npkt1;
+      npkt2  = data->npkt2;
+      sec1   = (unsigned int) data->time.first_time_sec;
+      msec1  = (unsigned int) data->time.first_time_usec;
+      sec2   = (unsigned int) data->time.last_time_sec;
+      msec2  = (unsigned int) data->time.last_time_usec;
+      talk1  = (unsigned int) data->time.first_mach;
+      talk2  = (unsigned int) data->time.last_mach;
 
       /*  Re-order ip addresses if 2nd is local and first is not  */
       switch_mach = 
