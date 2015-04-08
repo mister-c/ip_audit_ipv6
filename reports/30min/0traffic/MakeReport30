@@ -192,6 +192,9 @@ while (<STDIN>) {
    $Totb     = $byt[0] + $byt[1];
    $AllComm += $Totb;
 
+   printf("1... $ip[0]\n");
+   printf("1... $ip[1]\n");
+
    # Test for Src/Dst  local/remote or remote/local
    $Location0  = &GetLocation ($ip[0]);
    $Location1  = &GetLocation ($ip[1]);
@@ -886,7 +889,7 @@ sub ic {
 #-----------------------------------------------------------------------
 #  Is ip local, remote or other.
 #-----------------------------------------------------------------------
-sub GetLocation {
+sub GetLocation {   #TODO Make sure that ipv6 addresses are recognized
    my ($IP) = @_;
    my ($i,$InRange);
 
@@ -910,6 +913,8 @@ sub GetLocation {
 	
 	#  Return other if InRange or out of range but range reversed
 	return 'O' if $InRange ^ $OtherNetReverse;
+
+        printf("2... $IP is remote.\n");
 
 	#  IP is remote
 	return 'R';
@@ -1131,12 +1136,13 @@ sub FindConfig {
 #  Parse local net string into list of lo,hi ip addresses
 sub ParseNetRange {
    my ($local) = @_;
-   my ($NetReverse, @Net);
+   my ($ipvsn, $NetReverse, @Net);
 
    ($prefix,$net) = $local=~/^([!]*)(.*)/;
    $NetReverse =  $prefix eq '!'; 
+   $ipvsn = 4;
 
-   for (split(/:/,$net)) {
+   for (split(/_/,$net)) {
 
       #  aaa.aaa.aaa.aaa-bbb.bbb.bbb.bbb
       if (/^([0-9\.]+)-([0-9\.]+)$/) {
@@ -1163,15 +1169,23 @@ sub ParseNetRange {
 		##$n2 = $n1 | ~$mask; 
         $n2 = $n1 | (0xffffffff ^ $mask);
 
+      #  Ipv6
+      #  xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx
+      #  TODO finish adding patterns for recognizing ipv6
+       } elsif(/^([0-9abcdef:]+)$/){
+	 @n1 = (split(/:/), $1, 0, 0, 0, 0, 0, 0, 0, 0);
+	 $n1 = unpack("H32", pack("H4H4H4H4H4H4H4H4",@n1));
+         @n2 = ( split(/\./,$1), 255, 255, 255, 255);
+	 $n2 = unpack("H32", pack("H4H4H4H4H4H4H4H4",@n2));
+	 $ipvsn = 6;
+	 #$n1 = unpack( pack("C5"))
       #  aaa.aaa
-      } elsif (/^([0-9\.]+)$/) {
+       } elsif (/^([0-9\.]+)$/) {
          @n1 = ( split(/\./,$1), 0, 0, 0, 0);
          $n1 = unpack("N", pack("C4",@n1));
          @n2 = ( split(/\./,$1), 255, 255, 255, 255);
          $n2 = unpack("N", pack("C4",@n2));
-
-      #  Other
-      } else {
+       } else {
          printf STDERR  "ERROR: Local Net strings format not recognized\n";
          printf STDERR  <<EOM;
          Accpted formats are:
@@ -1187,9 +1201,17 @@ EOM
       }
 
       #  Save localnet
-      push @Net, sprintf ("%03d.%03d.%03d.%03d",
-      unpack("C4",pack("N", $n1))), sprintf ("%03d.%03d.%03d.%03d",
-      unpack("C4",pack("N", $n2))); 
+      if($ipvsn == 4){
+	  push @Net, sprintf ("%03d.%03d.%03d.%03d",
+          unpack("C4",pack("N", $n1))), sprintf ("%03d.%03d.%03d.%03d",
+          unpack("C4",pack("N", $n2)));
+      } elsif($ipvsn == 6){
+	  push @Net, sprintf ("%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x", unpack("C32", pack("H32", $n1))),
+	  sprintf ("%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x", unpack("C32", pack("H32", $n1)));
+      }
    }
+   printf("LOCALADDR.....\n");
+   print join("\n", @Net);
+   printf("\n\n");
    return ($NetReverse, @Net);
 }

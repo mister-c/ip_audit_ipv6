@@ -347,7 +347,6 @@ void txt_writepkt (htable_t *ht, char *outname) {
 		   t->key[26], t->key[27], t->key[28], t->key[29], t->key[30], t->key[31], t->key[32]);
 	}
 
-
 	pt1  = (int) t->key[33]*256 + t->key[34];
 	pt2  = (int) t->key[35]*256 + t->key[36];
 	prot = t->key[37];
@@ -387,8 +386,8 @@ void txt_writepkt (htable_t *ht, char *outname) {
 		   t->key[47], t->key[48], t->key[49]);
 	}
 
-	
       }
+
 
       if (write_time_g) {
 

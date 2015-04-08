@@ -4,7 +4,7 @@
 BEGIN {
   #make adjust-cgi will search and replace the below from
   #what the configure script has detected as the ipaudit homedir.
-  unshift (@INC,"/home/ipaudit/");
+  unshift (@INC,"/home/ipaudit/"); # Adjusted via adjust-cgi
 }
 
 use POSIX;

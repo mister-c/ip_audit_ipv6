@@ -106,7 +106,10 @@ pcap_t **pcapfile_m = NULL;
 char   **pcapfilename_m = NULL;
 int    *pcapfiletype_m = NULL;
 int    *pcapoffset_m = NULL;
-int    npcapfile_m  = 0;
+/*  This keeps track of the index of  */
+/*  either open pcap files OR live    */
+/*  interfaces                        */
+int    npcapfile_m  = 0; 
 
 int npkt_m = 0;      /*  Number of    packets  */
 int nippkt_m  = 0;   /*  Number of ip packets  */
@@ -482,7 +485,6 @@ if (debug_g) {
    }
 
 
-
    /*  Initialize info for select()  */
    if (!readfile_m) {
       FD_ZERO (&rdfs_init);
@@ -561,28 +563,32 @@ if (debug_g) {
       /*  Skip this packet if ethernet and not ip or vlan */
       is_vlan = 0;
       if (pcapoffset_m[next_intf]==POFF_ETH) {
-         eth_pkt = (eth_struct_t *) raw_pkt;
-         /*  Check if packet is IP  */
-         is_ip4 = (eth_pkt->ptype[0]==0x08 && eth_pkt->ptype[1]==0x00);
-         is_ip6 = (eth_pkt->ptype[0]==0x86 && eth_pkt->ptype[1]==0xDD);
-         /*  If not IP, is it VLAN?  */
-         if (!is_ip4 && !is_ip6) {
-            is_vlan =  eth_pkt->ptype[0]==0x81 && eth_pkt->ptype[1]==0;
-            /*  If is VLAN, check for IP further down packet  */
-            if (is_vlan) {
-                /* VLAN tags are 12bits... assemble and compare */
-                unsigned int vlan_id = 
-                    (eth_pkt->ptype[2] & 0x0F)<<8 |
-                    (eth_pkt->ptype[3]);
-                /* If this packet isn't from the VLAN we're listening to, ignore it */
-                if ((vlan_m!=0) && (vlan_id!=vlan_m)) continue;
-                /* Check IP protocol */
-		is_ip4 = (eth_pkt->ptype[4]==0x08 && eth_pkt->ptype[5]==0x00);
-		is_ip6 = (eth_pkt->ptype[4]==0x86 && eth_pkt->ptype[5]==0xDD);
-            }
-         }
-         if (!is_ip4 && !is_ip6) continue;
+	eth_pkt = (eth_struct_t *) raw_pkt;
+      } else if (pcapoffset_m[next_intf]==POFF_LINUX_SLL) {
+	eth_pkt = (eth_struct_t *) &raw_pkt[2];
+      } else {
+	continue;
       }
+      is_ip4 = (eth_pkt->ptype[0]==0x08 && eth_pkt->ptype[1]==0x00);
+      is_ip6 = (eth_pkt->ptype[0]==0x86 && eth_pkt->ptype[1]==0xDD);
+      /*  If not IP, is it VLAN?  */
+      if (!is_ip4 && !is_ip6) {
+	is_vlan =  eth_pkt->ptype[0]==0x81 && eth_pkt->ptype[1]==0;
+	/*  If is VLAN, check for IP further down packet  */
+	if (is_vlan) {
+	  /* VLAN tags are 12bits... assemble and compare */
+	  unsigned int vlan_id = 
+	    (eth_pkt->ptype[2] & 0x0F)<<8 |
+	    (eth_pkt->ptype[3]);
+	  /* If this packet isn't from the VLAN we're listening to, ignore it */
+	  if ((vlan_m!=0) && (vlan_id!=vlan_m)) continue;
+	  /* Check IP protocol */
+	  is_ip4 = (eth_pkt->ptype[4]==0x08 && eth_pkt->ptype[5]==0x00);
+	  is_ip6 = (eth_pkt->ptype[4]==0x86 && eth_pkt->ptype[5]==0xDD);
+	}
+      }
+      if (!is_ip4 && !is_ip6) continue;
+
 
 
       /*  Find pointer to ip packet  
@@ -2130,6 +2136,12 @@ void open_interface (void) {
 
       /*  Find packet offset  */
       pcapoffset_m[i] = get_packetoffset(pcap_datalink(pcapfile_m[i]));
+      if(pcapoffset_m[i] == POFF_LINUX_SLL && printeth_g == TRUE){
+	//If the packets contain SLL headers we cannot capture
+	//ethernet src and dst
+	printeth_g = FALSE;
+	printf("Warning: ethernet headers not available.\n");
+      }
 
       /*  Apply user requested packet filter code */
       if (pcap_compile(pcapfile_m[i], &fcode, filtercmd_m, 0, 0) < 0)

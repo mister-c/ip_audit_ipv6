@@ -18,7 +18,7 @@ BEGIN {
   ### This can also be changed via "make adjust-cgi" after    ###
   ### ./configure has been run.				      ###
   ###############################################################
-  $IPAUDITCONF = "/home/ipaudit/ipaudit-web.conf";
+  $IPAUDITCONF = "/home/ipaudit/ipaudit-web.conf"; # Adjusted via adjust-cgi
 }
 
 # This would be set in whatever perl script is calling us.
