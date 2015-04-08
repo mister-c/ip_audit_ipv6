@@ -58,7 +58,8 @@ set title "$PLOT_TITLE (updated $UpdateDateTime)"
 set xlabel "Date"
 set ylabel "Host Count"
 $size_option
-set term png small color
+set size 1.0, 0.3125
+set term png small crop
 set output \"$plot_name\"
 plot \\
  "< tail -1000 $LOG_NAME" u 1:(\$2) t "Send-Only" w i lt 3, \\

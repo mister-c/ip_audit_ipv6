@@ -67,7 +67,8 @@ set mxtics 1
 set key left
 set grid xtics
 $size_option
-set term png small color
+set size 1.0, 0.3125
+set term png small crop
 set output \"$plot_name\"
 set nokey
 plot \\

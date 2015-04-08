@@ -2,7 +2,6 @@
 
 use POSIX;
 
-
 die "Need arguments\n" unless @ARGV>=3;
 
 #  Get path name of gnuplot executable from environment
@@ -13,28 +12,30 @@ $GNUPLOT= defined $ENV{GNUPLOT} ? $ENV{GNUPLOT} : "gnuplot";
 #
 #  Make Plot
 #
-
 $PLOT_NAME=~s/\.png$//;
 &MakePlot("$PLOT_NAME.png");
 &MakePlot("$PLOT_NAME-large.png","set size 1,0.6");
 
+
+exit;
+
 #
 #  Plot previous week  values from log usin Gnuplot
 #
-sub MakePlot
-	{
-	my ($plot_name, $size_option) = @_;
+sub MakePlot {
+        my ($plot_name, $size_option) = @_;
 	my ($LastDate, $MaxDateTime, $MinDateTime);
 	my ($UpdateDateTime, $Sec, $f);
+
+	#  Default size option  
+	$size_option = "set size 1.0, 0.3125"  if  $size_option eq "";
+
 	#  Determine min and max date/time (use 1 week interval)
-	($LastDate, undef) = 
-		($DATE=~ /(\d{4}-\d\d-\d\d)-*(\d\d:\d\d)*/);
+	($LastDate, undef) = ($DATE=~ /(\d{4}-\d\d-\d\d)-*(\d\d:\d\d)*/);
+
 	$MaxDateTime = &date ($LastDate,   "1d");
 	$MinDateTime = &date ($LastDate, "-13d");
 	$UpdateDateTime = &date();
-
-	#  Default size option
-	$size_option = "set size 1.0, 0.3125" if  $size_option eq "";
 
 	#  Number of seconds in a day
 	$Sec = 60*60*24;
@@ -44,15 +45,16 @@ sub MakePlot
 
 	open (GNUPLOT, "| $GNUPLOT") || die "Cannot run GNUPLOT\n";
 
+	$yrange_statement = "set yrange [0:$YMAX]" if $YMAX;
+
+
+
 	#  Make GNUPLOT print immediately
 	select (GNUPLOT);
 	$| = 1;
-	
-	$yrange_statement = "set yrange [0:$YMAX]" if $YMAX;
 
 # old gif statement
 # set term gif small size 600,150 xffffff x000000 xdddddd x880000 x008800 x000088 x666666
-
 
 print GNUPLOT <<"EOM";
 set xdata time
@@ -60,21 +62,22 @@ set timefmt "%Y-%m-%d-%H:%M"
 set format x "%m-%d"
 set xrange [ \"$MinDateTime\" : \"$MaxDateTime\" ]
 $yrange_statement
+set key left
 set title "Internet Traffic (updated $UpdateDateTime)";
 set xlabel "Date"
 set ylabel "Mb/s"
 set xtics $Sec
 set ytics
 set mxtics 1
-set key left
 set grid xtics
 $size_option
-set term png small crop#color
+set size 1.0, 0.3125
+set term png small #color
 set output \"$plot_name\"
 plot \\
- "$LOG_NAME" u 1:($f*\$2)       t "Total"    w i lt 7, \\
- "$LOG_NAME" u 1:($f*\$3)       t "Incoming" w i  lt 8 lw 3, \\
- "$LOG_NAME" u 1:($f*\$4)       t "Outgoing" w l  lt 3 lw 3
+ "$LOG_NAME" u 1:($f*\$2) t "Internal" w i lt 8, \\
+ "$LOG_NAME" u 1:($f*\$3) t "External" w l lt 9, \\
+ "$LOG_NAME" u 1:($f*\$4) t "Other"    w l lt 1
 quit
 EOM
 

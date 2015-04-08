@@ -8,7 +8,7 @@ die "Need arguments\n" unless @ARGV>=3;
 #  Get path name of gnuplot executable from environment
 $GNUPLOT= defined $ENV{GNUPLOT} ? $ENV{GNUPLOT} : "gnuplot";
 
-($LOG_NAME, $PLOT_NAME, $DATE, $YMAX) = @ARGV;
+($LOG_NAME, $PLOT_NAME, $DATE, $YMAX, $PLOT_TITLE) = @ARGV;
 
 #
 #  Make Plot
@@ -50,9 +50,7 @@ sub MakePlot
 	
 	$yrange_statement = "set yrange [0:$YMAX]" if $YMAX;
 
-# old gif statement
-# set term gif small size 600,150 xffffff x000000 xdddddd x880000 x008800 x000088 x666666
-
+	
 
 print GNUPLOT <<"EOM";
 set xdata time
@@ -60,7 +58,7 @@ set timefmt "%Y-%m-%d-%H:%M"
 set format x "%m-%d"
 set xrange [ \"$MinDateTime\" : \"$MaxDateTime\" ]
 $yrange_statement
-set title "Internet Traffic (updated $UpdateDateTime)";
+set title "$PLOT_TITLE (updated $UpdateDateTime)"
 set xlabel "Date"
 set ylabel "Mb/s"
 set xtics $Sec
@@ -69,12 +67,16 @@ set mxtics 1
 set key left
 set grid xtics
 $size_option
-set term png small crop#color
+set size 1.0, 0.3125
+set term png small #color
 set output \"$plot_name\"
+set nokey
 plot \\
- "$LOG_NAME" u 1:($f*\$2)       t "Total"    w i lt 7, \\
- "$LOG_NAME" u 1:($f*\$3)       t "Incoming" w i  lt 8 lw 3, \\
- "$LOG_NAME" u 1:($f*\$4)       t "Outgoing" w l  lt 3 lw 3
+ "$LOG_NAME" u 1:($f*\$2)   w i  lt 7, \\
+ "$LOG_NAME" u 1:($f*\$3)   w l  lt 8 lw 3, \\
+ "$LOG_NAME" u 1:($f*\$4)   w l  lt 3 lw 3, \\
+ "$LOG_NAME" u 1:($f*\$5)   w l  lt 4 lw 3, \\
+ "$LOG_NAME" u 1:($f*\$6)   w l  lt 5 lw 3
 quit
 EOM
 

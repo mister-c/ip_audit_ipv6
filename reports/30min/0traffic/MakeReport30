@@ -42,7 +42,7 @@ $LOCAL_HOST_CNT      = 0;
 $HOST_PAIR_CNT       = 0;
 
 #  Print debug messages
-$DEBUG=0;
+$DEBUG=1;
 $DO_MACHINE_PROBE_REPORT=0;
 
 #
@@ -294,7 +294,6 @@ while ( ($key,undef) = each %RemoteTraffic) {
    $RemoteRespond++ if $RemoteTraffic{$key}[$INC];
 }
 
-
 #  Print HTML report
 open (HTML, ">".$HTMLName) || die "Cannot open HTML output file.\n";
 &PrintHTMLReport;
@@ -387,9 +386,14 @@ print "Starting Busiest Host\n" if $DEBUG;
 
 &MakeTopList ($NTOP, \%LocalTraffic, 0, \%LocalSort);
 
+printf("1\n");
+
 $Title = "Busiest Local Hosts";
 $Title .= " <font color=\"red\">(data collection incomplete)</font>"
    if $LOCAL_HOST_WARN;
+
+printf("2\n");
+
 &PrintTraffic 
    (
    $Title,
@@ -397,12 +401,16 @@ $Title .= " <font color=\"red\">(data collection incomplete)</font>"
    \%LocalTraffic
    );
 
+printf("3\n");
 
 &MakeTopList ($NTOP, \%RemoteTraffic, 0, \%RemoteSort);
 
 $Title = "Busiest Remote Hosts";
 $Title .= " <font color=\"red\">(data collection incomplete)</font>"
    if $REMOTE_HOST_WARN;
+
+printf("4\n");
+
 &PrintTraffic 
    (
    $Title,
@@ -410,6 +418,8 @@ $Title .= " <font color=\"red\">(data collection incomplete)</font>"
    \%RemoteTraffic
    );
 
+
+printf("5\n");
 
 #
 #  REPORT:  Busiest Connections
@@ -420,6 +430,9 @@ $Title .= " <font color=\"red\">(data collection incomplete)</font>"
 $Title = "Busiest Host Pairs";
 $Title .= " <font color=\"red\">(data collection incomplete)</font>"
    if $HOST_PAIR_WARN;
+
+printf("6\b");
+
 &PrintSubList 
    (
    $Title,
@@ -820,6 +833,8 @@ sub PrintTraffic {
    my ($icolor) = 0;
    my ($name,$Total,$Incoming,$Outgoing);
 
+   print("2a\n");
+
 
 print HTML << "EOM";
 <br><br>
@@ -841,8 +856,14 @@ cellpadding="2" align="center" bgcolor="#818181">
 </tr>
 EOM
 
+#Change 1
+printf("2b\n");
+
+   $it=0;
 
    for ( sort {$$KeyHash{$b} <=> $$KeyHash{$a}} keys %$KeyHash ) {
+       $it++;
+       printf("2b$it...1\n");
 
       $Total = $$Hash{$_}[0];
 
@@ -851,15 +872,20 @@ EOM
       } else {
          $Incoming = $$Hash{$_}[1];
       }
+       printf("2b$it...2\n");
 
       if (!defined($$Hash{$_}[2])) {
          $Outgoing = 0;
       } else {
          $Outgoing = $$Hash{$_}[2];
       }
-         
-      $host = &SplitHostKey($_);
+
+       printf("2b$it...2\n");
+      $host = &shorten_ipv6(&SplitHostKey($_));
+       printf("host is....$host\n");
+       printf("2b$it...3\n");
       $name = &GetDNS($host);
+       printf("2b$it...4\n");
       print HTML "<tr bgcolor=\"$alternating_color[$icolor]\">\n";
       print HTML "<td>", &iplink($date,$host), "</td>\n";
       print HTML "<td>$name</td>\n";
@@ -869,6 +895,7 @@ EOM
       print HTML "</tr>\n";
 
       $icolor = 1-$icolor;
+       printf("2b$it...5\n");
       }
    print HTML "</table>";
    print HTML "</td></tr></table>\n";
@@ -946,52 +973,97 @@ EOM
 exit;
 }
 
+#change 2
 
+#TODO make all of these accept ipv6 keys
 sub MakeHostKey {
    my ($host) = @_;
-   return pack "CCCC", split(/\./,$host);
+   #ipv6 host pair
+   if($host =~ /^([0-9abcdef:]+)$/){
+       return pack ("CH4H4H4H4H4H4H4H4", 54, split(/:/, $host));
+   }
+   #ipv4 host pair
+   return pack "CCCCC", 52, split(/\./,$host);
 }
 
 
 sub MakeHostPairKey {
    my ($loc,$rem) = @_;
-   return pack "CCCCCCCC",
-      split(/\./,$loc), split(/\./,$rem);
+   #ipv6 host pair
+   if($loc =~ /^([0-9abcdef:]+)$/){
+       return pack ("CH4H4H4H4H4H4H4H4H4H4H4H4H4H4H4H4",
+		    54, split(/:/, $loc), split(/:/, $rem));
+   }
+   #ipv4 host pair
+   return pack "CCCCCCCCC",
+      52, split(/\./,$loc), split(/\./,$rem);
 }
 
 
 sub MakeBigKey {
    my ($loc,$rem,$prot,$lpt,$rpt) = @_;
-   return pack "CCCCCCCCCnn",
-      split(/\./,$loc), split(/\./,$rem), $prot, $lpt, $rpt;  
+
+   #ipv6 host pair
+   if($loc =~ /^([0-9abcdef:]+)$/){
+       return pack ("CH4H4H4H4H4H4H4H4H4H4H4H4H4H4H4H4nn",
+		    54, split(/:/, $loc), split(/:/, $rem), $prot, $lpt, $rpt);
+   }
+   #ipv4 host pair
+   return pack "CCCCCCCCCCnn",
+      52, split(/\./,$loc), split(/\./,$rem), $prot, $lpt, $rpt;
 }
 
+#TODO finish editing this method
 sub SplitHostKey {
    my ($pack) = @_;
    my ($key);
-   $key = sprintf "%03d.%03d.%03d.%03d", unpack ("CCCC", $pack); 
+   if(sprintf("%c", unpack("C1", $pack)) eq '6'){
+       $key = substr( sprintf("%c%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x", unpack("C17", $pack)), 1);
+       return $key;
+   }
+   $key = substr(sprintf("%c%03d.%03d.%03d.%03d", unpack ("CCCCC", $pack)), 1);
    return $key;
 }
 
+#Finish this
 sub SplitHostPairKey {
    my ($pack) = @_;
    my ($loc,$rem,@k);
+   if(sprintf("%c", unpack("C1", $pack)) eq '6'){
+       @k   = unpack ("C33", $pack);
+       $loc = sprintf("%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x",
+		      $k[1], $k[2], $k[3], $k[4], $k[5], $k[6], 
+		      $k[7], $k[8], $k[9], $k[10], $k[11], $k[12], 
+
+		      $k[13], $k[14], $k[15], $k[16]);
+       $rem = sprintf("%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x",
+		      $k[17], $k[18], $k[19], $k[20], $k[21], $k[22], 
+		      $k[23], $k[24], $k[25], $k[26], $k[27], $k[28], 
+		      $k[29], $k[30], $k[31], $k[32]);
+       return ($loc,$rem);
+   }
    @k   = unpack ("CCCCCCCC", $pack); 
-   $loc = sprintf "%03d.%03d.%03d.%03d", $k[0], $k[1], $k[2], $k[3];
-   $rem = sprintf "%03d.%03d.%03d.%03d", $k[4], $k[5], $k[6], $k[7];
+   $loc = sprintf "%03d.%03d.%03d.%03d", $k[1], $k[2], $k[3], $k[4];
+   $rem = sprintf "%03d.%03d.%03d.%03d", $k[5], $k[6], $k[7], $k[8];
    return ($loc,$rem)
 }
 
-
+#TODO test this method
+#This might cause an error
+#I replaced the : deliniator with a ;
 sub SplitBigKey {
    my ($pack) = @_;
    my ($key);
    #$key = sprintf "%03d.%03d.%03d.%03d:%03d.%03d.%03d.%03d:%d:%d:%d",
-   $key = sprintf "%03d.%03d.%03d.%03d:%03d.%03d.%03d.%03d",
-         unpack ("CCCCCCCCCnn", $pack); 
+   if(sprintf("%c", unpack("C1", $pack)) eq '6'){
+       $key = substr(sprintf("%c%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x,%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x",
+		     unpack("C33", $pack)),1);
+       return split(/,/,$key);
+   }
+   $key = substr(sprintf("%c%03d.%03d.%03d.%03d:%03d.%03d.%03d.%03d",
+         unpack ("CCCCCCCCCCnn", $pack)), 1); 
    return split(/:/,$key);
 }
-
 
 sub GetDNS {
    my ($name) = @_;
@@ -999,6 +1071,14 @@ sub GetDNS {
       $name = sprintf "%d.%d.%d.%d", $1,$2,$3,$4;
       $name = inet_aton($name);
       $name = gethostbyaddr($name, AF_INET) if defined($name);
+   } elsif ($name=~/([0-9abcdef]{1,4}:){7}/){
+       printf("$name...");
+       my ($err, @res) = Socket::getaddrinfo($name, 0);
+       return "&nbsp;" if $err;
+       my ($bin_addr) = @res[0]->{addr};
+       ($err, $name, $serv) = Socket::getnameinfo($bin_addr);
+       return "&nbsp;" if $err;
+       printf("$name" . "\n");
    }
    return defined $name ? $name : "&nbsp;";
 }
@@ -1100,11 +1180,13 @@ for $key (sort {$$data{$b}<=>$$data{$a}} keys %$data) {
 print HTML "</table>\n";
 }
 
+#change 3
 
 sub iplink {
    my ($date,$ip) = @_;
-   return $ip if $date eq "";
-   return "<a href=$Conf{'CGI_BIN'}/SearchIpauditData?date=$date&ip=$ip&sort=0>$ip</a>";
+   my($shortip) = &shorten_ipv6($ip);
+   return $shortip if $date eq "";
+   return "<a href=$Conf{'CGI_BIN'}/SearchIpauditData?date=$date&ip=$ip&sort=0>$shortip</a>";
 }
 
 #  Search upward from $Dir looking for $File
@@ -1142,8 +1224,8 @@ sub ParseNetRange {
    $NetReverse =  $prefix eq '!'; 
    $ipvsn = 4;
 
-   for (split(/_/,$net)) {
-
+   for (split(/,/,$net)) {
+       
       #  aaa.aaa.aaa.aaa-bbb.bbb.bbb.bbb
       if (/^([0-9\.]+)-([0-9\.]+)$/) {
          @n1 = (split(/\./,$1) , 0, 0, 0, 0);
@@ -1173,12 +1255,11 @@ sub ParseNetRange {
       #  xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx
       #  TODO finish adding patterns for recognizing ipv6
        } elsif(/^([0-9abcdef:]+)$/){
-	 @n1 = (split(/:/), $1, 0, 0, 0, 0, 0, 0, 0, 0);
+	 @n1 = (split(/:/, $1), 0, 0, 0, 0, 0, 0, 0, 0);
 	 $n1 = unpack("H32", pack("H4H4H4H4H4H4H4H4",@n1));
-         @n2 = ( split(/\./,$1), 255, 255, 255, 255);
+         @n2 = (split(/:/, $1), 0, 0, 0, 0, 0, 0, 0, 0);
 	 $n2 = unpack("H32", pack("H4H4H4H4H4H4H4H4",@n2));
 	 $ipvsn = 6;
-	 #$n1 = unpack( pack("C5"))
       #  aaa.aaa
        } elsif (/^([0-9\.]+)$/) {
          @n1 = ( split(/\./,$1), 0, 0, 0, 0);
@@ -1214,4 +1295,66 @@ EOM
    print join("\n", @Net);
    printf("\n\n");
    return ($NetReverse, @Net);
+}
+
+####################################################################################################
+
+#change 4
+
+sub shorten_ipv6{
+    my($addr_long) = @_;
+    my(@arr) = split(":", $addr_long);
+
+    $arrSize = @arr;
+    for($i = 0; $i < $arrSize; $i++) {
+	my $seg = @arr[$i];
+	my $newseg = $seg;
+	my $j = 0;
+	while($j < 4){
+	    $digit = substr($seg, $j, 1);
+	    if($digit eq "0"){
+		$newseg = substr($seg, $j + 1);
+	    } else {
+		last;
+	    }
+	    $j++;
+	}
+	@arr[$i] = $newseg;
+    }
+
+    my $count = 0;
+    my $max = 0;
+    my $pos = -1;
+
+    $arrLen = @arr;
+    for ($i = 0; $i < $arrLen; $i++){
+	$seg = @arr[$i];
+	if ($seg eq ""){
+	    $count++;
+	    @arr[$i] = 0;
+	} else{
+	    if($count > $max){
+		$max = $count;
+		$pos = $i;
+	    }
+	}
+    }
+    $pos = $pos - $max;
+
+    $addr_short = "";
+    for ($i = 0; $i < $arrLen; $i++){
+	if($i < $pos || $i > ($pos + $max - 1)){
+	    $seg = @arr[$i];
+	    $addr_short = $addr_short . $seg . ":";
+	}
+	if($i == $pos){
+	    $addr_short = $addr_short . ":";
+	} 
+    }
+    if($pos == 0){
+	$addr_short = ":" . substr($addr_short, 0, length($addr_short)-1);
+    }else{
+	$addr_short = substr($addr_short, 0, length($addr_short)-1);
+    }
+    return $addr_short;
 }

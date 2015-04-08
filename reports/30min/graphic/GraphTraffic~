@@ -69,7 +69,8 @@ set mxtics 1
 set key left
 set grid xtics
 $size_option
-set term png small crop#color
+set size 1.0, 0.3125
+set term png small #color
 set output \"$plot_name\"
 plot \\
  "$LOG_NAME" u 1:($f*\$2)       t "Total"    w i lt 7, \\

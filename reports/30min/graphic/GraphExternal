@@ -71,7 +71,8 @@ set ytics
 set mxtics 1
 set grid xtics
 $size_option
-set term png small color
+set size 1.0, 0.3125
+set term png small crop
 set output \"$plot_name\"
 plot \\
  "$LOG_NAME" u 1:($f*\$2) t "Internal" w i lt 8, \\
