@@ -19,7 +19,11 @@ Defines
 */
 #define MAX_COL 256
 #define NSTR    256
-#define IPLEN    16
+#define IPLEN4    16
+#define IPLEN6    40
+
+#define IPLEN6_BIN    16
+
 
 /*
 ------------------------------------------------------------------------
@@ -44,10 +48,10 @@ Macros
 ------------------------------------------------------------------------
 */
 #define IS_REMOTE(fptr)  ( ! ( \
-   in_iprange ((fptr), local_iplist_m,  n_local_iplist_m) || \
+			      in_iprange ((fptr),  local_iplist_m,  n_local_iplist_m) || \
+			      in_iprange6 ((fptr), local_iplist6_m, n_local_iplist6_m) || \
    n_other_iplist_m && \
-   in_iprange ((fptr), other_iplist_m,  n_other_iplist_m)   ) )
-
+			      in_iprange ((fptr), other_iplist_m,  n_other_iplist_m)   ) )
 
    
 
@@ -67,9 +71,13 @@ Modules variables
 int debug_m = 0;
 
 int  n_local_iplist_m = 0;
+int  n_local_iplist6_m = 0;
 int  n_other_iplist_m = 0;
-char (*local_iplist_m)[IPLEN] = NULL;
-char (*other_iplist_m)[IPLEN] = NULL;
+int  n_other_iplist6_m = 0;
+char (*local_iplist_m)[IPLEN4] = NULL;
+char (*local_iplist6_m)[IPLEN6] = NULL;
+char (*other_iplist_m)[IPLEN4] = NULL;
+char (*other_iplist6_m)[IPLEN6] = NULL;
 
 /*
 ------------------------------------------------------------------------
@@ -78,12 +86,17 @@ Prototypes
 */
 int   get_fields     (char *s, char **fptr, int);
 int   is_whitespace  (int c);
-void  parse_ip_range (char *arg_in, char (**iplist)[IPLEN], int *niplist);
+void  parse_ip_range (char *arg_in, char (**iplist4)[IPLEN4], char (**iplist6)[IPLEN6],
+		      int *niplist4, int *niplist6); 
 int   get_range_code (char *ip);
-int   in_iprange     (char *, char (*iplist)[IPLEN], int niplist);
+int   in_iprange     (char *, char (*iplist)[IPLEN4], int niplist4);
+int   in_iprange6    (char *, char (*iplist)[IPLEN6], int niplist6);
 int   str2ip         (char *ipstr);
-void  ip2str         (int ip, char[IPLEN]);
-void  ip2ipf         (char *ip, char ipf[IPLEN]);
+void  str2ip6        (char *ipstr, char buffer[IPLEN6_BIN]);
+void  ip2str         (int ip, char[IPLEN4]);
+void  ip2str6        (char int_buff[IPLEN6_BIN], char str_buff[IPLEN6]);
+void  ip2ipf         (char *ip, char ipf[IPLEN4]);
+void  ip2ipf6         (char *ip, char ipf[IPLEN6]);
 int   str2mask       (char *ipstr);
 void  Print_Usage    (void);
 
@@ -135,14 +148,16 @@ int main (int argc, char *argv[]) {
    }
 
    /*  First argument is local net  */
-   parse_ip_range (argv[optind], &local_iplist_m, &n_local_iplist_m);
+   parse_ip_range (argv[optind], &local_iplist_m, &local_iplist6_m,
+		   &n_local_iplist_m, &n_local_iplist6_m);
 
    /*  Second argument (if present) is other net
     *  '-' means any non-local is considered other  
     *  */
    if (argc>optind+1 && strcmp("-",argv[optind])) {
-      parse_ip_range(argv[optind+1], &other_iplist_m, &n_other_iplist_m);
+     parse_ip_range(argv[optind+1], &other_iplist_m, &other_iplist6_m, &n_other_iplist_m, &n_other_iplist6_m);
    }
+   
 
    if (argc>optind+2) {
       if (!strcmp("-",argv[optind+2])) {
@@ -157,10 +172,11 @@ int main (int argc, char *argv[]) {
    } else
       fin = stdin;
 
-
+   /* DEBUG */
+   printf("finished getting input\n"); /*  */
    /*  Read ipaudit output from standard input and re-order ip data  */
    while (NULL!=fgets(buffer,NSTR,fin)) {
-
+     printf("entering while loop\n");     
       /*  Skip comments  */
       if (buffer[0]=='#') continue;
 
@@ -201,9 +217,22 @@ int main (int argc, char *argv[]) {
       /*  Break into fields  */
       nfield = get_fields (buffer, fptr, 2);
 
+      /* TODO Check if this works???? */
+
+      /* DEBUG */
+      printf("%s\n", fptr[0]);
+    
       /*  Print if first field is local ip  */
       if (filter && !strcmp(filter,"l")) {
          loc0 = in_iprange (fptr[0], local_iplist_m,  n_local_iplist_m);
+         if (loc0) 
+            printf ("%s\n", buffer2);
+         continue;
+      }
+
+      /*  Repeat for ipv6  */
+      if (filter && !strcmp(filter,"l")) {
+         loc0 = in_iprange6 (fptr[0], local_iplist6_m,  n_local_iplist6_m);
          if (loc0) 
             printf ("%s\n", buffer2);
          continue;
@@ -213,6 +242,15 @@ int main (int argc, char *argv[]) {
       if (filter && !strcmp(filter,"ll")) {
          loc0 = in_iprange (fptr[0], local_iplist_m,  n_local_iplist_m);
          loc1 = in_iprange (fptr[1], local_iplist_m,  n_local_iplist_m);
+         if (loc0 && loc1)
+            printf ("%s\n", buffer2);
+         continue;
+      }
+
+      /*  Repeat for ipv6  */
+      if (filter && !strcmp(filter,"ll")) {
+         loc0 = in_iprange6 (fptr[0], local_iplist6_m,  n_local_iplist6_m);
+         loc1 = in_iprange6 (fptr[1], local_iplist6_m,  n_local_iplist6_m);
          if (loc0 && loc1)
             printf ("%s\n", buffer2);
          continue;
@@ -236,17 +274,20 @@ int main (int argc, char *argv[]) {
       }
 
       /*  Print if first two fields are local/other or other/local  */
-      loc0 = in_iprange (fptr[0], local_iplist_m,  n_local_iplist_m);
+      loc0 = in_iprange (fptr[0], local_iplist_m,  n_local_iplist_m) || in_iprange6 (fptr[0], local_iplist6_m,  n_local_iplist6_m);
       rem1 = IS_REMOTE  (fptr[1]);
 
       /*  Address already local/other  */
       if (loc0 && rem1) {
+         printf("already ordered\n");	
          printf ("%s\n", buffer2);
 
       /*  Address is other/local, so switch order */
       } else {
-         loc1 = in_iprange (fptr[1], local_iplist_m,  n_local_iplist_m);
+         loc1 = in_iprange (fptr[1], local_iplist_m, n_local_iplist_m) || in_iprange6 (fptr[1], local_iplist6_m,  n_local_iplist6_m);
          rem0 = IS_REMOTE  (fptr[0]);
+	 printf("gotta flip gotta flip!!!\n");
+	 printf("%d...%d...\n", loc1, rem0);	 
          if (rem0 && loc1) {
             nfield = get_fields (buffer2, fptr, MAX_COL);
             /* do stuff  */
@@ -272,6 +313,7 @@ int main (int argc, char *argv[]) {
 
    /*  Write summary  */
    if (do_traffic_summary)
+
       printf ("%.0f %.0f %.0f %.0f %.0f %.0f %.0f %.0f %.0f\n",
          connections, 
          packets, 
@@ -295,40 +337,65 @@ int main (int argc, char *argv[]) {
 Local functions
 ------------------------------------------------------------------------
 */
-void parse_ip_range (char *arg_in, char (**iplist)[IPLEN], int *niplist) {
+void parse_ip_range (char *arg_in, char (**iplist4)[IPLEN4], 
+		     char (**iplist6)[IPLEN6], int *niplist4, int *niplist6) {
    char *arg_cpy = (char *) malloc (strlen(arg_in)+1);
    char *ipstr   = (char *) malloc (strlen(arg_in)+1);
    char *netstr  = (char *) malloc (strlen(arg_in)+1);
    char *maskstr = (char *) malloc (strlen(arg_in)+1);
    char *range1  = NULL;
    char *range2  = NULL;
+   int  ip_vsn;
    int  nrange;
    int  mask;
    int  net;
    int  ip1, ip2;
-   int  n;
-   char *p;
+   char ip6_1[IPLEN6_BIN];
+   char ip6_2[IPLEN6_BIN];
+   int  n4;
+   int  n6;
+   char *p1;
+   int v1;
 
-   *iplist  = NULL;
-   *niplist =0;
+   *iplist4  = NULL;
+   *iplist6  = NULL;
+   *niplist4 =0;
+   *niplist6 =0;
 
    /*  If no list (no string, blank string or string eq '-'
     *  then return null  */
-   if (arg_in==NULL || *arg_in==0 || (!strcmp("-",arg_in)) ) 
+   if (arg_in==NULL || *arg_in==0 || (!strcmp("-",arg_in)) )
       return;
       
    /*  Count number of ranges (equals number of : + 1 )  */
-   p = arg_in;
-   n = 1;
-   while (*p++) {
-      if (*p==':') n++;
+   p1 = arg_in;
+
+   n4 = 0;
+   n6 = 0;
+
+   v1 = 4;
+
+   while (*p1++) {
+     if (*p1==':') v1 = 6;
+     if (*p1=='.') v1 = 4;
+     if (*p1==',' && v1 ==4) n4++;
+     if (*p1==',' && v1 ==6) n6++;
+   }
+   if (v1 == 6){
+     n6++;
+   } else if (v1 == 4){
+     n4++;
    }
 
+   /* DEBUG */
+   printf("n6...%d, n4...%d\n", n6,n4);
 
    /*  allocate storage  */
-   *iplist = (char (*)[IPLEN]) malloc (2 * n * IPLEN);
-   if (*iplist==NULL) {
-      *niplist = 0;
+   *iplist4 = (char (*)[IPLEN4]) malloc (2 * n4 * IPLEN4);
+   *iplist6 = (char (*)[IPLEN6]) malloc (2 * n6 * IPLEN6);
+   if (n4+n6==0) {
+      *niplist4 = 0;
+      *niplist6 = 0;
       return;
    }
 
@@ -336,25 +403,46 @@ void parse_ip_range (char *arg_in, char (**iplist)[IPLEN], int *niplist) {
    range2 = arg_cpy;
 
    /*  break string into separate ranges  */
-   *niplist = 0;
+   *niplist4 = 0;
+   *niplist6 =0;
    while (NULL!=range2) {
-
+      printf("TOPOFLOOP\n");
       /*  Break arg into (1st range):(remaining ranges)  */
       range1 = range2;
-      range2 = strchr(range1, ':');
+      range2 = strchr(range1, ',');
       if (NULL!=range2) *range2++ = '\0';
+      /* DEBUG */
+      if (NULL==range2) printf("range2 is null\n");
+      
+      
+      ip_vsn = 4;
+      if(NULL!=strchr(range1, ':')){
+	ip_vsn = 6;
+      }
 
+     /* DEBUG */
+      printf("range1... %s\tversion...%d\n", range1, ip_vsn);
+      printf("range2... %s\n", range2);
 
       /*  Look for range expressed as (lo ip)-(hi ip)  */
-       if (2==sscanf (range1, "%[0-9.]-%[0-9.]", ipstr, netstr)) {
-         ip1 = str2ip(ipstr);
-         ip2 = str2ip(netstr);
+       if (2==sscanf (range1, "%[0-9abcdef.:]-%[0-9abcdef.:]", ipstr, netstr)) {
+	 if(ip_vsn == 6){
+	   str2ip6(ipstr, ip6_1);
+	   str2ip6(netstr, ip6_2);
+	 } else{
+	   ip1 = str2ip(ipstr);
+	   ip2 = str2ip(netstr);
+	 }
 
       /*  break range into (ip)/(net) or (ip)/(mask)  */
-      } else if (2==sscanf (range1, "%[0-9.]/%[0-9.]", ipstr, netstr)) {
+       } else if (2==sscanf (range1, "%[0-9abcdef.:]/%[0-9abcdef.]", ipstr, netstr)) {
 
          /*  read ip address  */
-         ip1 = str2ip (ipstr);
+	 if(ip_vsn == 6){
+	   str2ip6(ipstr, ip6_1);
+	 } else{
+	   ip1 = str2ip(ipstr);
+	 }
 
          /*  Second substr is a mask (255.225.255.0)  */
          if (strchr (netstr,'.')) {
@@ -366,16 +454,32 @@ void parse_ip_range (char *arg_in, char (**iplist)[IPLEN], int *niplist) {
          } else {
             net = atoi(netstr);
             if (net<0) net=0;
-            else if (net>32) net=32;
-            mask = 0xffffffff >> net;
+            else if (net>128) net=128;
+
+	    if(ip_vsn == 6){
+	      /* TODO figure out how to fix this */
+	      /* mask = 0xffffffff >> net;  */
+	      return;
+	    } else {
+	      mask = 0xffffffff >> net;
+	    }
             if (mask==-1) mask = 0;
             ip2 = ip1 | mask;
          }
 
       /*  Look for single ip address  */
-      } else if (sscanf (range1, "%[0-9.].%[0-9].", ipstr, netstr)) {
-         ip1 = str2ip (ipstr);
-         ip2 = ip1 | str2mask(ipstr);
+      } else if (sscanf (range1, "%[0-9abcdef.:].%[0-9abcdef:].", ipstr, netstr)) {
+	 if(ip_vsn == 6){
+	   str2ip6 (ipstr, ip6_1);
+	   str2ip6 (ipstr, ip6_2);
+	   /* ip2 = ip1 | str2mask6(ipstr); */
+	 } else{
+	   ip1 = str2ip (ipstr);
+	   ip2 = ip1 | str2mask(ipstr);
+	 }
+
+	 /* DEBUG */
+	 printf("Matched the \"Look for single ip address\" case\n");
 
       /*  Bad input format  */
       } else {
@@ -383,43 +487,76 @@ void parse_ip_range (char *arg_in, char (**iplist)[IPLEN], int *niplist) {
                "ERROR:  Cannot read network range argument.\n");
          fprintf (stderr, 
                "  Program continues with using default network range.\n");
-         *niplist = 0;
-         if (NULL!=*iplist) free (*iplist);
+         *niplist4 = 0;
+         if (NULL!=*iplist4) free (*iplist4);
+         if (NULL!=*iplist6) free (*iplist6);
          return;
       }
 
       /* Store results  */
-      ip2str (ip1,(*iplist)[(*niplist)++]);
-      ip2str (ip2,(*iplist)[(*niplist)++]);
-   } 
+       if(ip_vsn == 6){
+	 ip2str6 (ip6_1,(*iplist6)[(*niplist6)++]);
+	 ip2str6 (ip6_2,(*iplist6)[(*niplist6)++]);
+       } else {
+	 ip2str (ip1,(*iplist4)[(*niplist4)++]);
+	 ip2str (ip2,(*iplist4)[(*niplist4)++]);
+       }
+       /* DEBUG */
+       printf("ENDOFLOOP\n");
 
+   }
 
    free (netstr);
    free (ipstr);
    free (arg_cpy);
 
-
    /*  Correct double counting of niplist  */
-   *niplist /= 2;
-
+   *niplist4 /= 2;
+   *niplist6 /= 2;
 }
 
 
 /*  Determine if ipaddresses is within one of the ranges in iplist  */
 /*  If no range specified, then ip address *is* in range  */
-int in_iprange (char *ip, char (*iplist)[IPLEN], int niplist) {
+int in_iprange (char *ip, char (*iplist)[IPLEN4], int niplist4) {
    int i;
-   char ipf[IPLEN];
+   char ipf[IPLEN4];
+   /* If we aren't checking for an ipv4 address then return false */
+   if(NULL==strchr(ip, '.')){
+     return 0;     
+   }
    /*  No network list implies *all* ip addresses  */
-   if (niplist==0 || iplist==NULL || iplist[0]==NULL) return 1;
+   if (niplist4==0 || iplist==NULL || iplist[0]==NULL) return 1;
    if (ip==NULL) return 0;
    ip2ipf(ip,ipf);
-   for (i=0;i<2*niplist;i+=2)  {
+   for (i=0;i<2*niplist4;i+=2)  {
       if (strcmp(ipf,iplist[i])>=0 && strcmp(ipf,iplist[i+1])<=0)
          return 1;
    }
    return 0;
 }
+
+/*  Determine if ipaddresses is within one of the ranges in iplist  */
+/*  If no range specified, then ip address *is* in range  */
+int in_iprange6 (char *ip, char (*iplist)[IPLEN6], int niplist6) {
+   int i;
+   char ipf[IPLEN6];
+   /* If we aren't checking for an ipv4 address then return true */
+   if(NULL==strchr(ip, ':')){
+     return 0;
+   }
+   /*  No network list implies *all* ip addresses  */
+   if (niplist6==0 || iplist==NULL || iplist[0]==NULL) return 1;
+   if (ip==NULL) return 0;
+   ip2ipf(ip,ipf);
+   for (i=0;i<2*niplist6;i+=2)  {
+      if (strcmp(ipf,iplist[i])>=0 && strcmp(ipf,iplist[i+1])<=0)
+         printf("in_iprange6 success!!!\n");      
+         return 1;
+   }
+   return 0;
+}
+
 
 int get_fields (char *s, char **fptr, int max_field) {
    int nfield=0;
@@ -452,6 +589,17 @@ int str2ip (char *ipstr) {
    return ipout;
 }
 
+void str2ip6 (char *ipstr, char buffer[IPLEN6_BIN]) {
+   int ip[16];
+   int i;
+   int n = sscanf (ipstr, "%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x",
+		   ip, ip+1, ip+2, ip+3, ip+4, ip+5, ip+6, ip+7, ip+8,
+		   ip+9, ip+10, ip+11, ip+12, ip+13, ip+14, ip+15, ip+16);
+    for (i=0;i<16;i++) {
+      buffer[i] = 0;
+      if (i<n) buffer[i] |= (ip[i] & 0xff);
+    }
+ }
 
 int str2mask (char *ipstr) {
    int ip[4];
@@ -464,6 +612,17 @@ int str2mask (char *ipstr) {
 
    return mask;
 }
+
+/* int str2mask6 (char *ipstr) { */
+/*    int ip[16]; */
+/*    int mask; */
+/*    int n = sscanf (ipstr, "%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x", */
+/* 		   ip, ip+1, ip+2, ip+3, ip+4, ip+5, ip+6, ip+7, ip+8, */
+/* 		   ip+9, ip+10, ip+11, ip+12, ip+13, ip+14, ip+15); */
+/*    mask = 0xffffffffffffffffffffffffffffffff >> (8*n); */
+
+/*    return mask; */
+/* } */
 
 
 void Print_Usage (void) {
@@ -495,7 +654,7 @@ printf ("(7) internal bytes, (8) external bytes, (9) and other bytes\n\n");
 
 
 /*  Convert int ip to zero padded string such as 001.231.021.124  */
-void ip2str (int ip, char buffer[IPLEN]) {
+void ip2str (int ip, char buffer[IPLEN4]) {
    int p[4];
    int i;
    for (i=0;i<4;i++) {
@@ -505,19 +664,37 @@ void ip2str (int ip, char buffer[IPLEN]) {
    sprintf (buffer, "%03d.%03d.%03d.%03d", p[3], p[2], p[1], p[0]);
 }
 
+/*  Convert int ip to zero padded string such as 001.231.021.124  */
+void ip2str6 (char int_buff[IPLEN6_BIN], char str_buff[IPLEN6]) {
+   int p[16];
+   int i;
+   /* DEBUG */
+   printf("ip2str6\n");
+   for (i=0;i<16;i++) {
+      p[i] = int_buff[i] & 0xff;
+      printf("%02x\n", p[i]);
+   }
+   sprintf (str_buff, "%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x\0",
+	    int_buff[0], int_buff[1], int_buff[2], int_buff[3], 
+	    int_buff[4], int_buff[5], int_buff[6], int_buff[7], int_buff[8],
+	    int_buff[9], int_buff[10], int_buff[11], int_buff[12], int_buff[13], 
+	    int_buff[14], int_buff[15], int_buff[16]);
+}
+
+
 /*  Copy ip string into buffer with zero padding  */
-void ip2ipf (char *ip, char ipf[IPLEN]) {
+void ip2ipf (char *ip, char ipf[IPLEN4]) {
    int slen;
    int olen;
    char *dst, *src;
    /*  return if ip string already padded  */
    slen = strlen(ip);
-   if (slen>=IPLEN-1) {
-      strncpy (ipf, ip, IPLEN);
+   if (slen>=IPLEN4-1) {
+      strncpy (ipf, ip, IPLEN4);
       return;
    }
    src = ip  + slen  - 1;
-   dst = ipf + IPLEN - 1;
+   dst = ipf + IPLEN4 - 1;
    *(dst--) = '\0';
    /*  Work forward from end of string  */
    while (dst>=ipf) {
@@ -536,6 +713,41 @@ void ip2ipf (char *ip, char ipf[IPLEN]) {
       src--;
    }
 }
+
+
+/* ipv6 version of the same */
+/* TODO add support for double-colon elided pattern */
+void ip2ipf6 (char *ip, char ipf[IPLEN6]) {
+   int slen;
+   int olen;
+   char *dst, *src;
+   /*  return if ip string already padded  */
+   slen = strlen(ip);
+   if (slen>=IPLEN6-1) {
+      strncpy (ipf, ip, IPLEN6);
+      return;
+   }
+   src = ip  + slen  - 1;
+   dst = ipf + IPLEN6 - 1;
+   *(dst--) = '\0';
+   /*  Work forward from end of string  */
+   while (dst>=ipf) {
+      olen = 4;
+      /*  Transfer digits of octet  */
+      while (*src!=':' && src>=ip) {
+         *(dst--) = *(src--);
+         olen--;
+      }
+      /*  Pad octet with zeroes  */
+      while (olen--)
+         *(dst--) = '0';
+      /*  Add ':'  */
+      if (dst>ipf)
+         *(dst--) = ':';
+      src--;
+   }
+}
+
 
 
 int get_range_code (char *ip) {
