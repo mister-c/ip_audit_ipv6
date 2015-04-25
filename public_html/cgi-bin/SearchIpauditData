@@ -411,7 +411,7 @@ sub read_files {
 	} else {
 		$pid = open(FILE, "-|") or exec "$ZCAT", @file_list;
 			&croak ("$ZCAT exec failed: $!")  unless defined($pid);
-	}        
+	}
 
 	#  Print table header, column labels
 	&print_column_labels;
@@ -470,7 +470,6 @@ sub read_files {
 		if($search{last_talker} ne "any")  {
 			next if $data[12] ne $search{last_talker};
 		}
-
 		#  Skip this eligible line until count of $incr is reached
 		next unless ++$nincr == $arg{line_incr};
 		$nincr = 0;
@@ -491,13 +490,13 @@ sub read_files {
 		#  If only a one-way connection, set last field to '-'
 		if ($data[7]==0 || $data[8]==0) {
 			$data[12] = "-";
-		} 
+		}
 
 		#  Convert port numbers to port lookup url's
 		&porturl(\@data);
 
 		#  Print this connection
-		&print_table_data($nprint,@data); 
+		&print_table_data($nprint,@data);
 
 		#  Count number of lines printed
 		$nprint++;
@@ -587,19 +586,39 @@ sub munge_ip($ ) {
 	my $ip = shift;
 	&croak ("munge_ip: No ip defined")  unless defined($ip);
 	# taken almost directly from SearchIpauditData
-	return sprintf "%03d.%03d.%03d.%03d", ($ip =~/(\d{1,3})\.(\d{1,3}).(\d{1,3}).(\d{1,3})/);
+	if ($ip=~/(\d{1,3})\.(\d{1,3}).(\d{1,3}).(\d{1,3})/){
+	    return sprintf "%03d.%03d.%03d.%03d", ($ip =~/(\d{1,3})\.(\d{1,3}).(\d{1,3}).(\d{1,3})/);
+	} elsif ($ip=~/[0-9A-Fa-f]{1,4}\:/){
+	    return $ip;
+	}
 }
 
 # converts ip to "normal" form
 sub demunge_ip {
 	my ($ip) = @_;
 	&croak ("demunge_ip: No ip defined")  unless defined($ip);
-	return sprintf "%d.%d.%d.%d", ($ip =~/0*(\d+)\.0*(\d+).0*(\d+).0*(\d+)/);
+	if ($ip=~/(\d{1,3})\.(\d{1,3}).(\d{1,3}).(\d{1,3})/){
+	    return sprintf "%d.%d.%d.%d", ($ip =~/0*(\d+)\.0*(\d+).0*(\d+).0*(\d+)/);
+	} elsif ($ip=~/(::)?[0-9A-Fa-f]{1,4}\:{1,2}/){
+	    ($ip) = $ip =~ /((::)?([0-9A-Fa-f]{1,4}\:{1,2}){0,7}[0-9A-Fa-f]{1,4}$)/;
+	    return $ip;
+	}
+	return 0;
 }
+
+
+### ($ip=~/[0-9A-Fa-f]{1,4}\:/){
+### 	    return $ip;
+### 	}
+# }
 
 # convert an ip fragment to ipaudit style
 sub munge_ip_frag ($ ) {
-		return join ".", map ( sprintf ("%03d", $_)  , split (/\./, shift) ) ;
+	if ($_=~/(\d{1,3})\.(\d{1,3}).(\d{1,3}).(\d{1,3})/){
+	    return join ".", map ( sprintf ("%03d", $_)  , split (/\./, shift) );
+	} else{
+	    return $_;
+	}
 }
 		
 		
@@ -809,7 +828,6 @@ sub read_arg {
 
 
 
-
 #  Set defaults on user form if not entered from previous call
 sub set_form_defaults() {
 
@@ -866,7 +884,11 @@ sub set_search_param {
 
 	#  Untaint ip_pattern
 	if ($arg{ip_address}) {
-		($search{ip_pattern}) = $arg{ip_address} =~/^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/;
+	      if($arg{ip_address} =~/^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/){
+		    ($search{ip_pattern}) = $arg{ip_address} =~/^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/;
+		} elsif ($arg{ip_address}=~/[0-9A-Fa-f]{0,4}\:{1,2}/) {
+		    ($search{ip_pattern}) = $arg{ip_address} =~ /(([0-9A-Fa-f]{0,4}\:)*[0-9A-Fa-f]{0,4})/;
+		}
 		$search{ip_pattern} = munge_ip($search{ip_pattern});
 	}
 
