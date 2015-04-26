@@ -46,6 +46,10 @@ my (%arg) = (
 	"last_talker"   => "any",
 );
 
+#Number of segments
+my ($NUM_IP6_SEG)=8;
+
+
 my (%search);
 
 
@@ -589,6 +593,7 @@ sub munge_ip($ ) {
 	if ($ip=~/(\d{1,3})\.(\d{1,3}).(\d{1,3}).(\d{1,3})/){
 	    return sprintf "%03d.%03d.%03d.%03d", ($ip =~/(\d{1,3})\.(\d{1,3}).(\d{1,3}).(\d{1,3})/);
 	} elsif ($ip=~/[0-9A-Fa-f]{1,4}\:/){
+	    $ip = lengthen_ipv6( split(":",$ip) );
 	    return $ip;
 	}
 }
@@ -992,4 +997,80 @@ exit;
 sub untaint {
 	$_[0] =~ /^(.*)$/;
 	return $1;
+}
+
+
+#I can barely beleive this works...
+sub lengthen_ipv6{
+    my(@arr) = @_;
+
+    my $pos = -1;
+    my $arrLen = @arr;
+
+    my $loopCount1 = 0;
+    my $loopCount2 = 0;
+    my $loopCount3 = 0;
+
+    #This array will contain the segments of our ipv6
+    #address that we will convert to a string
+    my @tempArr;
+
+    #This string will contain the ipv6 that we will return
+    my $addr_long;
+
+    my $seg;
+    my $newseg;
+
+    my $i;
+
+    for($i = 0; $i < $arrLen; $i++){
+	if(@arr[$i] eq ""){
+	    $pos = $i;
+	    last;
+	}
+    }
+
+    for($i = 0; $i < $arrLen; $i++) {
+    	$seg = @arr[$i];
+    	$newseg = "0" x (4 - length($seg)) . $seg;
+    	@arr[$i] = $newseg;
+    }
+
+    #Set the number of times we're going to run
+    #the loops based on how long the abbreviated
+    #address is
+    if($pos == 0){
+	$loopCount1 = 0;
+	$loopCount2 = $NUM_IP6_SEG - $arrLen;
+    } elsif($pos == -1){
+	$loopCount1 = $arrLen;
+	$loopCount2 = $NUM_IP6_SEG;
+    } else{
+	$loopCount1 = $pos;
+	$loopCount2 = ($NUM_IP6_SEG - $arrLen) + $loopCount1;
+    }
+    $loopCount3 = $NUM_IP6_SEG;
+
+    #Load tempArr with the abbreivated ipv6 address
+    #Padd it with zeroes
+    for($i = 0; $i < $loopCount1; $i++){
+#	@tempArr[$i] = sprintf("%04d", @arr[0]);
+	@tempArr[$i] = @arr[0];
+	@arr = @arr[1..$arrLen];
+	$arrLen--;	
+    }
+    for($i = $loopCount1; $i < $loopCount2; $i++){
+	@tempArr[$i] = "0000";
+    }
+    for($i = $loopCount2; $i < $loopCount3; $i++){
+#	@tempArr[$i] = sprintf("%04d", @arr[0]);
+	@tempArr[$i] = @arr[0];
+	@arr = @arr[1..$arrLen];
+	$arrLen--;
+    }
+
+    #Combine the segments into a single string
+    #and return the result
+    $addr_long = join(":", @tempArr);
+    return $addr_long;
 }
