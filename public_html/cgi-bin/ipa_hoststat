@@ -54,16 +54,16 @@ if ($OFFER_QUERY != 0) {
 	if ( ! defined $input{ARG_IP} || $input{ARG_IP} eq "" ) {
 		$ip = $ENV{REMOTE_ADDR};
 	#  Argument is IP address
-	} elsif ($input{ARG_IP}=~/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/)  {
+	} elsif ($input{ARG_IP}=~/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/ | $input{ARG_IP}=~ /(::)?[0-9A-Fa-f]{1,4}\:{1,2}/)  {
 		$ip = $input{ARG_IP};
 	#  Argument is DNS
 	} else {
 		$ip = &getip($input{ARG_IP}) || $ENV{REMOTE_ADDR};
 		#  Send user message if name not found
 		if ($ip eq "0.0.0.0") {
-			&printerror ("Unknown host name", 
-			sprintf ("Cannot find ip address for host name \"$input{ARG_IP}\"."));
-			exit;
+		    &printerror ("Unknown host name", 
+				 sprintf ("Cannot find ip address for host name \"%s\".", $input{ARG_IP}));
+		    exit;
 		}
 	}
 
@@ -74,15 +74,19 @@ if ($OFFER_QUERY != 0) {
 
 
 #  Format (and untaint) ip address with zero padding
-$ipf = sprintf "%03d.%03d.%03d.%03d", $ip=~/(\d{1,3})/g;
+if ($ip=~/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/) {
+    $ipf = sprintf "%03d.%03d.%03d.%03d", $ip=~/(\d{1,3})/g;
+} elsif ($ip=~ /(::)?[0-9A-Fa-f]{1,4}\:{1,2}/) {
+    $ipf = lengthen_ipv6(split(":", $ip));
+    ($ipf) = $ipf =~ /((::)?([0-9A-Fa-f]{1,4}\:{1,2}){0,7}[0-9A-Fa-f]{1,4}$)/;
 
+}
 
 #  If no date entered then use yesterday
 if (defined($input{date}) && $input{date} ne "") {
 	$date = &date ($input{date}, "%Y-%m-%d");
 } else {
-	$date = &date (0,"%Y-%m-%d", -1);
-	
+	$date = &date (0,"%Y-%m-%d", -1);	
 }
 
 
@@ -192,7 +196,7 @@ print<<"EOM";
 	</tr>
 		<tr>
 			<td width="50%" bgcolor="FFFFFF"><font face="verdana" size="2" color="#080808">IP Address</font></td>
-			<td width="50%" bgcolor="FFFFFF" align="right"><font face="verdana" size="2" color="#080808">$ip</font></td>
+			<td width="50%" bgcolor="FFFFFF" align="right"><font face="verdana" size="2" color="#080808">$ipf</font></td>
 		</tr>
 EOM
 } else {
@@ -361,4 +365,74 @@ sub date {
 	}
 	$time += $incr * 86_400;
 	return strftime $format, localtime($time);
+}
+
+#I can barely beleive this works...
+sub lengthen_ipv6{
+    my(@arr) = @_;
+
+    my $pos = -1;
+    my $arrLen = @arr;
+
+    my $loopCount1 = 0;
+    my $loopCount2 = 0;
+    my $loopCount3 = 0;
+
+    #This array will contain the segments of our ipv6
+    #address that we will convert to a string
+    my @tempArr;
+
+    #This string will contain the ipv6 that we will return
+    my $addr_long;
+
+    for($i = 0; $i < $arrLen; $i++){
+	if(@arr[$i] eq ""){
+	    $pos = $i;
+	    last;
+	}
+    }
+
+    for($i = 0; $i < $arrLen; $i++) {
+    	my $seg = @arr[$i];
+    	my $newseg = "0" x (4 - length($seg)) . $seg;
+    	@arr[$i] = $newseg;
+    }
+
+    #Set the number of times we're going to run
+    #the loops based on how long the abbreviated
+    #address is
+    if($pos == 0){
+	$loopCount1 = 0;
+	$loopCount2 = $NUM_IP6_SEG - $arrLen;
+    } elsif($pos == -1){
+	$loopCount1 = $arrLen;
+	$loopCount2 = $NUM_IP6_SEG;
+    } else{
+	$loopCount1 = $pos;
+	$loopCount2 = ($NUM_IP6_SEG - $arrLen) + $loopCount1;
+    }
+    $loopCount3 = $NUM_IP6_SEG;
+
+    #Load tempArr with the abbreivated ipv6 address
+    #Padd it with zeroes
+    for($i = 0; $i < $loopCount1; $i++){
+#	@tempArr[$i] = sprintf("%04d", @arr[0]);
+	@tempArr[$i] = @arr[0];
+	@arr = @arr[1..$arrLen];
+	$arrLen--;	
+    }
+    for($i = $loopCount1; $i < $loopCount2; $i++){
+	@tempArr[$i] = "0000";
+    }
+    for($i = $loopCount2; $i < $loopCount3; $i++){
+#	@tempArr[$i] = sprintf("%04d", @arr[0]);
+	@tempArr[$i] = @arr[0];
+	@arr = @arr[1..$arrLen];
+	$arrLen--;
+    }
+
+    #Combine the segments into a single string
+    #and return the result
+    $addr_long = join(":", @tempArr);
+    return $addr_long;
 }

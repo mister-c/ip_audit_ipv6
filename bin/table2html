@@ -139,8 +139,6 @@ sub l {
 }
 
 
-
-
 #  Parse options
 @Headings   = parseOpt($opt_H)     if $opt_H;
 @CellFormat = parseOpt($opt_C)     if $opt_C;

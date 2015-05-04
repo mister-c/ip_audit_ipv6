@@ -1000,7 +1000,7 @@ sub untaint {
 }
 
 
-#I can barely beleive this works...
+#I can barely believe this works...
 sub lengthen_ipv6{
     my(@arr) = @_;
 
